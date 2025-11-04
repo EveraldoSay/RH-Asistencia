@@ -1,0 +1,997 @@
+$primary: #3b82f6;
+$primary-dark: #2563eb;
+$primary-light: #dbeafe;
+$secondary: #64748b;
+$success: #10b981;
+$warning: #f59e0b;
+$danger: #ef4444;
+$light: #f8fafc;
+$dark: #1e293b;
+$gray-100: #f1f5f9;
+$gray-200: #e2e8f0;
+$gray-300: #cbd5e1;
+$gray-400: #94a3b8;
+$gray-500: #6b7280;
+$gray-600: #4b5563;
+$gray-700: #374151;
+$gray-800: #1f2937;
+$gray-900: #111827;
+$gray-50: #f9fafb;
+$success-light: #d1fae5;
+$success-dark: #065f46;
+$error-light: #fee2e2;
+$error-dark: #b91c1c;
+
+
+$border-radius: 8px;
+$shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+.fijo-container {
+  max-width: 900px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-in-out;
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: $dark;
+    font-weight: 600;
+    border-bottom: 2px solid $primary;
+    padding-bottom: 0.5rem;
+  }
+}
+
+// Alertas
+.alerts {
+  margin-bottom: 1.5rem;
+}
+
+.alert {
+  padding: 0.8rem 1rem;
+  border-radius: $border-radius;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  
+  &.error {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-left: 4px solid #ef4444;
+  }
+  
+  &.info {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left: 4px solid $primary;
+  }
+  
+  button {
+    border: 0;
+    background: transparent;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Formulario
+.form-fijo {
+  background: white;
+  border-radius: $border-radius;
+  padding: 1.5rem;
+  box-shadow: $shadow;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid $gray-200;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    margin: 0 0 1rem 0;
+    color: $dark;
+    font-weight: 600;
+    
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: $primary-light;
+      border-radius: 50%;
+      margin-right: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: $primary;
+    }
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+// Elementos de formulario
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: $secondary;
+}
+
+input, select {
+  border: 1px solid $gray-300;
+  padding: 0.625rem 0.75rem;
+  border-radius: $border-radius;
+  font: inherit;
+  transition: all 0.2s ease-in-out;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+}
+
+// Grid de empleados
+.empleados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.empleado-card {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  padding: 1rem;
+  background: $light;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary;
+    box-shadow: $shadow;
+  }
+
+  .empleado-info {
+    strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: $dark;
+    }
+
+    .rol {
+      font-size: 0.85rem;
+      color: $secondary;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .turno-asignado {
+      font-size: 0.8rem;
+      color: $success;
+      font-weight: 500;
+    }
+
+    .sin-turno {
+      font-size: 0.8rem;
+      color: $warning;
+      font-style: italic;
+    }
+  }
+}
+
+// Días de descanso
+.dias-descanso-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.dia-descanso-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary;
+    background: $primary-light;
+  }
+
+  input[type="checkbox"] {
+    margin: 0;
+  }
+
+  .checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid $gray-400;
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+  }
+
+  input[type="checkbox"]:checked + .checkmark {
+    background: $primary;
+    border-color: $primary;
+    
+    &::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 12px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+.resumen-descanso {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: $gray-100;
+  border-radius: $border-radius;
+  
+  .dia-seleccionado {
+    display: inline-block;
+    margin: 0.25rem 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: $primary;
+    color: white;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+}
+
+// Resumen
+.resumen {
+  background: $gray-100;
+  border-radius: $border-radius;
+  padding: 1.5rem;
+  
+  h3 {
+    margin-top: 0;
+  }
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.resumen-item {
+  padding: 0.75rem;
+  background: white;
+  border-radius: $border-radius;
+  border-left: 4px solid $primary;
+  
+  strong {
+    color: $secondary;
+    font-weight: 600;
+  }
+}
+
+// Botones
+.actions {
+  margin-top: 2rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  border-top: 1px solid $gray-200;
+  padding-top: 1.5rem;
+}
+
+.btn {
+  background: $primary;
+  color: white;
+  border: 0;
+  padding: 0.625rem 1.25rem;
+  border-radius: $border-radius;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    background: $gray-300;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  &.outline {
+    background: white;
+    border: 1px solid $gray-300;
+    color: $secondary;
+    
+    &:hover {
+      background: $gray-100;
+      border-color: $gray-400;
+      color: $dark;
+    }
+  }
+
+  &.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+// Texto muted
+.muted {
+  color: $gray-400;
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+}
+
+// Animaciones
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ===== ESTILOS NUEVOS =====
+
+.contadores {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  
+  .contador {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    background: #f5f5f5;
+    font-weight: 500;
+    
+    &.limite {
+      background: #ffebee;
+      color: #c62828;
+      font-weight: bold;
+    }
+  }
+}
+
+.filtros-rol {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  
+  .btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    
+    &.active {
+      background: #2196f3;
+      color: white;
+    }
+  }
+}
+
+.search-box {
+  margin-bottom: 1rem;
+  
+  input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid $gray-300;
+    border-radius: $border-radius;
+    font-size: 1rem;
+    
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+  }
+}
+
+.empleados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.empleado-card {
+  border: 2px solid $gray-200;
+  border-radius: $border-radius;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  
+  &.selected {
+    border-color: $primary;
+    background: $primary-light;
+  }
+  
+  &.not-selectable {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    margin: 0;
+    
+    input[type="checkbox"] {
+      margin-top: 0.25rem;
+      transform: scale(1.2);
+    }
+  }
+  
+  .info {
+    flex: 1;
+    
+    .name {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: $dark;
+    }
+    
+    .rol {
+      display: block;
+      font-size: 0.875rem;
+      color: $secondary;
+      margin-bottom: 0.5rem;
+    }
+    
+    .estado-area {
+      .estado {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+        
+        &.disponible {
+          background: #d1fae5;
+          color: #065f46;
+        }
+        
+        &.asignado-otra {
+          background: #fee2e2;
+          color: #b91c1c;
+        }
+      }
+    }
+  }
+}
+
+.resumen-equipo {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: $gray-100;
+  border-radius: $border-radius;
+  
+  h4 {
+    margin: 0 0 1rem 0;
+    color: $dark;
+  }
+}
+
+.equipo-seleccionado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.empleado-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius;
+  font-size: 0.875rem;
+  
+  .btn-remove {
+    background: $danger;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.error-text {
+  color: $danger;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.nuevo-turno-card {
+  background: #f8f9fa;
+  border-radius: $border-radius;
+  padding: 1rem;
+  margin-top: 1rem;
+  border: 1px dashed $gray-300;
+  
+  h4 {
+    margin: 0 0 1rem 0;
+    color: $secondary;
+    font-size: 1rem;
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+  }
+  
+  .tolerancias {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    label {
+      font-size: 0.8rem;
+      
+      input {
+        width: 60px;
+        margin-left: 0.5rem;
+      }
+    }
+  }
+  
+  .btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+.info-box {
+  padding: 1rem;
+  border-radius: $border-radius;
+  margin-bottom: 1rem;
+  
+  &.success {
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+  }
+  
+  &:not(.success) {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    color: #1e40af;
+  }
+  
+  p {
+    margin: 0.25rem 0;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  
+  &.permanente {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .fijo-container {
+    padding: 0.5rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .empleados-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dias-descanso-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .resumen-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions {
+    flex-direction: column;
+    
+    .btn {
+      width: 100%;
+    }
+  }
+
+  .contadores {
+    flex-direction: column;
+  }
+  
+  .filtros-rol {
+    justify-content: center;
+  }
+  
+  .nuevo-turno-card .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .equipo-seleccionado {
+    flex-direction: column;
+  }
+}
+
+// Agregar estos estilos al archivo SCSS existente
+
+.stepper {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.5rem 0 2rem;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: $gray-200;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+  
+  .step {
+    flex: 1;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    border-radius: $border-radius;
+    font-weight: 600;
+    background: white;
+    position: relative;
+    z-index: 2;
+    border: 2px solid $gray-200;
+    transition: all 0.2s ease-in-out;
+    
+    &.active {
+      background: $primary;
+      color: white;
+      border-color: $primary;
+      box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    }
+    
+    &:not(.active):hover {
+      border-color: $primary;
+      background: $primary-light;
+    }
+  }
+}
+
+.area-info {
+  padding: 0.75rem;
+  background: $primary-light;
+  border-radius: $border-radius;
+  margin-bottom: 1rem;
+  border-left: 4px solid $primary;
+}
+
+.turnos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.turno-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 2px solid $gray-300;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    border-color: $primary;
+    background: $primary-light;
+  }
+  
+  input[type="radio"] {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  .turno-info {
+    flex: 1;
+    
+    strong {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    
+    span {
+      color: #374151;
+      font-size: 0.9rem;
+    }
+    
+    small {
+      color: $gray-600;
+      font-size: 0.8rem;
+      display: block;
+      margin-top: 0.25rem;
+    }
+  }
+  
+  input[type="radio"]:checked + .turno-info {
+    color: $primary;
+  }
+}
+
+.nuevo-turno-card {
+  background: $gray-50;
+  border: 2px dashed $gray-400;
+  border-radius: $border-radius;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  
+  h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #374151;
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+  }
+  
+  .tolerancias {
+    display: flex;
+    gap: 1rem;
+    
+    label {
+      font-size: 0.8rem;
+      color: $gray-600;
+      
+      input {
+        width: 60px;
+        margin-left: 0.25rem;
+      }
+    }
+  }
+}
+
+.dias-descanso-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.dia-descanso-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid $gray-300;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    border-color: $primary;
+    background: $primary-light;
+  }
+  
+  input[type="checkbox"] {
+    margin-right: 0.75rem;
+  }
+  
+  input[type="checkbox"]:checked + .checkmark {
+    background: $primary;
+    border-color: $primary;
+    
+    &::after {
+      content: '✓';
+      color: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+    }
+  }
+}
+
+.resumen-descanso {
+  padding: 1rem;
+  background: $success-light;
+  border-radius: $border-radius;
+  border-left: 4px solid $success;
+  margin: 1rem 0;
+  
+  .dia-seleccionado {
+    display: inline-block;
+    background: $success;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+.resumen {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: $gray-50;
+  border-radius: $border-radius;
+  
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: $gray-800;
+  }
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.resumen-item {
+  padding: 0.75rem;
+  background: white;
+  border-radius: $border-radius;
+  border-left: 4px solid $primary;
+  
+  .badge.permanente {
+    background: $success;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+.filtros-rol {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  
+  .btn.small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+    
+    &.active {
+      background: $primary;
+      color: white;
+    }
+  }
+}
+
+.estado-area {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  
+  .estado {
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-weight: 500;
+    
+    &.disponible {
+      background: $success-light;
+      color: $success-dark;
+    }
+    
+    &.asignado-actual {
+      background: $primary-light;
+      color: $primary-dark;
+    }
+    
+    &.asignado-otra {
+      background: $error-light;
+      color: $error-dark;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .stepper {
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    &::before {
+      display: none;
+    }
+    
+    .step {
+      text-align: left;
+      padding: 1rem;
+    }
+  }
+  
+  .nuevo-turno-card .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dias-descanso-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .resumen-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

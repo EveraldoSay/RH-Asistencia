@@ -1,0 +1,340 @@
+<div class="container">
+  <!-- Encabezado -->
+  <div class="header">
+    <h1>Gestión de Empleados</h1>
+    <div class="user-info">
+      <span>{{ userInfo?.preferred_username || userInfo?.email || userInfo?.name || 'Usuario' }}</span>
+      <span class="roles">Rol: {{ displayRoles.length ? displayRoles.join(', ') : 'Sin roles' }}</span>
+    </div>
+  </div>
+
+  <!-- Botones y Busqueda -->
+  <div class="actions" style="display:flex; gap:.75rem; align-items:center;">
+    <div *ngIf="canCreateEdit()" style="display:flex; gap:.5rem;">
+      <button class="btn btn-primary" (click)="showCreateForm()" [disabled]="loading">
+        + Agregar Empleado
+      </button>
+      <button class="btn btn-primary" (click)="showNewRolForm = true" [disabled]="loading">
+        + Agregar Rol
+      </button>
+      <button class="btn btn-primary" (click)="showNewAreaForm = true" [disabled]="loading">
+        + Agregar Área
+      </button>
+      <!-- <button class="btn btn-secondary" (click)="importarBiometrico()" [disabled]="loading">
+        Importar desde biométrico
+      </button> -->
+
+    </div>
+
+    <!-- 🔎 Caja de búsqueda -->
+    <div style="margin-left:auto; display:flex; gap:.5rem; align-items:center;">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        [disabled]="loading"
+        placeholder="Buscar por numero, nombre, rol o area"
+        style="min-width: 320px; padding:.5rem .75rem; border:1px solid #ccc; border-radius:.5rem;"
+      />
+      <button *ngIf="searchTerm" class="btn btn-secondary btn-small" (click)="clearSearch()">Limpiar</button>
+    </div>
+  </div>
+
+
+  <!-- Mensaje de error general -->
+  <div class="alert alert-error" *ngIf="error">
+    {{ error }}
+    <button (click)="error = null">&times;</button>
+  </div>
+
+  <!-- Spinner de carga -->
+  <div class="loading" *ngIf="loading && !showForm">
+    Cargando empleados...
+  </div>
+
+  <!-- Mini form Área -->
+  <div class="form-container" *ngIf="showNewAreaForm">
+    <h3>Nueva Área</h3>
+
+    <form #areaForm="ngForm" (ngSubmit)="saveArea(areaForm)">
+      <div class="form-group">
+        <label>Nombre del área *</label>
+        <input
+          type="text"
+          name="area_nombre"
+          [(ngModel)]="newArea.nombre_area"
+          required minlength="3" maxlength="50"
+          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,50}$"
+          placeholder="Ej: Laboratorio">
+      </div>
+
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <textarea
+          name="area_descripcion"
+          [(ngModel)]="newArea.descripcion"
+          maxlength="500"
+          placeholder="Ej: Área encargada de análisis clínicos"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading || areaForm.invalid">Guardar</button>
+        <button class="btn btn-secondary" type="button" (click)="showNewAreaForm=false">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+
+
+    <!-- Mini form Rol -->
+  <div class="form-container" *ngIf="showNewRolForm">
+    <h3>Nuevo Rol</h3>
+
+    <form #rolForm="ngForm" (ngSubmit)="saveRol(rolForm)">
+      <div class="form-group">
+        <label>Nombre del rol *</label>
+        <input
+          type="text"
+          name="rol_nombre"
+          [(ngModel)]="newRol.nombre_rol"
+          required minlength="3" maxlength="50"
+          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,50}$"
+          placeholder="Ej: Enfermero">
+      </div>
+
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <textarea
+          name="rol_descripcion"
+          [(ngModel)]="newRol.descripcion"
+          maxlength="500"
+          placeholder="Ej: Responsable de cuidados generales"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading || rolForm.invalid">Guardar</button>
+        <button class="btn btn-secondary" type="button" (click)="showNewRolForm=false">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+
+
+  <!-- Formulario de creación/edición -->
+  <div class="form-container" *ngIf="showForm">
+    <h3>{{ editingEmpleado ? 'Editar Empleado' : 'Nuevo Empleado' }}</h3>
+
+    <form #f="ngForm" (ngSubmit)="saveEmpleado(f)">
+      <!-- Número -->
+      <div class="form-group">
+        <label>Número de Telefono </label>
+        <input
+          type="text"
+          name="numero_empleado"
+          [(ngModel)]="empleadofrorm.numero_empleado"
+          required
+          minlength="8"
+          maxlength="8"
+          inputmode="numeric"
+          pattern="^[0-9]{8}$"
+          placeholder="Ej: 50234567"
+          (input)="onNumeroInput($event)"
+          (blur)="clearServerError('numero')"
+        />
+        <small class="field-error" *ngIf="f.submitted && f.controls['numero_empleado']?.errors?.['required']">
+          El número telefónico es obligatorio.
+        </small>
+        <small class="field-error" *ngIf="f.controls['numero_empleado']?.errors?.['pattern']">
+          Debe contener exactamente 8 dígitos numéricos.
+        </small>
+        <small class="field-error" *ngIf="f.controls['numero_empleado']?.errors?.['minlength'] || f.controls['numero_empleado']?.errors?.['maxlength']">
+          El número debe tener exactamente 8 dígitos.
+        </small>
+        <small class="field-error" *ngIf="serverErrors.numeroDuplicado">
+          Este número ya está registrado.
+        </small>
+      </div>
+
+      <!-- Renglón -->
+      <div class="form-group">
+        <label>Renglón marcaje</label>
+        <select
+          name="renglon"
+          [(ngModel)]="empleadofrorm.renglon"
+          required
+        >
+          <option [ngValue]="null">Seleccionar renglón...</option>
+
+          <optgroup label="Renglones con marcaje obligatorio">
+            <option value="011">011 </option>
+            <option value="036">036 </option>
+            <option value="022">022</option>
+            <option value="021">021 </option>
+          </optgroup>
+
+          <optgroup label="Renglones sin marcaje obligatorio">
+            <option value="182">182 </option>
+            <option value="189">189</option>
+            <option value="186">186 </option>
+            <option value="183">183 </option>
+          </optgroup>
+        </select>
+
+        <small class="field-error" *ngIf="f.submitted && f.controls['renglon']?.errors?.['required']">
+          Debe seleccionar un renglón.
+        </small>
+      </div>
+
+
+      <!-- Nombre -->
+      <div class="form-group">
+        <label>Nombre Completo</label>
+        <input
+          type="text"
+          name="nombre_completo"
+          [(ngModel)]="empleadofrorm.nombre_completo"
+          required
+          minlength="3"
+          maxlength="150"
+          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,150}$"
+          placeholder="Ej: María López García"
+          (input)="onNombreInput($event)"
+          (blur)="clearServerError('nombre')"
+        >
+        <small class="field-error" *ngIf="f.submitted && f.controls['nombre_completo']?.errors?.['required']">
+          El nombre es obligatorio.
+        </small>
+        <small class="field-error" *ngIf="f.controls['nombre_completo']?.errors?.['minlength']">
+          Debe tener al menos 3 caracteres.
+        </small>
+        <small class="field-error" *ngIf="f.controls['nombre_completo']?.errors?.['pattern']">
+          Solo se permiten letras y espacios.
+        </small>
+        <small class="field-error" *ngIf="serverErrors.nombreDuplicado">
+          Ya existe un empleado con este nombre.
+        </small>
+      </div>
+
+      <!-- Correo -->
+      <div class="form-group">
+        <label>Correo (opcional)</label>
+        <input
+          type="email"
+          name="email"
+          [(ngModel)]="empleadofrorm.email"
+          maxlength="120"
+          placeholder="ejemplo@hospital.com"
+          (input)="onEmailInput($event)"
+          (blur)="clearServerError('email')"
+          pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+        >
+        <small class="field-error" *ngIf="f.controls['email']?.errors?.['pattern']">
+          Correo no válido.
+        </small>
+        <small class="field-error" *ngIf="serverErrors.emailDuplicado">
+          Este correo ya está registrado.
+        </small>
+      </div>
+
+
+      <!-- Selects -->
+      <div class="form-group">
+        <label>Rol</label>
+        <select [(ngModel)]="empleadofrorm.rol_id" name="rol_id">
+          <option [ngValue]="null">Seleccionar rol...</option>
+          <option *ngFor="let rol of roles" [ngValue]="rol.id">{{ rol.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Area</label>
+        <select [(ngModel)]="empleadofrorm.area_id" name="area_id">
+          <option [ngValue]="null">Seleccionar área...</option>
+          <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.nombre }}</option>
+        </select>
+      </div>
+
+      <!-- Activo -->
+      <div class="form-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="empleadofrorm.activo" name="activo">
+          Activo
+        </label>
+      </div>
+
+      <!-- Jefatura en su área -->
+      <div class="form-group">
+        <fieldset>
+          <legend>Jefatura en su área</legend>
+          <label>
+            <input type="radio" name="supervision" [(ngModel)]="supervision" value="NINGUNO" />
+            Ninguno
+          </label>
+          <label style="margin-left: 1rem;">
+            <input type="radio" name="supervision" [(ngModel)]="supervision" value="ESPECIFICO" />
+            Supervisor específico (no titular)
+          </label>
+          <label style="margin-left: 1rem;">
+            <input type="radio" name="supervision" [(ngModel)]="supervision" value="TITULAR" />
+            Jefe titular del área
+          </label>
+        </fieldset>
+      </div>
+
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading || f.invalid">
+          {{ editingEmpleado ? 'Actualizar' : 'Guardar' }}
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="cancelForm()" [disabled]="loading">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabla de empleados -->
+  <div class="table-container" *ngIf="!loading && !showForm">
+    <table class="empleados-table">
+      <thead>
+        <tr>
+          <th>Telefono</th>
+          <th>Nombre Completo</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Area</th>
+          <th>Estado</th>
+          <th *ngIf="canCreateEdit() || canDelete()">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let emp of filteredEmpleados; trackBy: trackById" [class.inactive]="!emp.activo">
+          <td>{{ emp.numero_empleado }}</td>
+          <td>{{ emp.nombre_completo }}</td>
+          <td>{{ emp.email || '—' }}</td>
+          <td>{{ getRolNombre(emp.rol_id) }}</td>
+          <td>{{ getAreaNombre(emp.area_id) }}</td>
+          <td [class.status-active]="emp.activo" [class.status-inactive]="!emp.activo">
+            {{ emp.activo ? 'Activo' : 'Inactivo' }}
+          </td>
+          <td *ngIf="canCreateEdit() || canDelete()" class="action-buttons">
+            <div class="actions-inline">
+              <button *ngIf="canCreateEdit()" class="btn btn-edit btn-small" (click)="showEditForm(emp)">Editar</button>
+              <button *ngIf="canCreateEdit()" class="btn btn-warning btn-small" (click)="deactivateEmpleado(emp)">
+                {{ emp.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button *ngIf="canDelete()" class="btn btn-danger btn-small" (click)="deleteEmpleado(emp)">Eliminar</button>
+            </div>
+          </td>
+
+        <tr *ngIf="!loading && searchTerm && filteredEmpleados.length === 0">
+          <td colspan="6" class="no-data">Sin coincidencias para "{{ searchTerm }}".</td>
+        </tr>
+
+        <tr *ngIf="!loading && !searchTerm && empleados.length === 0">
+          <td colspan="6" class="no-data">No hay empleados registrados.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+</div>
