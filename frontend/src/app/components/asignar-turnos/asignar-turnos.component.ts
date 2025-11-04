@@ -210,42 +210,92 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
   }
 
   // ===== Métodos de navegación =====
-  abrirFormulario(id: any) {
-    this.editandoId = id === 'NUEVO' ? 'NUEVO' : id;
-    this.modo = this.vista === 'LISTA_ROTATIVOS' ? 'ROTATIVO' : 'FIJO';
-    this.vista = 'FORMULARIO';
-    this.resetFormulario();
+ abrirFormulario(id: any) {
+  this.editandoId = id === 'NUEVO' ? 'NUEVO' : id;
+  this.modo = this.vista === 'LISTA_ROTATIVOS' ? 'ROTATIVO' : 'FIJO';
+  this.vista = 'FORMULARIO';
+  this.resetFormulario();
 
-    if (id !== 'NUEVO') {
-      const conf = this.modo === 'ROTATIVO' 
-        ? this.configuracionesRotativas.find(c => c.id === id)
-        : null;
+  // 🆕 Si es un nuevo turno, no hay problema
+  if (id === 'NUEVO') return;
 
-      if (conf) {
-        this.areaJefeForm.patchValue({
-          area_id: conf.areaId,
-          jefe_id: conf.jefeId
-        });
-        this.equipoCompleto = [...(conf.equipo || conf.empleadosFijos || [])];
-        this.reemplazos = [...(conf.reemplazos || [])];
-        this.fechasForm.patchValue({
-          fecha_inicio: conf.fecha_inicio,
-          fecha_fin: conf.fecha_fin,
-          patron: conf.patron || 'NORMAL'
-        });
+  // 🔹 Si es una configuración existente
+  const conf = this.modo === 'ROTATIVO'
+    ? this.configuracionesRotativas.find(c => c.id === id)
+    : this.configuracionesFijas.find(c => c.id === id);
 
-        if (conf.fecha_inicio && conf.fecha_fin) {
-          this.cargarAsignacionesEquipoCompleto(conf.fecha_inicio, conf.fecha_fin);
+  if (conf) {
+    // Cargar datos básicos
+    this.areaJefeForm.patchValue({
+      area_id: conf.areaId || conf.area_id,
+      jefe_id: conf.jefeId || conf.jefe_id
+    });
+
+    this.fechasForm.patchValue({
+      fecha_inicio: conf.fecha_inicio,
+      fecha_fin: conf.fecha_fin,
+      patron: conf.patron || 'NORMAL'
+    });
+
+    this.reemplazos = [...(conf.reemplazos || [])];
+
+    // 🧩 REEMPLAZO CLAVE:
+    // Si el equipo no viene cargado, lo reconstruimos desde la BD
+    if (!conf.equipo || conf.equipo.length === 0) {
+      // Intentar extraer los IDs de empleados guardados en configuraciones_turnos
+      try {
+        // Algunos backends devuelven empleados_ids como JSON string o array
+        const ids = Array.isArray(conf.empleados_ids)
+          ? conf.empleados_ids
+          : JSON.parse(conf.empleados_ids || '[]');
+
+        if (ids.length > 0) {
+          this.cargarEmpleadosDelLote(ids);
+        } else {
+          console.warn('⚠️ No se encontraron empleados_ids en la configuración');
+          this.equipoCompleto = [];
         }
-        this.step = 4;
-
+      } catch (e) {
+        console.error('Error parseando empleados_ids:', e);
+        this.equipoCompleto = [];
       }
+    } else {
+      // Si ya vienen los datos del equipo
+      this.equipoCompleto = [...conf.equipo];
     }
+
+    // Cargar asignaciones existentes si hay fechas
+    if (conf.fecha_inicio && conf.fecha_fin) {
+      this.cargarAsignacionesEquipoCompleto(conf.fecha_inicio, conf.fecha_fin);
+    }
+
+    // Mostrar paso 4 directamente (selector de empleado)
+    this.step = 4;
   }
+}
+
+cargarEmpleadosDelLote(ids: number[]) {
+  if (!ids || ids.length === 0) return;
+
+  this.http.post(`${API}/asignaciones/empleados/por-ids`, { ids }).subscribe({
+    next: (resp: any) => {
+      if (resp.success) {
+        this.equipoCompleto = resp.data;
+        console.info(`👥 Equipo reconstruido (${resp.data.length} empleados)`);
+      } else {
+        console.warn('⚠️ No se pudo cargar el equipo del lote');
+      }
+    },
+    error: (err) => console.error('❌ Error al cargar empleados del lote:', err)
+  });
+}
+
+
+
 cargarConfiguraciones() {
     this.turnosService.getConfiguraciones().subscribe({
       next: (res) => {
-        
+        console.log('📦 Configuraciones recibidas:', res);
         if (res.success && res.data) {
           this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO');
           this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO');
