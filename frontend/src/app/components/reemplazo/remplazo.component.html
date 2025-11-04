@@ -1,0 +1,75 @@
+<div class="reemplazo-container">
+  <!-- Botón para abrir modal -->
+  <button class="btn btn-reemplazo" (click)="abrirModal()">
+    🔄 Buscar Reemplazo
+  </button>
+
+  <!-- Modal -->
+  <div *ngIf="mostrarModal" class="modal-overlay">
+    <div class="modal-content">
+      <!-- Header -->
+      <div class="modal-header">
+        <h3>Buscar Reemplazo para {{ empleadoOriginalNombre }}</h3>
+        <button class="btn-cerrar" (click)="cerrarModal()">×</button>
+      </div>
+
+      <!-- Lista de empleados -->
+      <div class="paso-busqueda" *ngIf="!empleadoReemplazoSeleccionado">
+        <input 
+          type="text" 
+          placeholder="Buscar por nombre..." 
+          [(ngModel)]="busquedaEmpleado"
+          (input)="filtrarEmpleados()"
+          class="input-busqueda"
+        >
+
+          <div class="empleados-lista">
+            <div 
+              *ngFor="let empleado of empleadosFiltrados" 
+              class="empleado-item"
+              (click)="confirmarReemplazo(empleado)"
+            >
+              <div class="empleado-info">
+                <strong>{{ empleado.nombre_completo }}</strong>
+                <span class="empleado-rol">{{ getRolNombre(empleado.rol_id) }}</span>
+                <span class="empleado-email">{{ empleado.email }}</span>
+              </div>
+              <div class="empleado-accion">
+                <button class="btn btn-seleccionar">Seleccionar</button>
+              </div>
+            </div>
+
+            <div *ngIf="empleadosFiltrados.length === 0" class="sin-resultados">
+              No se encontraron empleados disponibles
+            </div>
+          </div>
+
+        <div class="acciones-paso">
+          <button class="btn btn-secundario" (click)="cerrarModal()">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- 🧩 NUEVA SECCIÓN: Confirmación y guardado -->
+      <div class="paso-confirmacion" *ngIf="empleadoReemplazoSeleccionado">
+        <h4>✅ Empleado seleccionado para cubrir:</h4>
+        <div class="empleado-seleccionado">
+          <p><strong>{{ empleadoReemplazoSeleccionado.nombre_completo }}</strong></p>
+          <p>{{ getRolNombre(empleadoReemplazoSeleccionado.rol_id) }}</p>
+          <p>{{ empleadoReemplazoSeleccionado.email }}</p>
+        </div>
+
+        <!-- Aquí más adelante puedes integrar el calendario -->
+        <p class="texto-calendario">
+          Selecciona en el calendario los días que cubrirá este empleado.
+        </p>
+
+        <div class="acciones-paso">
+          <button class="btn btn-secundario" (click)="cancelarSeleccion()">Volver</button>
+          <button class="btn btn-primario" (click)="guardarReemplazo()">Guardar asignación</button>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+</div>

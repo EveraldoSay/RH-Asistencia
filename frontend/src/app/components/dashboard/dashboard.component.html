@@ -1,0 +1,117 @@
+<div class="dashboard-container" *ngIf="!loading">
+
+  <!-- Sección de estadísticas principales -->
+  <div class="stats-section">
+    <h3>Resumen de Personal</h3>
+    <div class="stats-container">
+      <!-- Tarjeta de Personal Total -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <div class="info">
+          <p>Personal Total</p>
+          <h2>{{ data.personalTotal }}</h2>
+          <small *ngIf="!hasData">Esperando datos...</small>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Personal Activo -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-user-check"></i></div>
+        <div class="info">
+          <p>Personal Activo</p>
+          <h2>{{ data.personalActivo }}</h2>
+          <small *ngIf="!hasData">Esperando datos...</small>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Personal Inactivo -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-user-slash"></i></div>
+        <div class="info">
+          <p>Personal Inactivo</p>
+          <h2>{{ data.personalInactivo }}</h2>
+          <small *ngIf="!hasData">Esperando datos...</small>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Personal sin Turno -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-user-clock"></i></div>
+        <div class="info">
+          <p>Personal sin Turno</p>
+          <h2>{{ data.personalSinTurno }}</h2>
+          <small *ngIf="!hasData">Esperando datos...</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección de Turnos -->
+  <div class="stats-section">
+    <h3>Gestión de Turnos</h3>
+    <div class="stats-container">
+      <!-- Tarjeta de Total de Turnos (suma de fijos + rotativos) -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+        <div class="info">
+          <p>Total de Turnos</p>
+          <h2>{{ data.totalTurnos }}</h2>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Turnos Fijos -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="info">
+          <p>Turnos Fijos</p>
+          <h2>{{ data.turnosFijos }}</h2>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Turnos Rotativos -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-sync-alt"></i></div>
+        <div class="info">
+          <p>Turnos Rotativos</p>
+          <h2>{{ data.turnosRotativos }}</h2>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Alertas -->
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="info">
+          <p>Alertas</p>
+          <h2>{{ data.alertas }}</h2>
+          <small *ngIf="!hasData">No hay alertas registradas</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido inferior -->
+  <div class="bottom-section">
+    
+    <!-- Gráfico de asistencia semanal -->
+    <div class="chart-container">
+      <h3>Asistencia Semanal</h3>
+      <div *ngIf="!hasData" class="no-data">
+        <p>No hay datos de asistencia disponibles</p>
+      </div>
+      <canvas id="asistenciaChart" *ngIf="hasData"></canvas>
+    </div>
+
+    <!-- Distribución de Personal por Área -->
+    <div class="chart-container">
+      <h3>Distribución de Personal por Área</h3>
+      <div *ngIf="!hasData" class="no-data">
+        <p>No hay datos disponibles</p>
+      </div>
+      <canvas id="areaChart" *ngIf="hasData"></canvas>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="loading" class="loading">
+  <p>Cargando datos del dashboard...</p>
+</div>
