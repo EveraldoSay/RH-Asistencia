@@ -1,0 +1,34 @@
+se nesecitan instalar las dependencias en ambas carpetas
+cd backend = npm install == esto para instalar dependencias
+cd backend = npm install nodemailer == esto para el envio de correos
+cd backend = pm2 start server.js --name hospital_biometric  
+cd backend = npm install node-cron
+
+cd frontend = npm install
+cd frontend = npm install -g @angular/cli
+cd frontend = npm install jspdf jspdf-autotable
+cd frontend = npm install chart.js
+
+para levantar ambas carpetas 
+cd backend = npm run dev
+cd frontend = ng serve
+
+
+
+para levantar keycloak 
+cd bin = kc.bat start-dev
+
+backend
+/__npm init -y  (Inicializa Node.js:)
+/__npm install express  (Instalar Express (framework para API REST):)
+/__npm install express cors  (Esto instalará)
+           express (framework para el servidor).
+           cors (para permitir peticiones desde Angular u otros dominios).)
+/__npm install express cors mysql2
+/__npm install express-session bcrypt
+/__npm install dotenv
+
+
+frontend
+/__ng new frontend (esto crea todas las carpetas y archivos que necesita angular)
+/__npm install zone.js
