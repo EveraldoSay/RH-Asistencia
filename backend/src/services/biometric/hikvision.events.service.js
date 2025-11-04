@@ -15,11 +15,9 @@ function buildConfig(prefix) {
 
 const devices = [buildConfig('HIK1'), buildConfig('HIK2')].filter(d => d.host);
 
-// =============================================================
-// 🔁 Extraer eventos de marcaje (entradas y salidas)
-// =============================================================
+// Extraer eventos de marcaje (entradas y salidas)
 export async function syncEventosDesdeBiometricos() {
-  console.log('🚀 Iniciando sincronización de eventos desde biométricos...');
+  console.log('Iniciando sincronización de eventos desde biométricos...');
   let totalEventos = 0;
 
   for (const dev of devices) {
@@ -30,7 +28,7 @@ export async function syncEventosDesdeBiometricos() {
         pass: dev.pass
       });
 
-      console.log(`📡 Consultando eventos desde ${dev.host}...`);
+      console.log(`Consultando eventos desde ${dev.host}...`);
 
       const body = {
         AcsEventCond: {
@@ -39,7 +37,7 @@ export async function syncEventosDesdeBiometricos() {
           searchResultPosition: 0,
           major: 0,
           minor: 0,
-          startTime: "2025-01-01T00:00:00",  // puedes filtrar desde una fecha reciente
+          startTime: "2025-01-01T00:00:00",
           endTime: "2025-12-31T23:59:59"
         }
       };
@@ -47,7 +45,7 @@ export async function syncEventosDesdeBiometricos() {
       // Intentar formato JSON
       let data;
       try {
-        data = await client.post(`/ISAPI/AccessControl/AcsEvent?format=json`, body);
+        data = await client.post(`/ISAPI/AccessControl/AcsEventTotalNum?format=json`, body);
       } catch (jsonErr) {
         // Fallback XML
         const xmlBody = `
@@ -66,11 +64,9 @@ export async function syncEventosDesdeBiometricos() {
       const eventos = data?.AcsEvent?.InfoList || data?.AcsEventNotificationList || [];
 
       const lista = Array.isArray(eventos) ? eventos : [eventos];
-      console.log(`📄 ${lista.length} eventos recibidos desde ${dev.host}`);
+      console.log(`${lista.length} eventos recibidos desde ${dev.host}`);
 
-      // =============================================================
-      // 🔄 Procesar y guardar en la BD
-      // =============================================================
+      // Procesar y guardar en la BD
       for (const ev of lista) {
         const empNo = ev?.EmployeeNoString || ev?.employeeNo || ev?.EmployeeNo || null;
         const fechaHora = ev?.dateTime || ev?.time || null;
