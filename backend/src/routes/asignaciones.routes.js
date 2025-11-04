@@ -405,7 +405,7 @@ const { sendEmail} = require('../services/email.service.js');
 
       } catch (error) {
         if (conn) await conn.rollback();
-        console.error("❌ Error en /bulk:", error);
+        console.error("Error en /bulk:", error);
         res.status(500).json({ success: false, message: error.message });
       } finally {
         if (conn) conn.release();
@@ -428,7 +428,7 @@ const { sendEmail} = require('../services/email.service.js');
 
       // Validaciones iniciales
       if (!area_id || !jefe_id || !turno_id || !Array.isArray(empleados) || empleados.length === 0) {
-        console.warn('⚠️ Datos incompletos recibidos en /fijos:', req.body);
+        console.warn('Datos incompletos recibidos en /fijos:', req.body);
         return res.status(400).json({
           success: false,
           message: 'Debe seleccionar el área, jefe, turno fijo y al menos un empleado.'
@@ -613,45 +613,56 @@ const { sendEmail} = require('../services/email.service.js');
       
       return resultadosCorreos;
     }
-    // ========================= EMPLEADOS DISPONIBLES PARA REEMPLAZO =========================
-    router.get("/reemplazos/disponibles", async (req, res) => {
-      try {
-        const { fecha, turno_id } = req.query;
 
-        if (!fecha) {
-          return res.status(400).json({ success: false, message: "Falta la fecha" });
-        }
+    // ========================= EMPLEADOS DISPONIBLES PARA REEMPLAZO (solo con rol y área) =========================
+router.get("/reemplazos/disponibles", async (req, res) => {
+  try {
+    const { fecha, turno_id } = req.query;
 
-        ("📅 Buscando empleados disponibles para:", fecha, "Turno:", turno_id || "—");
+    if (!fecha) {
+      return res.status(400).json({ success: false, message: "Falta la fecha" });
+    }
 
-        // 🔹 Nueva lógica:
-        // 1) Solo empleados activos
-        // 2) Que no tengan asignación para ese día (fecha entre fecha_inicio y fecha_fin)
-        // 3) Que no estén asignados a otra área (solo disponibles o sin área)
-        const [rows] = await db.query(`
-          SELECT 
-            e.id, e.nombre_completo, e.email, e.rol_id, e.area_id, ar.nombre_area
-          FROM empleados e
-          LEFT JOIN areas ar ON e.area_id = ar.id
-          WHERE e.activo = 1
-            AND e.id NOT IN (
-              SELECT a.empleado_id
-              FROM asignacion_turnos a
-              WHERE ? BETWEEN a.fecha_inicio AND a.fecha_fin
-                AND a.eliminado_en IS NULL
-            )
-            AND (e.area_id IS NULL OR e.area_id = 0)
-          ORDER BY e.nombre_completo ASC;
-        `, [fecha]);
+    
 
-        (`✅ ${rows.length} empleados disponibles encontrados`);
-        res.json({ success: true, data: rows });
+    // 🔹 Nueva lógica:
+    // 1) Solo empleados activos
+    // 2) Con rol asignado (e.rol_id IS NOT NULL)
+    // 3) Con área asignada (e.area_id IS NOT NULL)
+    // 4) Que no estén asignados ya a otro turno ese mismo día
+    const [rows] = await db.query(`
+      SELECT 
+        e.id, 
+        e.nombre_completo, 
+        e.email, 
+        e.rol_id, 
+        r.nombre_rol,
+        e.area_id, 
+        ar.nombre_area
+      FROM empleados e
+      LEFT JOIN areas ar ON e.area_id = ar.id
+      LEFT JOIN roles_empleado r ON e.rol_id = r.id
+      WHERE e.activo = 1
+        AND e.rol_id IS NOT NULL         
+        AND e.area_id IS NOT NULL        
+        AND e.id NOT IN (                 
+          SELECT a.empleado_id
+          FROM asignacion_turnos a
+          WHERE ? BETWEEN a.fecha_inicio AND a.fecha_fin
+            AND a.eliminado_en IS NULL
+        )
+      ORDER BY ar.nombre_area, e.nombre_completo ASC;
+    `, [fecha]);
 
-      } catch (error) {
-        console.error("❌ Error en /reemplazos/disponibles:", error.message);
-        res.status(500).json({ success: false, message: error.message });
-      }
-    });
+    console.log(`✅ ${rows.length} empleados disponibles encontrados`);
+    res.json({ success: true, data: rows });
+
+  } catch (error) {
+    console.error("❌ Error en /reemplazos/disponibles:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
     // ========================== SOLICITAR REEMPLAZO DE TURNO =========================
     router.post("/reemplazos/solicitar", async (req, res) => {
@@ -733,7 +744,6 @@ const { sendEmail} = require('../services/email.service.js');
         conn.release();
       }
     });
-
 
       // =================== OBTENER ASIGNACIONES EXISTENTES DE UN EMPLEADO ===================
     router.get('/empleado/:id', requireAuth, async (req, res) => {
@@ -1016,6 +1026,7 @@ const { sendEmail} = require('../services/email.service.js');
             e.nombre_completo AS jefeNombre,
             c.turno_id,
             t.nombre_turno AS nombreTurno,
+            c.empleados_ids,                         -- ✅ Incluye los IDs completos
             JSON_LENGTH(c.empleados_ids) AS empleadosCount,
             c.fecha_inicio,
             c.fecha_fin,
@@ -1038,5 +1049,31 @@ const { sendEmail} = require('../services/email.service.js');
         });
       }
     });
+
+
+    // ========================= OBTENER EMPLEADOS POR IDS =========================
+    router.post('/empleados/por-ids', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "No se enviaron IDs válidos" });
+    }
+
+    const placeholders = ids.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT e.id, e.nombre_completo, e.email, e.rol_id, e.area_id, r.nombre_rol
+       FROM empleados e
+       LEFT JOIN roles_empleado r ON e.rol_id = r.id
+       WHERE e.id IN (${placeholders})`,
+      ids
+    );
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('❌ Error en /empleados/por-ids:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+    });
+
 
 module.exports = router;
