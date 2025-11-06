@@ -615,54 +615,53 @@ const { sendEmail} = require('../services/email.service.js');
     }
 
     // ========================= EMPLEADOS DISPONIBLES PARA REEMPLAZO (solo con rol y área) =========================
-router.get("/reemplazos/disponibles", async (req, res) => {
-  try {
-    const { fecha, turno_id } = req.query;
+    router.get("/reemplazos/disponibles", async (req, res) => {
+      try {
+        const { fecha, turno_id } = req.query;
 
-    if (!fecha) {
-      return res.status(400).json({ success: false, message: "Falta la fecha" });
-    }
+        if (!fecha) {
+          return res.status(400).json({ success: false, message: "Falta la fecha" });
+        }
 
-    
+        
 
-    // 🔹 Nueva lógica:
-    // 1) Solo empleados activos
-    // 2) Con rol asignado (e.rol_id IS NOT NULL)
-    // 3) Con área asignada (e.area_id IS NOT NULL)
-    // 4) Que no estén asignados ya a otro turno ese mismo día
-    const [rows] = await db.query(`
-      SELECT 
-        e.id, 
-        e.nombre_completo, 
-        e.email, 
-        e.rol_id, 
-        r.nombre_rol,
-        e.area_id, 
-        ar.nombre_area
-      FROM empleados e
-      LEFT JOIN areas ar ON e.area_id = ar.id
-      LEFT JOIN roles_empleado r ON e.rol_id = r.id
-      WHERE e.activo = 1
-        AND e.rol_id IS NOT NULL         
-        AND e.area_id IS NOT NULL        
-        AND e.id NOT IN (                 
-          SELECT a.empleado_id
-          FROM asignacion_turnos a
-          WHERE ? BETWEEN a.fecha_inicio AND a.fecha_fin
-            AND a.eliminado_en IS NULL
-        )
-      ORDER BY ar.nombre_area, e.nombre_completo ASC;
-    `, [fecha]);
+        // 🔹 Nueva lógica:
+        // 1) Solo empleados activos
+        // 2) Con rol asignado (e.rol_id IS NOT NULL)
+        // 3) Con área asignada (e.area_id IS NOT NULL)
+        // 4) Que no estén asignados ya a otro turno ese mismo día
+        const [rows] = await db.query(`
+          SELECT 
+            e.id, 
+            e.nombre_completo, 
+            e.email, 
+            e.rol_id, 
+            r.nombre_rol,
+            e.area_id, 
+            ar.nombre_area
+          FROM empleados e
+          LEFT JOIN areas ar ON e.area_id = ar.id
+          LEFT JOIN roles_empleado r ON e.rol_id = r.id
+          WHERE e.activo = 1
+            AND e.rol_id IS NOT NULL         
+            AND e.area_id IS NOT NULL        
+            AND e.id NOT IN (                 
+              SELECT a.empleado_id
+              FROM asignacion_turnos a
+              WHERE ? BETWEEN a.fecha_inicio AND a.fecha_fin
+                AND a.eliminado_en IS NULL
+            )
+          ORDER BY ar.nombre_area, e.nombre_completo ASC;
+        `, [fecha]);
 
-    console.log(`✅ ${rows.length} empleados disponibles encontrados`);
-    res.json({ success: true, data: rows });
+        console.log(`${rows.length} empleados disponibles encontrados`);
+        res.json({ success: true, data: rows });
 
-  } catch (error) {
-    console.error("❌ Error en /reemplazos/disponibles:", error.message);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
+      } catch (error) {
+        console.error("Error en /reemplazos/disponibles:", error.message);
+        res.status(500).json({ success: false, message: error.message });
+      }
+    });
 
     // ========================== SOLICITAR REEMPLAZO DE TURNO =========================
     router.post("/reemplazos/solicitar", async (req, res) => {
@@ -681,7 +680,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
           return res.status(400).json({ ok: false, message: "Faltan datos para crear el reemplazo." });
         }
 
-        ("📅 Iniciando solicitud de reemplazo para fechas:", fechas);
+        ("Iniciando solicitud de reemplazo para fechas:", fechas);
         req.isReemplazo = true;
 
         await conn.beginTransaction();
@@ -733,11 +732,11 @@ router.get("/reemplazos/disponibles", async (req, res) => {
 
         await conn.commit();
 
-        (`✅ Reemplazo asignado correctamente: ${reemplazo.nombre_completo} cubre a ${reemplazado?.nombre_completo || "Empleado desconocido"}`);
+        (`Reemplazo asignado correctamente: ${reemplazo.nombre_completo} cubre a ${reemplazado?.nombre_completo || "Empleado desconocido"}`);
         return res.json({ ok: true, message: "Reemplazo asignado correctamente." });
 
       } catch (error) {
-        console.error("❌ Error en /reemplazos/solicitar:", error);
+        console.error("Error en /reemplazos/solicitar:", error);
         await conn.rollback();
         return res.status(500).json({ ok: false, message: "Error al asignar el reemplazo.", error: error.message });
       } finally {
@@ -789,7 +788,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
 
         res.json({ success: true, asignaciones });
       } catch (error) {
-        console.error('❌ Error al obtener asignaciones:', error);
+        console.error('Error al obtener asignaciones:', error);
         res.status(500).json({
           success: false,
           message: 'Error al obtener asignaciones del empleado',
@@ -842,13 +841,13 @@ router.get("/reemplazos/disponibles", async (req, res) => {
           LEFT JOIN roles_empleado r ON e.rol_id = r.id
           LEFT JOIN areas a ON e.area_id = a.id
           WHERE e.activo = 1
-            AND e.rol_id IS NOT NULL          -- ✅ Solo empleados con rol asignado
+            AND e.rol_id IS NOT NULL          -- Solo empleados con rol asignado
           ORDER BY e.nombre_completo ASC;
         `, [areaId, areaId]);
 
         res.json({ success: true, data: rows });
       } catch (err) {
-        console.error('❌ Error al obtener empleados disponibles:', err);
+        console.error('Error al obtener empleados disponibles:', err);
         res.status(500).json({ message: 'Error al obtener empleados disponibles', error: err.message });
       }
     });
@@ -869,7 +868,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
         conn = await db.getConnection();
         await conn.beginTransaction();
 
-        ('🔁 Renovando turnos rotativos para área:', area_id, 'Mes:', mes_actual, 'Año:', anio_actual);
+        ('Renovando turnos rotativos para área:', area_id, 'Mes:', mes_actual, 'Año:', anio_actual);
 
         // 🔹 Calcular fechas del próximo mes
         const nuevoMes = mes_actual == 12 ? 1 : mes_actual + 1;
@@ -909,7 +908,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
 
         await conn.commit();
 
-        (`✅ Se generaron ${asignaciones.length} nuevas asignaciones rotativas para el mes ${nuevoMes}/${nuevoAnio}`);
+        (`Se generaron ${asignaciones.length} nuevas asignaciones rotativas para el mes ${nuevoMes}/${nuevoAnio}`);
 
         // 🔹 Registrar evento en bitácora
         await db.query(`
@@ -924,17 +923,17 @@ router.get("/reemplazos/disponibles", async (req, res) => {
             if (emp?.email) {
               const html = `
                 <div style="font-family: Arial, sans-serif; color: #333;">
-                  <h2>📅 Renovación de turno rotativo</h2>
+                  <h2>Renovación de turno rotativo</h2>
                   <p>Hola <strong>${emp.nombre_completo}</strong>,</p>
                   <p>Tu turno <strong>${a.nombre_turno}</strong> se ha renovado automáticamente para el mes de 
                   <strong>${nuevoMes}/${nuevoAnio}</strong>.</p>
                   <p>Horario: ${a.hora_inicio} - ${a.hora_fin}</p>
                   <hr><small>Hospital Regional de Occidente — Sistema de Asistencia</small>
                 </div>`;
-              await sendEmail(emp.email, '📅 Renovación de turnos rotativos', html);
+              await sendEmail(emp.email, 'Renovación de turnos rotativos', html);
             }
           } catch (err) {
-            console.warn('⚠️ No se pudo enviar correo a empleado', a.empleado_id, err.message);
+            console.warn('No se pudo enviar correo a empleado', a.empleado_id, err.message);
           }
         }
 
@@ -946,7 +945,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
 
       } catch (error) {
         if (conn) await conn.rollback();
-        console.error('❌ Error en /renovar-rotativos:', error);
+        console.error('Error en /renovar-rotativos:', error);
         res.status(500).json({ success: false, message: error.message });
       } finally {
         if (conn) conn.release();
@@ -956,7 +955,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
     // ========================= RESUMEN DE TURNOS - MEJORADO =========================
       router.get('/resumen', async (req, res) => {
         try {
-          ('📊 Generando resumen de asignaciones...');
+          ('Generando resumen de asignaciones...');
 
           // TURNOS FIJOS: Asignaciones que no tienen fecha fin o son permanentes
           const [[{ fijos }]] = await db.query(`
@@ -996,14 +995,14 @@ router.get("/reemplazos/disponibles", async (req, res) => {
             activos_hoy: parseInt(activos_hoy) || 0
           };
 
-          ('✅ Resumen de asignaciones:', resultado);
+          ('Resumen de asignaciones:', resultado);
 
           res.json({
             success: true,
             data: resultado
           });
         } catch (e) {
-          console.error('❌ Error generando resumen de asignaciones:', e);
+          console.error('Error generando resumen de asignaciones:', e);
           res.status(500).json({ 
             success: false, 
             error: 'Error al generar resumen',
@@ -1026,7 +1025,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
             e.nombre_completo AS jefeNombre,
             c.turno_id,
             t.nombre_turno AS nombreTurno,
-            c.empleados_ids,                         -- ✅ Incluye los IDs completos
+            c.empleados_ids,                         -- Incluye los IDs completos
             JSON_LENGTH(c.empleados_ids) AS empleadosCount,
             c.fecha_inicio,
             c.fecha_fin,
@@ -1041,7 +1040,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
 
         res.json({ success: true, data: rows });
       } catch (err) {
-        console.error('❌ Error al obtener configuraciones:', err);
+        console.error('Error al obtener configuraciones:', err);
         res.status(500).json({
           success: false,
           message: 'Error al obtener configuraciones',
@@ -1070,7 +1069,7 @@ router.get("/reemplazos/disponibles", async (req, res) => {
 
     res.json({ success: true, data: rows });
   } catch (error) {
-    console.error('❌ Error en /empleados/por-ids:', error);
+    console.error('Error en /empleados/por-ids:', error);
     res.status(500).json({ success: false, message: error.message });
   }
     });
