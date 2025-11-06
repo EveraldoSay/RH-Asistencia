@@ -3,6 +3,7 @@ cd backend = npm install == esto para instalar dependencias
 cd backend = npm install nodemailer == esto para el envio de correos
 cd backend = pm2 start server.js --name hospital_biometric  
 cd backend = npm install node-cron
+cd backend = npm install -g pm2 = ejecucion automatica de los archivos dentro de scripts
 
 cd frontend = npm install
 cd frontend = npm install -g @angular/cli
@@ -29,6 +30,11 @@ backend
 /__npm install dotenv
 
 
-frontend
+frontend 
 /__ng new frontend (esto crea todas las carpetas y archivos que necesita angular)
 /__npm install zone.js
+
+
+pm2 start scripts/scheduler.js --name sync-biometric
+pm2 save
+ 
