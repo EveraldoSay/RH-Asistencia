@@ -176,7 +176,7 @@ router.get('/asistencia', requireAuth, async (req, res) => {
   }
 });
 
-// ===================== REPORTE DE EVENTOS BIOMÉTRICOS =====================
+// ===================== REPORTE DE EVENTOS BIOMÉTRICOS (ENTRADA/SALIDA FILTRADA) =====================
 router.get('/eventos-biometricos', requireAuth, async (req, res) => {
   try {
     const { mes } = req.query;
@@ -186,52 +186,82 @@ router.get('/eventos-biometricos', requireAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'El parámetro mes es obligatorio.' });
     }
 
-    // Obtener el rango de fechas del mes
+    // Obtener el rango del mes
     const [year, month] = mes.split('-').map(Number);
-    const fechaInicio = new Date(year, month - 1, 1);
-    const fechaFin = new Date(year, month, 0); // Último día del mes
-    
-    const desde = fechaInicio.toISOString().split('T')[0];
-    const hasta = fechaFin.toISOString().split('T')[0];
+    const desde = new Date(year, month - 1, 1).toISOString().split('T')[0];
+    const hasta = new Date(year, month, 0).toISOString().split('T')[0];
 
     console.log(`Buscando eventos desde ${desde} hasta ${hasta}`);
 
-    // Consulta para obtener eventos biométricos con nombre del empleado
-    const [eventos] = await db.query(`
+    // Traer todos los eventos del mes
+    const [rawEventos] = await db.query(`
       SELECT 
         ra.id,
         ra.empleado_id,
         e.nombre_completo AS empleado,
-        ra.tipo_evento,
         ra.fecha_hora,
-        DATE_FORMAT(ra.fecha_hora, '%d/%m/%Y') as fecha,
-        DATE_FORMAT(ra.fecha_hora, '%H:%i:%s') as hora,
+        DATE(ra.fecha_hora) AS fecha,
+        TIME(ra.fecha_hora) AS hora,
         ra.dispositivo_ip,
         ra.codigo_evento,
         ra.origen,
-        ra.procesado,
         ra.creado_en
       FROM registros_asistencia ra
       LEFT JOIN empleados e ON e.id = ra.empleado_id
       WHERE ra.fecha_hora BETWEEN ? AND ?
-      ORDER BY ra.fecha_hora DESC, e.nombre_completo
+      ORDER BY e.nombre_completo, ra.fecha_hora ASC
     `, [`${desde} 00:00:00`, `${hasta} 23:59:59`]);
 
-    console.log(`Total eventos biométricos encontrados: ${eventos.length}`);
-    res.json({ 
-      success: true, 
-      eventos,
+    console.log(`Total eventos crudos: ${rawEventos.length}`);
+
+    // Agrupar eventos por empleado y fecha
+    const agrupados = {};
+    for (const ev of rawEventos) {
+      const clave = `${ev.empleado_id || 'sin_id'}_${ev.fecha}`;
+      if (!agrupados[clave]) agrupados[clave] = [];
+      agrupados[clave].push(ev);
+    }
+
+    // Construir el resultado filtrando solo entrada/salida
+    const eventos = [];
+    for (const [clave, lista] of Object.entries(agrupados)) {
+      if (lista.length === 1) {
+        // Solo un evento -> entrada
+        eventos.push({
+          ...lista[0],
+          tipo_evento: 'ENTRADA',
+        });
+      } else if (lista.length > 1) {
+        // Primer evento del día
+        eventos.push({
+          ...lista[0],
+          tipo_evento: 'ENTRADA',
+        });
+        // Último evento del día
+        eventos.push({
+          ...lista[lista.length - 1],
+          tipo_evento: 'SALIDA',
+        });
+      }
+    }
+
+    console.log(`Total eventos filtrados (solo entrada/salida): ${eventos.length}`);
+
+    res.json({
+      success: true,
+      eventos: eventos.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora)),
       periodo: { desde, hasta }
     });
 
   } catch (err) {
     console.error('Error generando reporte de eventos biométricos:', err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Error al generar reporte de eventos biométricos',
-      error: err.message 
+      error: err.message
     });
   }
 });
+
 
 module.exports = router;
