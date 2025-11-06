@@ -22,7 +22,7 @@ export class ReportesComponent implements OnInit {
   mesSeleccionado = '';   // formato YYYY-MM
   semanaSeleccionada: any = null;
   semanas: any[] = [];
-  tipoReporte: string = 'semana'; // 'semana', 'mes', 'todo', 'biometricos'
+  tipoReporte: string = 'semana';
 
   cargando = false;
 
