@@ -27,7 +27,7 @@ async function fetchEvents(device) {
     return iso + '-06:00';
   };
 
-  console.log(`📡 Consultando eventos de ${device.ip}...`);
+  console.log(`Consultando eventos de ${device.ip}...`);
   const allEvents = [];
   let position = 0;
   let more = true;
@@ -57,7 +57,7 @@ async function fetchEvents(device) {
     );
 
     if (!res.ok) {
-      console.error(`❌ Error en ${device.ip}: HTTP ${res.status}`);
+      console.error(`Error en ${device.ip}: HTTP ${res.status}`);
       const raw = await res.text();
       console.error(raw);
       break;
@@ -67,7 +67,7 @@ async function fetchEvents(device) {
     const list = data?.AcsEvent?.InfoList || [];
     const status = data?.AcsEvent?.responseStatusStrg || '';
 
-    console.log(`📦 ${device.ip}: lote ${intento} (${list.length} eventos)`);
+    console.log(`${device.ip}: lote ${intento} (${list.length} eventos)`);
 
     allEvents.push(...list);
 
@@ -80,7 +80,7 @@ async function fetchEvents(device) {
     await new Promise(r => setTimeout(r, 300));
   }
 
-  console.log(`✅ ${device.ip}: ${allEvents.length} eventos obtenidos en total`);
+  console.log(`${device.ip}: ${allEvents.length} eventos obtenidos en total`);
   return allEvents.map(ev => ({
     ip: device.ip,
     empleado: ev.employeeNoString,
@@ -93,7 +93,6 @@ async function fetchEvents(device) {
   }));
 }
 
-// === Guardar eventos en registros_asistencia ===
 // === Guardar eventos en registros_asistencia ===
 async function saveEvents(events) {
   let insertados = 0;
@@ -111,21 +110,20 @@ async function saveEvents(events) {
       // Si no existe, se guardará como NULL pero con su número biométrico
       const empleado_id = rows.length ? rows[0].id : null;
 
-      await db.query(
-        `
-        INSERT INTO registros_asistencia
-          (empleado_id, numero_biometrico, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
-        VALUES (?, ?, ?, ?, ?, ?, 'BIOMETRICO', 0)
-        `,
-        [
-          empleado_id,
-          ev.empleado, // siempre guardar número del biométrico
-          ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
-          new Date(ev.fechaHora),
-          ev.ip,
-          ev.modo
-        ]
-      );
+    await db.query(
+      `
+      INSERT INTO registros_asistencia
+        (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
+      VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
+      `,
+      [
+        empleado_id,
+        ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
+        new Date(ev.fechaHora),
+        ev.ip,
+        ev.modo
+      ]
+    );
 
       insertados++;
     } catch (err) {
@@ -140,7 +138,7 @@ async function saveEvents(events) {
 // === Proceso principal ===
 (async () => {
   try {
-    console.log('🚀 Iniciando sincronización biométrica...');
+    console.log('Iniciando sincronización biométrica...');
     const allEvents = [];
 
     for (const dev of devices) {
@@ -149,23 +147,23 @@ async function saveEvents(events) {
     }
 
     if (!allEvents.length) {
-      console.warn('⚠️ No se encontraron eventos para procesar.');
+      console.warn('No se encontraron eventos para procesar.');
       process.exit(0);
     }
 
     await saveEvents(allEvents);
     await processDailyAttendance();
-    console.log('✅ Sincronización completada.');
+    console.log('Sincronización completada.');
     process.exit(0);
   } catch (err) {
-    console.error('❌ Error general:', err.message);
+    console.error('Error general:', err.message);
     process.exit(1);
   }
 })();
 
 // === Consolidación diaria ===
 async function processDailyAttendance() {
-  console.log('🧩 Procesando asistencias consolidadas del día...');
+  console.log('Procesando asistencias consolidadas del día...');
 
   const [empleados] = await db.query(`
     SELECT DISTINCT empleado_id, DATE(fecha_hora) AS fecha
@@ -213,7 +211,7 @@ async function processDailyAttendance() {
 
     // Si no tiene turno asignado
     if (!turno) {
-      console.log(`⚠️ Empleado ${empleado_id} no tiene turno activo para ${fecha}. Se omite.`);
+      console.log(`Empleado ${empleado_id} no tiene turno activo para ${fecha}. Se omite.`);
       continue;
     }
 
@@ -228,11 +226,11 @@ async function processDailyAttendance() {
         }
       }
     } catch (e) {
-      console.warn(`⚠️ Configuración JSON inválida para turno ${turno.turno_id}:`, e.message);
+      console.warn(`Configuración JSON inválida para turno ${turno.turno_id}:`, e.message);
     }
 
     if (!esLaboral) {
-      console.log(`📅 Empleado ${empleado_id} tiene descanso el ${fecha}.`);
+      console.log(`Empleado ${empleado_id} tiene descanso el ${fecha}.`);
       continue;
     }
 
@@ -279,5 +277,5 @@ async function processDailyAttendance() {
     procesadas++;
   }
 
-  console.log(`✅ ${procesadas} asistencias consolidadas en total.`);
+  console.log(`${procesadas} asistencias consolidadas en total.`);
 }
