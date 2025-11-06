@@ -216,10 +216,10 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
   this.vista = 'FORMULARIO';
   this.resetFormulario();
 
-  // 🆕 Si es un nuevo turno, no hay problema
+  // Si es un nuevo turno, no hay problema
   if (id === 'NUEVO') return;
 
-  // 🔹 Si es una configuración existente
+  // Si es una configuración existente
   const conf = this.modo === 'ROTATIVO'
     ? this.configuracionesRotativas.find(c => c.id === id)
     : this.configuracionesFijas.find(c => c.id === id);
@@ -239,7 +239,7 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
 
     this.reemplazos = [...(conf.reemplazos || [])];
 
-    // 🧩 REEMPLAZO CLAVE:
+    // REEMPLAZO CLAVE:
     // Si el equipo no viene cargado, lo reconstruimos desde la BD
     if (!conf.equipo || conf.equipo.length === 0) {
       // Intentar extraer los IDs de empleados guardados en configuraciones_turnos
@@ -252,7 +252,7 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
         if (ids.length > 0) {
           this.cargarEmpleadosDelLote(ids);
         } else {
-          console.warn('⚠️ No se encontraron empleados_ids en la configuración');
+          console.warn('No se encontraron empleados_ids en la configuración');
           this.equipoCompleto = [];
         }
       } catch (e) {
@@ -281,12 +281,12 @@ cargarEmpleadosDelLote(ids: number[]) {
     next: (resp: any) => {
       if (resp.success) {
         this.equipoCompleto = resp.data;
-        console.info(`👥 Equipo reconstruido (${resp.data.length} empleados)`);
+        console.info(`Equipo reconstruido (${resp.data.length} empleados)`);
       } else {
-        console.warn('⚠️ No se pudo cargar el equipo del lote');
+        console.warn('No se pudo cargar el equipo del lote');
       }
     },
-    error: (err) => console.error('❌ Error al cargar empleados del lote:', err)
+    error: (err) => console.error('Error al cargar empleados del lote:', err)
   });
 }
 
@@ -295,7 +295,7 @@ cargarEmpleadosDelLote(ids: number[]) {
 cargarConfiguraciones() {
     this.turnosService.getConfiguraciones().subscribe({
       next: (res) => {
-        console.log('📦 Configuraciones recibidas:', res);
+        console.log('Configuraciones recibidas:', res);
         if (res.success && res.data) {
           this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO');
           this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO');
@@ -886,7 +886,7 @@ cargarConfiguraciones() {
     this.info = ` ${empleadosCount} empleados asignados al área ${areaNombre} y turnos guardados correctamente`;
     
     setTimeout(() => {
-      ('📋 Resumen de asignaciones:');
+      ('Resumen de asignaciones:');
       this.equipoCompleto.forEach(emp => {
         const turnoNombre = this.turnos.find(t => t.id === emp.turnoAsignado)?.nombre || 'Sin turno';
         (`   - ${emp.nombre_completo}: ${turnoNombre}`);
