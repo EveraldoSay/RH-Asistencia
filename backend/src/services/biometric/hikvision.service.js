@@ -2,7 +2,7 @@ const { makeClient } = require('./hikvision.client.cjs');
 const db = require('../../db');
 const xml2js = require('xml2js');
 
-// Construye configuración desde .env (HIK1_, HIK2_, etc.)
+// Construye configuración desde .env (HIK1_, HIK2.)
 function buildConfig(prefix) {
   return {
     host: process.env[`${prefix}_HOST`],
@@ -226,7 +226,7 @@ async function getAllEventsFromDevice(dev) {
     pass: dev.pass
   });
 
-  console.log(`📡 Consultando eventos desde ${dev.host}...`);
+  console.log(`Consultando eventos desde ${dev.host}...`);
   const eventosTotales = [];
   let posicion = 0;
   const maxResults = 100;
@@ -274,9 +274,9 @@ async function getAllEventsFromDevice(dev) {
             reader: ev.cardReaderNo || 0
           });
         });
-        console.log(`📄 ${lista.length} eventos desde ${dev.host} (pos=${posicion})`);
+        console.log(`${lista.length} eventos desde ${dev.host} (pos=${posicion})`);
       } else {
-        console.warn(`⚠️ No se encontraron eventos en ${dev.host} (pos=${posicion})`);
+        console.warn(`No se encontraron eventos en ${dev.host} (pos=${posicion})`);
       }
 
       if (estado === 'MORE') {
@@ -287,12 +287,12 @@ async function getAllEventsFromDevice(dev) {
       }
 
     } catch (err) {
-      console.error(`❌ Error procesando ${dev.host}: ${err.message}`);
+      console.error(`Error procesando ${dev.host}: ${err.message}`);
       continuar = false;
     }
   }
 
-  console.log(`✅ Total eventos desde ${dev.host}: ${eventosTotales.length}`);
+  console.log(`Total eventos desde ${dev.host}: ${eventosTotales.length}`);
   return eventosTotales;
 }
 
