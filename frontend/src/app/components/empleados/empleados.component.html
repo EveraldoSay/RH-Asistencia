@@ -132,26 +132,28 @@
           name="numero_empleado"
           [(ngModel)]="empleadofrorm.numero_empleado"
           required
-          minlength="8"
-          maxlength="8"
+          minlength="1"
+          maxlength="32"
           inputmode="numeric"
-          pattern="^[0-9]{8}$"
+          pattern="^[0-9]+$"
           placeholder="Ej: 50234567"
           (input)="onNumeroInput($event)"
           (blur)="clearServerError('numero')"
         />
+
         <small class="field-error" *ngIf="f.submitted && f.controls['numero_empleado']?.errors?.['required']">
-          El número telefónico es obligatorio.
+          El número de empleado es obligatorio.
         </small>
         <small class="field-error" *ngIf="f.controls['numero_empleado']?.errors?.['pattern']">
-          Debe contener exactamente 8 dígitos numéricos.
+          Solo se permiten valores numéricos.
         </small>
-        <small class="field-error" *ngIf="f.controls['numero_empleado']?.errors?.['minlength'] || f.controls['numero_empleado']?.errors?.['maxlength']">
-          El número debe tener exactamente 8 dígitos.
+        <small class="field-error" *ngIf="f.controls['numero_empleado']?.errors?.['minlength']">
+          Debe tener al menos 1 dígito.
         </small>
         <small class="field-error" *ngIf="serverErrors.numeroDuplicado">
           Este número ya está registrado.
         </small>
+
       </div>
 
       <!-- Renglón -->
@@ -297,7 +299,7 @@
     <table class="empleados-table">
       <thead>
         <tr>
-          <th>Telefono</th>
+          <th>ID</th>
           <th>Nombre Completo</th>
           <th>Correo</th>
           <th>Rol</th>

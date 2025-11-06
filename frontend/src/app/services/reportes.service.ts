@@ -25,4 +25,9 @@ export class ReportesService {
 
     return this.http.get<any>(`${API}/asistencia`, { params });
   }
+
+  getEventosBiometricos(mes: string) {
+    let params = new HttpParams().set('mes', mes);
+    return this.http.get<any>(`${API}/eventos-biometricos`, { params });
+  }
 }

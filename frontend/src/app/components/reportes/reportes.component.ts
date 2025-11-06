@@ -16,12 +16,13 @@ export class ReportesComponent implements OnInit {
   private repService = inject(ReportesService);
   areas: any[] = [];
   registros: any[] = [];
+  eventosBiometricos: any[] = [];
 
   areaSeleccionada: number | null = null;
   mesSeleccionado = '';   // formato YYYY-MM
   semanaSeleccionada: any = null;
   semanas: any[] = [];
-  tipoReporte: string = 'semana'; // 'semana', 'mes', 'todo'
+  tipoReporte: string = 'semana'; // 'semana', 'mes', 'todo', 'biometricos'
 
   cargando = false;
 
@@ -55,7 +56,7 @@ export class ReportesComponent implements OnInit {
       numero: 0,
       desde: `${year}-${month.toString().padStart(2, '0')}-01`,
       hasta: `${year}-${month.toString().padStart(2, '0')}-${diasMes}`,
-      texto: `📅 Mes Completo (1-${diasMes} ${fechaInicioMes.toLocaleString('es', { month: 'short' })})`
+      texto: `Mes Completo (1-${diasMes} ${fechaInicioMes.toLocaleString('es', { month: 'short' })})`
     });
 
     let diaActual = 1;
@@ -66,7 +67,7 @@ export class ReportesComponent implements OnInit {
       const fin = Math.min(diaActual + 6, diasMes);
       const desde = new Date(year, month - 1, inicio).toISOString().split('T')[0];
       const hasta = new Date(year, month - 1, fin).toISOString().split('T')[0];
-      const texto = `🗓️ Semana ${numeroSemana}: ${inicio}–${fin} ${fechaInicioMes.toLocaleString('es', { month: 'short' })}`;
+      const texto = `Semana ${numeroSemana}: ${inicio}–${fin} ${fechaInicioMes.toLocaleString('es', { month: 'short' })}`;
       this.semanas.push({ numero: numeroSemana, desde, hasta, texto });
       diaActual += 7;
       numeroSemana++;
@@ -75,7 +76,15 @@ export class ReportesComponent implements OnInit {
     this.semanaSeleccionada = null;
   }
 
-  generarReporte() {
+generarReporte() {
+    if (this.tipoReporte === 'biometricos') {
+      this.generarReporteBiometricos();
+    } else {
+      this.generarReporteAsistencia();
+    }
+  }
+
+  generarReporteAsistencia() {
     if (!this.areaSeleccionada) {
       alert('Seleccione un área.');
       return;
@@ -106,17 +115,10 @@ export class ReportesComponent implements OnInit {
 
     this.cargando = true;
 
-    ( {
-      areaId: this.areaSeleccionada,
-      tipo: this.tipoReporte,
-      desde,
-      hasta
-    });
-
     this.repService.getReporte(this.areaSeleccionada, desde, hasta, this.tipoReporte).subscribe({
       next: (res) => {
-    
         this.registros = res.registros;
+        this.eventosBiometricos = []; // Limpiar eventos biométricos
         this.cargando = false;
       },
       error: (err) => {
@@ -127,16 +129,53 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  obtenerResumen() {
-    const total = this.registros.length;
-    const presentes = this.registros.filter(r => 
-      r.estado_dia === 'Presente' || 
-      (r.entrada_real && r.estado_dia !== 'Ausente')
-    ).length;
-    const ausentes = total - presentes;
-    
-    return { total, presentes, ausentes };
+  generarReporteBiometricos() {
+    if (!this.mesSeleccionado) {
+      alert('Seleccione un mes para generar el reporte de eventos biométricos.');
+      return;
+    }
+
+    this.cargando = true;
+
+    this.repService.getEventosBiometricos(this.mesSeleccionado).subscribe({
+      next: (res) => {
+        this.eventosBiometricos = res.eventos;
+        this.registros = []; // Limpiar registros de asistencia
+        this.cargando = false;
+        console.log('Eventos biométricos cargados:', this.eventosBiometricos.length);
+      },
+      error: (err) => {
+        console.error('Error al generar reporte de eventos biométricos:', err);
+        this.cargando = false;
+        alert('Error al generar el reporte de eventos biométricos: ' + err.message);
+      }
+    });
   }
+
+ obtenerResumen() {
+    if (this.tipoReporte === 'biometricos') {
+      const total = this.eventosBiometricos.length;
+      const entradas = this.eventosBiometricos.filter(e => e.tipo_evento === 'ENTRADA').length;
+      const salidas = this.eventosBiometricos.filter(e => e.tipo_evento === 'SALIDA').length;
+      
+      return { 
+        total, 
+        entradas, 
+        salidas,
+        tipo: 'biometricos'
+      };
+    } else {
+      const total = this.registros.length;
+      const presentes = this.registros.filter(r => 
+        r.estado_dia === 'Presente' || 
+        (r.entrada_real && r.estado_dia !== 'Ausente')
+      ).length;
+      const ausentes = total - presentes;
+      
+      return { total, presentes, ausentes, tipo: 'asistencia' };
+    }
+  }
+
 
   // MÉTODOS PARA LAS CLASES DINÁMICAS
   getCumplimientoClass(valor: string): string {
@@ -161,22 +200,156 @@ export class ReportesComponent implements OnInit {
     return '';
   }
 
-  descargarPDF() {
-    if (this.registros.length === 0) {
-      alert('No hay datos para exportar.');
-      return;
-    }  
+descargarPDF() {
+  if (this.registros.length === 0 && this.eventosBiometricos.length === 0) {
+    alert('No hay datos para exportar.');
+    return;
+  }
 
-    if (!this.areaSeleccionada) {
-      console.error('No hay área seleccionada para el PDF');
-      alert('Error: No se ha seleccionado un área válida.');
-      return;
+  if (this.tipoReporte === 'biometricos') {
+    this.descargarPDFEventosBiometricos();
+  } else {
+    this.descargarPDFAsistencia();
+  }
+}
+
+descargarPDFAsistencia() {
+  if (this.registros.length === 0) {
+    alert('No hay datos para exportar.');
+    return;
+  }  
+
+  if (!this.areaSeleccionada) {
+    console.error('No hay área seleccionada para el PDF');
+    alert('Error: No se ha seleccionado un área válida.');
+    return;
+  }
+
+  let nombreArea = this.obtenerNombreArea();
+
+  if (nombreArea === 'Área no encontrada' && this.registros.length > 0) {
+    nombreArea = this.registros[0].area || 'Área_Desconocida';
+  }
+
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const logo = new Image();
+  logo.src = 'assets/logo-hospital.png';
+
+  const fechaGen = new Date().toLocaleDateString('es-GT');
+  const rango = this.obtenerRangoSeleccionado();
+  const resumen = this.obtenerResumen();
+
+  const nombreArchivo = `Reporte_${nombreArea.replace(/\s+/g, '_')}_${this.tipoReporte}_${fechaGen.replace(/\//g, '-')}.pdf`;
+
+  logo.onload = () => {
+    // --- Encabezado ---
+    doc.setFontSize(10);
+    try {
+      doc.addImage(logo, 'PNG', 14, 8, 25, 25);
+    } catch (e) {
+      console.warn('No se pudo cargar el logo, continuando sin imagen...');
     }
 
-    let nombreArea = this.obtenerNombreArea();
+    doc.setFont('helvetica', 'bold');
+    doc.text('Hospital Regional de Occidente', 45, 15);
+    doc.setFontSize(12);
+    doc.text('Reporte de Asistencia por Área', 45, 23);
 
-    if (nombreArea === 'Área no encontrada' && this.registros.length > 0) {
-      nombreArea = this.registros[0].area || 'Área_Desconocida';
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Área: ${nombreArea}`, 14, 38);
+    doc.text(`Periodo: ${rango}`, 90, 38);
+    doc.text(`Tipo: ${this.obtenerTipoReporteTexto()}`, 140, 38);
+    doc.text(`Generado: ${fechaGen}`, 200, 38);
+
+    doc.text(
+      `Total: ${resumen.total} | Presentes: ${resumen.presentes} | Ausentes: ${resumen.ausentes}`,
+      14,
+      45
+    );
+
+    // --- Datos de la tabla ---
+    const columnas = [
+      { header: 'Empleado', dataKey: 'empleado' },
+      { header: 'Cargo', dataKey: 'cargo' },
+      { header: 'Fecha', dataKey: 'fecha' },
+      { header: 'Turno', dataKey: 'turno_asignado' },
+      { header: 'Tipo Turno', dataKey: 'tipo_turno' },
+      { header: 'Entrada Prog.', dataKey: 'hora_entrada_programada' },
+      { header: 'Salida Prog.', dataKey: 'hora_salida_programada' },
+      { header: 'Entrada Real', dataKey: 'entrada_real' },
+      { header: 'Salida Real', dataKey: 'salida_real' },
+      { header: 'Cumplimiento', dataKey: 'cumplimiento' },
+      { header: 'Estado', dataKey: 'estado_dia' }
+    ];
+
+    const filas = this.registros.map((r) => ({
+      empleado: r.empleado,
+      cargo: r.cargo,
+      fecha: this.formatearFecha(r.fecha),
+      turno_asignado: r.turno_asignado || 'N/A',
+      tipo_turno: r.tipo_turno || 'N/A',
+      hora_entrada_programada: r.hora_entrada_programada || 'N/A',
+      hora_salida_programada: r.hora_salida_programada || 'N/A',
+      entrada_real: r.entrada_real ? this.formatearHora(r.entrada_real) : '--:--',
+      salida_real: r.salida_real ? this.formatearHora(r.salida_real) : '--:--',
+      cumplimiento: r.cumplimiento,
+      estado_dia: r.estado_dia
+    }));
+
+    autoTable(doc, {
+      columns: columnas,
+      body: filas,
+      startY: 50,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [0, 82, 155], textColor: 255, halign: 'center' },
+      alternateRowStyles: { fillColor: [240, 240, 240] },
+      columnStyles: { 
+        cumplimiento: { halign: 'center' }, 
+        estado_dia: { halign: 'center' },
+        tipo_turno: { halign: 'center' }
+      },
+      didDrawPage: (data) => {
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.height || pageSize.getHeight();
+        doc.setFontSize(8);
+        doc.text(
+          `Página ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
+          14,
+          pageHeight - 5
+        );
+      }
+    });
+
+    doc.save(nombreArchivo);
+  };
+
+  setTimeout(() => {
+    if (!logo.complete) {
+      console.warn('Sin logo, generando PDF...');
+      if (typeof logo.onload === 'function') {
+        logo.onload(new Event('load'));
+      }
+    }
+  }, 500);
+}
+
+
+obtenerTipoReporteTexto(): string {
+  switch (this.tipoReporte) {
+    case 'semana': return 'Por Semana';
+    case 'mes': return 'Mes Completo';
+    case 'todo': return 'Todo el Historial';
+    case 'biometricos': return 'Eventos Biométricos';
+    default: return 'No especificado';
+  }
+}
+
+
+    descargarPDFEventosBiometricos() {
+    if (this.eventosBiometricos.length === 0) {
+      alert('No hay eventos biométricos para exportar.');
+      return;
     }
 
     const doc = new jsPDF('l', 'mm', 'a4');
@@ -184,66 +357,51 @@ export class ReportesComponent implements OnInit {
     logo.src = 'assets/logo-hospital.png';
 
     const fechaGen = new Date().toLocaleDateString('es-GT');
-    const rango = this.obtenerRangoSeleccionado();
     const resumen = this.obtenerResumen();
-
-    const nombreArchivo = `Reporte_${nombreArea.replace(/\s+/g, '_')}_${this.tipoReporte}_${fechaGen.replace(/\//g, '-')}.pdf`;
-
+    const nombreArchivo = `Reporte_Eventos_Biometricos_${this.mesSeleccionado}.pdf`;
 
     logo.onload = () => {
-      // --- Encabezado ---
+      // Encabezado
       doc.setFontSize(10);
       try {
         doc.addImage(logo, 'PNG', 14, 8, 25, 25);
       } catch (e) {
-        console.warn('No se pudo cargar el logo, continuando sin imagen...');
+        console.warn('No se pudo cargar el logo...');
       }
 
       doc.setFont('helvetica', 'bold');
       doc.text('Hospital Regional de Occidente', 45, 15);
       doc.setFontSize(12);
-      doc.text('Reporte de Asistencia por Área', 45, 23);
+      doc.text('Reporte de Eventos Biométricos', 45, 23);
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Área: ${nombreArea}`, 14, 38);
-      doc.text(`Periodo: ${rango}`, 90, 38);
-      doc.text(`Tipo: ${this.obtenerTipoReporteTexto()}`, 140, 38);
+      doc.text(`Mes: ${this.mesSeleccionado}`, 14, 38);
+      doc.text(`Total eventos: ${resumen.total}`, 90, 38);
+      doc.text(`Entradas: ${resumen.entradas} | Salidas: ${resumen.salidas}`, 140, 38);
       doc.text(`Generado: ${fechaGen}`, 200, 38);
 
-      doc.text(
-        `Total: ${resumen.total} | Presentes: ${resumen.presentes} | Ausentes: ${resumen.ausentes}`,
-        14,
-        45
-      );
-
-      // --- Datos de la tabla ---
+      // Columnas para eventos biométricos
       const columnas = [
         { header: 'Empleado', dataKey: 'empleado' },
-        { header: 'Cargo', dataKey: 'cargo' },
+        { header: 'Tipo Evento', dataKey: 'tipo_evento' },
         { header: 'Fecha', dataKey: 'fecha' },
-        { header: 'Turno', dataKey: 'turno_asignado' },
-        { header: 'Tipo Turno', dataKey: 'tipo_turno' },
-        { header: 'Entrada Prog.', dataKey: 'hora_entrada_programada' },
-        { header: 'Salida Prog.', dataKey: 'hora_salida_programada' },
-        { header: 'Entrada Real', dataKey: 'entrada_real' },
-        { header: 'Salida Real', dataKey: 'salida_real' },
-        { header: 'Cumplimiento', dataKey: 'cumplimiento' },
-        { header: 'Estado', dataKey: 'estado_dia' }
+        { header: 'Hora', dataKey: 'hora' },
+        { header: 'Dispositivo IP', dataKey: 'dispositivo_ip' },
+        { header: 'Código Evento', dataKey: 'codigo_evento' },
+        { header: 'Origen', dataKey: 'origen' },
+        { header: 'Procesado', dataKey: 'procesado' }
       ];
 
-      const filas = this.registros.map((r) => ({
-        empleado: r.empleado,
-        cargo: r.cargo,
-        fecha: this.formatearFecha(r.fecha),
-        turno_asignado: r.turno_asignado || 'N/A',
-        tipo_turno: r.tipo_turno || 'N/A',
-        hora_entrada_programada: r.hora_entrada_programada || 'N/A',
-        hora_salida_programada: r.hora_salida_programada || 'N/A',
-        entrada_real: r.entrada_real ? this.formatearHora(r.entrada_real) : '--:--',
-        salida_real: r.salida_real ? this.formatearHora(r.salida_real) : '--:--',
-        cumplimiento: r.cumplimiento,
-        estado_dia: r.estado_dia
+      const filas = this.eventosBiometricos.map((e) => ({
+        empleado: e.empleado || 'No identificado',
+        tipo_evento: e.tipo_evento,
+        fecha: e.fecha,
+        hora: e.hora,
+        dispositivo_ip: e.dispositivo_ip || 'N/A',
+        codigo_evento: e.codigo_evento || 'N/A',
+        origen: e.origen,
+        procesado: e.procesado ? 'Sí' : 'No'
       }));
 
       autoTable(doc, {
@@ -254,9 +412,8 @@ export class ReportesComponent implements OnInit {
         headStyles: { fillColor: [0, 82, 155], textColor: 255, halign: 'center' },
         alternateRowStyles: { fillColor: [240, 240, 240] },
         columnStyles: { 
-          cumplimiento: { halign: 'center' }, 
-          estado_dia: { halign: 'center' },
-          tipo_turno: { halign: 'center' }
+          tipo_evento: { halign: 'center' },
+          procesado: { halign: 'center' }
         },
         didDrawPage: (data) => {
           const pageSize = doc.internal.pageSize;
@@ -275,7 +432,6 @@ export class ReportesComponent implements OnInit {
 
     setTimeout(() => {
       if (!logo.complete) {
-        console.warn('Sin logo, generando PDF...');
         if (typeof logo.onload === 'function') {
           logo.onload(new Event('load'));
         }
@@ -283,14 +439,6 @@ export class ReportesComponent implements OnInit {
     }, 500);
   }
 
-  obtenerTipoReporteTexto(): string {
-    switch (this.tipoReporte) {
-      case 'semana': return 'Por Semana';
-      case 'mes': return 'Mes Completo';
-      case 'todo': return 'Todo el Historial';
-      default: return 'No especificado';
-    }
-  }
 
   formatearFecha(fechaString: string): string {
     if (!fechaString) return 'N/A';
@@ -337,9 +485,12 @@ export class ReportesComponent implements OnInit {
   }
 
   onTipoReporteChange() {
-    // Resetear selección de semana cuando se cambia a "todo"
-    if (this.tipoReporte === 'todo') {
+    // Resetear selección de semana cuando se cambia a "todo" o "biometricos"
+    if (this.tipoReporte === 'todo' || this.tipoReporte === 'biometricos') {
       this.semanaSeleccionada = null;
     }
+    // Limpiar datos anteriores
+    this.registros = [];
+    this.eventosBiometricos = [];
   }
 }

@@ -4,19 +4,20 @@
   <div class="filtros">
     <div class="filtros-superiores">
       <div class="filtro-group">
-        <label>Área:</label>
-        <select [(ngModel)]="areaSeleccionada" (change)="onAreaChange()">
-          <option value="">-- Seleccione área --</option>
-          <option *ngFor="let area of areas" [value]="area.id">{{ area.nombre_area }}</option>
-        </select>
-      </div>
-
-      <div class="filtro-group">
         <label>Tipo Reporte:</label>
         <select [(ngModel)]="tipoReporte" (change)="onTipoReporteChange()">
           <option value="semana">Por Semana</option>
           <option value="mes">Mes Completo</option>
-          <option value="todo">Todo el Historial</option>
+          <option value="biometricos">Eventos Biométricos</option>
+          <!-- <option value="todo">Todo el Historial</option> -->
+        </select>
+      </div>
+
+      <div class="filtro-group" *ngIf="tipoReporte !== 'biometricos' && tipoReporte !== 'todo'">
+        <label>Área:</label>
+        <select [(ngModel)]="areaSeleccionada" (change)="onAreaChange()">
+          <option value="">-- Seleccione área --</option>
+          <option *ngFor="let area of areas" [value]="area.id">{{ area.nombre_area }}</option>
         </select>
       </div>
 
@@ -35,10 +36,16 @@
     </div>
 
     <div class="botones-container">
-      <button (click)="generarReporte()" [disabled]="!areaSeleccionada || (tipoReporte === 'semana' && !semanaSeleccionada) || (tipoReporte !== 'todo' && !mesSeleccionado)">
+      <button (click)="generarReporte()" 
+        [disabled]="
+          (tipoReporte === 'biometricos' && !mesSeleccionado) ||
+          (tipoReporte !== 'biometricos' && !areaSeleccionada) || 
+          (tipoReporte === 'semana' && !semanaSeleccionada) || 
+          (tipoReporte !== 'todo' && !mesSeleccionado)
+        ">
         <span>Generar</span>
       </button>
-      <button (click)="descargarPDF()" [disabled]="registros.length === 0">
+      <button (click)="descargarPDF()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0">
         <span>Descargar PDF</span>
       </button>
     </div>
@@ -48,7 +55,8 @@
     Generando reporte, por favor espere...
   </div>
 
-  <div *ngIf="!cargando && registros.length > 0" class="resultados">
+  <!-- TABLA PARA REPORTES DE ASISTENCIA NORMAL -->
+  <div *ngIf="!cargando && registros.length > 0 && tipoReporte !== 'biometricos'" class="resultados">
     <p class="resumen">
       Resumen: 
       Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> | 
@@ -59,6 +67,7 @@
 
     <div class="tabla-container">
       <table class="tabla-reporte">
+        <!-- ... (mantén la tabla existente de asistencia) -->
         <thead>
           <tr>
             <th>Área</th>
@@ -105,7 +114,64 @@
     </div>
   </div>
 
-  <div *ngIf="!cargando && registros.length === 0 && areaSeleccionada && ((tipoReporte === 'semana' && semanaSeleccionada) || (tipoReporte === 'mes' && mesSeleccionado) || tipoReporte === 'todo')" class="sin-resultados">
+  <!-- TABLA PARA EVENTOS BIOMÉTRICOS -->
+  <div *ngIf="!cargando && eventosBiometricos.length > 0 && tipoReporte === 'biometricos'" class="resultados">
+    <p class="resumen">
+      Resumen Eventos Biométricos: 
+      Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> | 
+      Total eventos: <strong>{{ obtenerResumen().total }}</strong> | 
+      Entradas: <strong>{{ obtenerResumen().entradas }}</strong> | 
+      Salidas: <strong>{{ obtenerResumen().salidas }}</strong>
+    </p>
+
+    <div class="tabla-container">
+      <table class="tabla-reporte">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Empleado</th>
+            <th>Tipo Evento</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Dispositivo IP</th>
+            <th>Código Evento</th>
+            <th>Origen</th>
+            <th>Procesado</th>
+            <th>Registrado En</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let evento of eventosBiometricos; let i = index">
+            <td>{{ evento.id }}</td>
+            <td>{{ evento.empleado || 'No identificado' }}</td>
+            <td>
+              <span [class]="evento.tipo_evento === 'ENTRADA' ? 'badge-fijo' : 'badge-rotativo'">
+                {{ evento.tipo_evento }}
+              </span>
+            </td>
+            <td>{{ evento.fecha }}</td>
+            <td>{{ evento.hora }}</td>
+            <td>{{ evento.dispositivo_ip || 'N/A' }}</td>
+            <td>{{ evento.codigo_evento || 'N/A' }}</td>
+            <td>{{ evento.origen }}</td>
+            <td>
+              <span [class]="evento.procesado ? 'estado-presente' : 'estado-ausente'">
+                {{ evento.procesado ? 'Sí' : 'No' }}
+              </span>
+            </td>
+            <td>{{ formatearFecha(evento.creado_en) }} {{ formatearHora(evento.creado_en) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="!cargando && registros.length === 0 && eventosBiometricos.length === 0 && 
+              ((tipoReporte === 'semana' && semanaSeleccionada) || 
+               (tipoReporte === 'mes' && mesSeleccionado && areaSeleccionada) || 
+               (tipoReporte === 'biometricos' && mesSeleccionado) || 
+               tipoReporte === 'todo')" 
+       class="sin-resultados">
     <p> No se encontraron registros para los filtros seleccionados.</p>
   </div>
 </div>
