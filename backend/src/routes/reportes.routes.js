@@ -20,7 +20,6 @@ router.get('/areas', requireAuth, async (req, res) => {
 router.get('/asistencia', requireAuth, async (req, res) => {
   try {
     const { area_id, desde, hasta, tipo_reporte = 'semana' } = req.query;
-    console.log('Parámetros recibidos:', { area_id, desde, hasta, tipo_reporte });
 
     if (!area_id || !desde || !hasta) {
       return res.status(400).json({ success: false, message: 'Faltan parámetros: área, desde y hasta son obligatorios.' });
@@ -101,7 +100,6 @@ router.get('/asistencia', requireAuth, async (req, res) => {
 
     // ==================== EXPANDIR FECHAS DE FIJOS ====================
     if (fijos.length > 0) {
-      console.log(`Generando reporte de ${fijos.length} empleados con turno fijo...`);
       const inicio = new Date(desde);
       const fin = new Date(hasta);
 
@@ -162,8 +160,6 @@ router.get('/asistencia', requireAuth, async (req, res) => {
       if (a.empleado > b.empleado) return 1;
       return new Date(a.fecha) - new Date(b.fecha);
     });
-
-    console.log(`Total registros generados: ${registros.length}`);
     res.json({ success: true, registros });
 
   } catch (err) {
@@ -176,33 +172,43 @@ router.get('/asistencia', requireAuth, async (req, res) => {
   }
 });
 
-// ===================== REPORTE DE EVENTOS BIOMÉTRICOS (ENTRADA/SALIDA FILTRADA) =====================
+
+// En reportes.routes.js - modificar la ruta /eventos-biometricos
 router.get('/eventos-biometricos', requireAuth, async (req, res) => {
   try {
-    const { mes, dia } = req.query;
-    console.log('Parámetros recibidos para eventos biométricos:', { mes, dia });
+    const { mes, dia, empleado_id, desde, hasta } = req.query;
+    console.log('Parámetros recibidos para eventos biométricos:', { mes, dia, empleado_id, desde, hasta });
 
-    if (!mes && !dia) {
-      return res.status(400).json({ success: false, message: 'El parámetro mes o dia es obligatorio.' });
+    // Validar que se proporcione al menos un tipo de filtro de fecha
+    if (!mes && !dia && !desde) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Se requiere al menos un parámetro de fecha: mes, dia o desde/hasta.' 
+      });
     }
 
-    let desde, hasta;
+    let fechaDesde, fechaHasta;
     
-    if (dia) {
+    if (desde && hasta) {
+      // Filtro por rango de fechas personalizado
+      fechaDesde = new Date(desde).toISOString().split('T')[0];
+      fechaHasta = new Date(hasta).toISOString().split('T')[0];
+      console.log(`Buscando eventos desde ${fechaDesde} hasta ${fechaHasta}`);
+    } else if (dia) {
       // Filtro por día específico
-      desde = new Date(dia).toISOString().split('T')[0];
-      hasta = desde;
-      console.log(`Buscando eventos para el día específico: ${desde}`);
+      fechaDesde = new Date(dia).toISOString().split('T')[0];
+      fechaHasta = fechaDesde;
+      console.log(`Buscando eventos para el día específico: ${fechaDesde}`);
     } else {
       // Filtro por mes (comportamiento original)
       const [year, month] = mes.split('-').map(Number);
-      desde = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      hasta = new Date(year, month, 0).toISOString().split('T')[0];
-      console.log(`Buscando eventos desde ${desde} hasta ${hasta} (mes completo)`);
+      fechaDesde = new Date(year, month - 1, 1).toISOString().split('T')[0];
+      fechaHasta = new Date(year, month, 0).toISOString().split('T')[0];
+      console.log(`Buscando eventos desde ${fechaDesde} hasta ${fechaHasta} (mes completo)`);
     }
 
-    // Traer todos los eventos del período seleccionado
-    const [rawEventos] = await db.query(`
+    // Construir la consulta dinámicamente
+    let query = `
       SELECT 
         ra.id,
         ra.empleado_id,
@@ -217,8 +223,19 @@ router.get('/eventos-biometricos', requireAuth, async (req, res) => {
       FROM registros_asistencia ra
       LEFT JOIN empleados e ON e.id = ra.empleado_id
       WHERE ra.fecha_hora BETWEEN ? AND ?
-      ORDER BY e.nombre_completo, ra.fecha_hora ASC
-    `, [`${desde} 00:00:00`, `${hasta} 23:59:59`]);
+    `;
+    
+    const params = [`${fechaDesde} 00:00:00`, `${fechaHasta} 23:59:59`];
+
+    // Agregar filtro por empleado si se especifica
+    if (empleado_id && empleado_id !== '') {
+      query += ` AND ra.empleado_id = ?`;
+      params.push(empleado_id);
+    }
+
+    query += ` ORDER BY e.nombre_completo, ra.fecha_hora ASC`;
+
+    const [rawEventos] = await db.query(query, params);
 
     console.log(`Total eventos crudos: ${rawEventos.length}`);
 
@@ -234,18 +251,15 @@ router.get('/eventos-biometricos', requireAuth, async (req, res) => {
     const eventos = [];
     for (const [clave, lista] of Object.entries(agrupados)) {
       if (lista.length === 1) {
-        // Solo un evento -> entrada
         eventos.push({
           ...lista[0],
           tipo_evento: 'ENTRADA',
         });
       } else if (lista.length > 1) {
-        // Primer evento del día
         eventos.push({
           ...lista[0],
           tipo_evento: 'ENTRADA',
         });
-        // Último evento del día
         eventos.push({
           ...lista[lista.length - 1],
           tipo_evento: 'SALIDA',
@@ -258,7 +272,7 @@ router.get('/eventos-biometricos', requireAuth, async (req, res) => {
     res.json({
       success: true,
       eventos: eventos.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora)),
-      periodo: { desde, hasta }
+      periodo: { desde: fechaDesde, hasta: fechaHasta }
     });
 
   } catch (err) {
@@ -267,6 +281,36 @@ router.get('/eventos-biometricos', requireAuth, async (req, res) => {
       success: false,
       message: 'Error al generar reporte de eventos biométricos',
       error: err.message
+    });
+  }
+});
+// En reportes.routes.js - corregir la ruta /buscar-empleados
+router.get('/buscar-empleados', requireAuth, async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.length < 2) {
+      return res.json({ success: true, empleados: [] });
+    }
+
+    // Verificar qué columnas existen en tu tabla empleados
+    const [empleados] = await db.query(`
+      SELECT id, nombre_completo, renglon 
+      FROM empleados 
+      WHERE (nombre_completo LIKE ? OR renglon LIKE ?) 
+        AND eliminado_en IS NULL
+        AND activo = 1
+      ORDER BY nombre_completo 
+      LIMIT 20
+    `, [`%${query}%`, `%${query}%`]);
+
+    res.json({ success: true, empleados });
+  } catch (err) {
+    console.error('Error buscando empleados:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error al buscar empleados',
+      error: err.message 
     });
   }
 });
