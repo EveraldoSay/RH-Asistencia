@@ -26,8 +26,14 @@ export class ReportesService {
     return this.http.get<any>(`${API}/asistencia`, { params });
   }
 
-  getEventosBiometricos(mes: string) {
-    let params = new HttpParams().set('mes', mes);
-    return this.http.get<any>(`${API}/eventos-biometricos`, { params });
+// Modificar el método getEventosBiometricos()
+getEventosBiometricos(fecha: string, tipo: string = 'mes') {
+  let params = new HttpParams();
+  if (tipo === 'dia') {
+    params = params.set('dia', fecha);
+  } else {
+    params = params.set('mes', fecha);
   }
+  return this.http.get<any>(`${API}/eventos-biometricos`, { params });
+}
 }
