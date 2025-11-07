@@ -23,6 +23,7 @@ export class ReportesComponent implements OnInit {
   semanaSeleccionada: any = null;
   semanas: any[] = [];
   tipoReporte: string = 'semana';
+  diaEspecifico: string = '';
 
   cargando = false;
 
@@ -130,19 +131,22 @@ generarReporte() {
   }
 
   generarReporteBiometricos() {
-    if (!this.mesSeleccionado) {
-      alert('Seleccione un mes para generar el reporte de eventos biométricos.');
+    if (!this.mesSeleccionado && !this.diaEspecifico) {
+      alert('Seleccione un mes o un día específico para generar el reporte de eventos biométricos.');
       return;
     }
 
     this.cargando = true;
 
-    this.repService.getEventosBiometricos(this.mesSeleccionado).subscribe({
+    // Determinar qué parámetro enviar
+    const parametro = this.diaEspecifico ? this.diaEspecifico : this.mesSeleccionado;
+    const tipoParametro = this.diaEspecifico ? 'dia' : 'mes';
+
+    this.repService.getEventosBiometricos(parametro, tipoParametro).subscribe({
       next: (res) => {
         this.eventosBiometricos = res.eventos;
         this.registros = []; // Limpiar registros de asistencia
         this.cargando = false;
-        console.log('Eventos biométricos cargados:', this.eventosBiometricos.length);
       },
       error: (err) => {
         console.error('Error al generar reporte de eventos biométricos:', err);
@@ -301,13 +305,74 @@ descargarPDFAsistencia() {
       columns: columnas,
       body: filas,
       startY: 50,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [0, 82, 155], textColor: 255, halign: 'center' },
+      styles: { 
+        fontSize: 8, 
+        cellPadding: 2,
+        font: 'helvetica'
+      },
+      headStyles: { 
+        fillColor: [0, 82, 155], 
+        textColor: 255, 
+        halign: 'center',
+        fontStyle: 'bold'
+      },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       columnStyles: { 
         cumplimiento: { halign: 'center' }, 
         estado_dia: { halign: 'center' },
-        tipo_turno: { halign: 'center' }
+        tipo_turno: { halign: 'center' },
+        // Aplicar negritas a horas reales
+        entrada_real: { fontStyle: 'bold' },
+        salida_real: { fontStyle: 'bold' }
+      },
+      // Aplicar estilos condicionales a las celdas
+      didParseCell: (data) => {
+        // Colorear tipo de turno
+        if (data.column.dataKey === 'tipo_turno' && data.cell.raw) {
+          if (data.cell.raw === 'FIJO') {
+            data.cell.styles.fillColor = [40, 167, 69]; // Verde
+            data.cell.styles.textColor = 255;
+          } else if (data.cell.raw === 'ROTATIVO') {
+            data.cell.styles.fillColor = [23, 162, 184]; // Azul
+            data.cell.styles.textColor = 255;
+          }
+        }
+
+        // Colorear estado de cumplimiento
+        if (data.column.dataKey === 'cumplimiento' && data.cell.raw) {
+          const cumplimiento = typeof data.cell.raw === 'string' ? data.cell.raw.toLowerCase() : '';
+          if (cumplimiento.includes('cumple')) {
+            data.cell.styles.textColor = [25, 135, 84]; // Verde
+            data.cell.styles.fontStyle = 'bold';
+          } else if (cumplimiento.includes('retraso')) {
+            data.cell.styles.textColor = [230, 126, 34]; // Naranja
+            data.cell.styles.fontStyle = 'bold';
+          } else if (cumplimiento.includes('ausente')) {
+            data.cell.styles.textColor = [220, 53, 69]; // Rojo
+            data.cell.styles.fontStyle = 'bold';
+          } else if (cumplimiento.includes('no aplica')) {
+            data.cell.styles.textColor = [32, 201, 151]; // Verde claro
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+
+        // Colorear estado del día
+        if (data.column.dataKey === 'estado_dia' && data.cell.raw) {
+          const estado = typeof data.cell.raw === 'string' ? data.cell.raw.toLowerCase() : '';
+          if (estado.includes('presente') && !estado.includes('no obligatorio')) {
+            data.cell.styles.textColor = [25, 135, 84]; // Verde
+            data.cell.styles.fontStyle = 'bold';
+          } else if (estado.includes('ausente')) {
+            data.cell.styles.textColor = [220, 53, 69]; // Rojo
+            data.cell.styles.fontStyle = 'bold';
+          } else if (estado.includes('retraso') || estado.includes('tarde')) {
+            data.cell.styles.textColor = [255, 193, 7]; // Amarillo
+            data.cell.styles.fontStyle = 'bold';
+          } else if (estado.includes('no obligatorio')) {
+            data.cell.styles.textColor = [32, 201, 151]; // Verde claro
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
       },
       didDrawPage: (data) => {
         const pageSize = doc.internal.pageSize;
@@ -346,7 +411,7 @@ obtenerTipoReporteTexto(): string {
 }
 
 
-    descargarPDFEventosBiometricos() {
+  descargarPDFEventosBiometricos() {
     if (this.eventosBiometricos.length === 0) {
       alert('No hay eventos biométricos para exportar.');
       return;
@@ -358,7 +423,7 @@ obtenerTipoReporteTexto(): string {
 
     const fechaGen = new Date().toLocaleDateString('es-GT');
     const resumen = this.obtenerResumen();
-    const nombreArchivo = `Reporte_Eventos_Biometricos_${this.mesSeleccionado}.pdf`;
+    const nombreArchivo = `Reporte_Eventos_Biometricos_${this.mesSeleccionado || this.diaEspecifico}.pdf`;
 
     logo.onload = () => {
       // Encabezado
@@ -376,7 +441,14 @@ obtenerTipoReporteTexto(): string {
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Mes: ${this.mesSeleccionado}`, 14, 38);
+      
+      // Mostrar mes o día específico según corresponda
+      if (this.diaEspecifico) {
+        doc.text(`Día: ${this.formatearFecha(this.diaEspecifico)}`, 14, 38);
+      } else {
+        doc.text(`Mes: ${this.mesSeleccionado}`, 14, 38);
+      }
+      
       doc.text(`Total eventos: ${resumen.total}`, 90, 38);
       doc.text(`Entradas: ${resumen.entradas} | Salidas: ${resumen.salidas}`, 140, 38);
       doc.text(`Generado: ${fechaGen}`, 200, 38);
@@ -396,7 +468,7 @@ obtenerTipoReporteTexto(): string {
       const filas = this.eventosBiometricos.map((e) => ({
         empleado: e.empleado || 'No identificado',
         tipo_evento: e.tipo_evento,
-        fecha: e.fecha,
+        fecha: this.formatearFecha(e.fecha),
         hora: e.hora,
         dispositivo_ip: e.dispositivo_ip || 'N/A',
         codigo_evento: e.codigo_evento || 'N/A',
@@ -408,12 +480,49 @@ obtenerTipoReporteTexto(): string {
         columns: columnas,
         body: filas,
         startY: 50,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [0, 82, 155], textColor: 255, halign: 'center' },
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 2,
+          font: 'helvetica'
+        },
+        headStyles: { 
+          fillColor: [0, 82, 155], 
+          textColor: 255, 
+          halign: 'center',
+          fontStyle: 'bold'
+        },
         alternateRowStyles: { fillColor: [240, 240, 240] },
         columnStyles: { 
           tipo_evento: { halign: 'center' },
-          procesado: { halign: 'center' }
+          procesado: { halign: 'center' },
+          // Aplicar negritas a la hora
+          hora: { fontStyle: 'bold' }
+        },
+        // Aplicar estilos condicionales
+        didParseCell: (data) => {
+          // Colorear tipo de evento (ENTRADA/SALIDA)
+          if (data.column.dataKey === 'tipo_evento' && data.cell.raw) {
+            if (data.cell.raw === 'ENTRADA') {
+              data.cell.styles.fillColor = [40, 167, 69]; // Verde
+              data.cell.styles.textColor = 255;
+              data.cell.styles.fontStyle = 'bold';
+            } else if (data.cell.raw === 'SALIDA') {
+              data.cell.styles.fillColor = [23, 162, 184]; // Azul
+              data.cell.styles.textColor = 255;
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+
+          // Colorear estado de procesado
+          if (data.column.dataKey === 'procesado' && data.cell.raw) {
+            if (data.cell.raw === 'Sí') {
+              data.cell.styles.textColor = [25, 135, 84]; // Verde
+              data.cell.styles.fontStyle = 'bold';
+            } else {
+              data.cell.styles.textColor = [220, 53, 69]; // Rojo
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
         },
         didDrawPage: (data) => {
           const pageSize = doc.internal.pageSize;
@@ -469,12 +578,16 @@ obtenerTipoReporteTexto(): string {
   }
 
   obtenerRangoSeleccionado() {
-    if (this.tipoReporte === 'todo') return 'Todo el historial';
-    if (this.tipoReporte === 'mes' && this.mesSeleccionado) {
+  if (this.tipoReporte === 'biometricos') {
+    if (this.diaEspecifico) {
+      return `Día específico: ${this.formatearFecha(this.diaEspecifico)}`;
+    } else if (this.mesSeleccionado) {
       const [year, month] = this.mesSeleccionado.split('-');
       const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
       return `Mes completo: ${fecha.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })}`;
     }
+  }
+
     if (!this.semanaSeleccionada) return 'Sin rango';
     const { desde, hasta } = this.semanaSeleccionada;
     return `${this.formatearFecha(desde)} a ${this.formatearFecha(hasta)}`;
@@ -489,6 +602,8 @@ obtenerTipoReporteTexto(): string {
     if (this.tipoReporte === 'todo' || this.tipoReporte === 'biometricos') {
       this.semanaSeleccionada = null;
     }
+    // Resetear día específico cuando se cambia de tipo de reporte
+    this.diaEspecifico = '';
     // Limpiar datos anteriores
     this.registros = [];
     this.eventosBiometricos = [];
