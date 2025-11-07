@@ -179,28 +179,36 @@ router.get('/asistencia', requireAuth, async (req, res) => {
 // ===================== REPORTE DE EVENTOS BIOMÉTRICOS (ENTRADA/SALIDA FILTRADA) =====================
 router.get('/eventos-biometricos', requireAuth, async (req, res) => {
   try {
-    const { mes } = req.query;
-    console.log('Parámetros recibidos para eventos biométricos:', { mes });
+    const { mes, dia } = req.query;
+    console.log('Parámetros recibidos para eventos biométricos:', { mes, dia });
 
-    if (!mes) {
-      return res.status(400).json({ success: false, message: 'El parámetro mes es obligatorio.' });
+    if (!mes && !dia) {
+      return res.status(400).json({ success: false, message: 'El parámetro mes o dia es obligatorio.' });
     }
 
-    // Obtener el rango del mes
-    const [year, month] = mes.split('-').map(Number);
-    const desde = new Date(year, month - 1, 1).toISOString().split('T')[0];
-    const hasta = new Date(year, month, 0).toISOString().split('T')[0];
+    let desde, hasta;
+    
+    if (dia) {
+      // Filtro por día específico
+      desde = new Date(dia).toISOString().split('T')[0];
+      hasta = desde;
+      console.log(`Buscando eventos para el día específico: ${desde}`);
+    } else {
+      // Filtro por mes (comportamiento original)
+      const [year, month] = mes.split('-').map(Number);
+      desde = new Date(year, month - 1, 1).toISOString().split('T')[0];
+      hasta = new Date(year, month, 0).toISOString().split('T')[0];
+      console.log(`Buscando eventos desde ${desde} hasta ${hasta} (mes completo)`);
+    }
 
-    console.log(`Buscando eventos desde ${desde} hasta ${hasta}`);
-
-    // Traer todos los eventos del mes
+    // Traer todos los eventos del período seleccionado
     const [rawEventos] = await db.query(`
       SELECT 
         ra.id,
         ra.empleado_id,
         e.nombre_completo AS empleado,
         ra.fecha_hora,
-        DATE(ra.fecha_hora) AS fecha,
+        DATE(ra.fecha_hora) AS fecha, 
         TIME(ra.fecha_hora) AS hora,
         ra.dispositivo_ip,
         ra.codigo_evento,
