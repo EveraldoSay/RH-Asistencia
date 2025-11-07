@@ -135,8 +135,6 @@
     }
   }
 
-
-
     .botones-container {
       display: flex;
       gap: 0.75rem;
@@ -432,3 +430,176 @@
   color: #20c997;          
   font-weight: 700;
 }
+
+// En reportes.component.scss - agregar estos estilos
+.busqueda-empleado-container {
+  position: relative;
+  width: 100%;
+}
+
+.busqueda-input {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #0b5ed7;
+    box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.1);
+  }
+}
+
+.btn-limpiar {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #5a6268;
+  }
+}
+
+.resultados-busqueda {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 2px;
+}
+
+.resultado-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.sin-resultados-busqueda {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 2px;
+  z-index: 1000;
+}
+
+.filtros-superiores {
+  .filtro-group {
+    min-width: 250px;
+  }
+}
+
+.botones-container {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+  
+  button {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    
+    // Botón Generar
+    &:first-of-type {
+      background: linear-gradient(135deg, #0b5ed7, #084298);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #084298, #06357a);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(11, 94, 215, 0.3);
+      }
+    }
+
+    // Botón Excel (NUEVO)
+    &.btn-excel {
+      background: linear-gradient(135deg, #198754, #0f5132);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #0f5132, #0a3622);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+      }
+    }
+
+    // Botón PDF
+    &:last-of-type {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #c82333, #a71e2a);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      }
+    }
+
+    &:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+// Responsive para botones
+@media (max-width: 768px) {
+  .botones-container {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
