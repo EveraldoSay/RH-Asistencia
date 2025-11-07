@@ -2,8 +2,7 @@ require('dotenv').config();
 const { exec } = require('child_process');
 const path = require('path');
 
-// ==================== CONFIGURACIÓN ====================
-// Tiempo en minutos entre ejecuciones (10 o 20 min recomendado)
+// Tiempo en minutos entre ejecuciones (20 o 30 min recomendado)
 const INTERVAL_MINUTES = Number(process.env.SYNC_INTERVAL_MINUTES) || 30;
 
 // Ruta de tus scripts 
