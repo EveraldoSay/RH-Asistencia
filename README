@@ -8,11 +8,15 @@ cd backend = npm install -g pm2 = ejecucion automatica de los archivos dentro de
 cd frontend = npm install
 cd frontend = npm install -g @angular/cli
 cd frontend = npm install jspdf jspdf-autotable
+cd frontend = npm install xlsx
 cd frontend = npm install chart.js
+cd frontend = npm install @angular/cdk
+cd frontend = ng add @angular/material
 
 para levantar ambas carpetas 
 cd backend = npm run dev
 cd frontend = ng serve
+
 
 
 
