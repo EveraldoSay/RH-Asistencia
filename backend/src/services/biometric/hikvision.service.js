@@ -225,8 +225,6 @@ async function getAllEventsFromDevice(dev) {
     user: dev.user,
     pass: dev.pass
   });
-
-  console.log(`Consultando eventos desde ${dev.host}...`);
   const eventosTotales = [];
   let posicion = 0;
   const maxResults = 100;
@@ -274,7 +272,6 @@ async function getAllEventsFromDevice(dev) {
             reader: ev.cardReaderNo || 0
           });
         });
-        console.log(`${lista.length} eventos desde ${dev.host} (pos=${posicion})`);
       } else {
         console.warn(`No se encontraron eventos en ${dev.host} (pos=${posicion})`);
       }
@@ -291,8 +288,6 @@ async function getAllEventsFromDevice(dev) {
       continuar = false;
     }
   }
-
-  console.log(`Total eventos desde ${dev.host}: ${eventosTotales.length}`);
   return eventosTotales;
 }
 
