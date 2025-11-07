@@ -295,7 +295,6 @@ cargarEmpleadosDelLote(ids: number[]) {
 cargarConfiguraciones() {
     this.turnosService.getConfiguraciones().subscribe({
       next: (res) => {
-        console.log('Configuraciones recibidas:', res);
         if (res.success && res.data) {
           this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO');
           this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO');
