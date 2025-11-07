@@ -17,7 +17,6 @@ const devices = [buildConfig('HIK1'), buildConfig('HIK2')].filter(d => d.host);
 
 // Extraer eventos de marcaje (entradas y salidas)
 export async function syncEventosDesdeBiometricos() {
-  console.log('Iniciando sincronización de eventos desde biométricos...');
   let totalEventos = 0;
 
   for (const dev of devices) {
@@ -27,8 +26,6 @@ export async function syncEventosDesdeBiometricos() {
         user: dev.user,
         pass: dev.pass
       });
-
-      console.log(`Consultando eventos desde ${dev.host}...`);
 
       const body = {
         AcsEventCond: {
@@ -64,7 +61,6 @@ export async function syncEventosDesdeBiometricos() {
       const eventos = data?.AcsEvent?.InfoList || data?.AcsEventNotificationList || [];
 
       const lista = Array.isArray(eventos) ? eventos : [eventos];
-      console.log(`${lista.length} eventos recibidos desde ${dev.host}`);
 
       // Procesar y guardar en la BD
       for (const ev of lista) {
@@ -119,7 +115,5 @@ export async function syncEventosDesdeBiometricos() {
       console.error(` Error procesando ${dev.host}:`, err.message);
     }
   }
-
-  console.log(`Total de eventos procesados: ${totalEventos}`);
   return { success: true, total: totalEventos };
 }
