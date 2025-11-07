@@ -26,6 +26,11 @@
         <input type="month" [(ngModel)]="mesSeleccionado" (change)="generarSemanas()" />
       </div>
 
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
+        <label>Día específico:</label>
+        <input type="date" [(ngModel)]="diaEspecifico" />
+      </div>
+
       <div class="filtro-group" *ngIf="tipoReporte === 'semana'">
         <label>Semana:</label>
         <select [(ngModel)]="semanaSeleccionada">
@@ -38,7 +43,7 @@
     <div class="botones-container">
       <button (click)="generarReporte()" 
         [disabled]="
-          (tipoReporte === 'biometricos' && !mesSeleccionado) ||
+          (tipoReporte === 'biometricos' && !mesSeleccionado && !diaEspecifico) ||
           (tipoReporte !== 'biometricos' && !areaSeleccionada) || 
           (tipoReporte === 'semana' && !semanaSeleccionada) || 
           (tipoReporte !== 'todo' && !mesSeleccionado)
