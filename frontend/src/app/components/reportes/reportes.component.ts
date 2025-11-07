@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportesService } from '../../services/reportes.service';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 
 @Component({
@@ -14,6 +15,10 @@ import autoTable from 'jspdf-autotable';
 })
 export class ReportesComponent implements OnInit {
   private repService = inject(ReportesService);
+  empleadoBusqueda: string = '';
+  empleadosEncontrados: any[] = [];
+  empleadoSeleccionado: any = null;
+  mostrandoResultados: boolean = false;
   areas: any[] = [];
   registros: any[] = [];
   eventosBiometricos: any[] = [];
@@ -24,6 +29,10 @@ export class ReportesComponent implements OnInit {
   semanas: any[] = [];
   tipoReporte: string = 'semana';
   diaEspecifico: string = '';
+
+  fechaDesde: string = '';
+  fechaHasta: string = '';
+  tipoFiltroBiometricos: string = 'mes'; // 'mes', 'dia', 'r
 
   cargando = false;
 
@@ -77,13 +86,13 @@ export class ReportesComponent implements OnInit {
     this.semanaSeleccionada = null;
   }
 
-generarReporte() {
-    if (this.tipoReporte === 'biometricos') {
-      this.generarReporteBiometricos();
-    } else {
-      this.generarReporteAsistencia();
+  generarReporte() {
+      if (this.tipoReporte === 'biometricos') {
+        this.generarReporteBiometricos();
+      } else {
+        this.generarReporteAsistencia();
+      }
     }
-  }
 
   generarReporteAsistencia() {
     if (!this.areaSeleccionada) {
@@ -130,6 +139,43 @@ generarReporte() {
     });
   }
 
+    buscarEmpleados() {
+      if (this.empleadoBusqueda.length < 2) {
+        this.empleadosEncontrados = [];
+        this.mostrandoResultados = false;
+        return;
+      }
+
+      this.repService.buscarEmpleados(this.empleadoBusqueda).subscribe({
+        next: (res) => {
+          this.empleadosEncontrados = res.empleados;
+          this.mostrandoResultados = true;
+        },
+        error: (err) => {
+          console.error('Error buscando empleados:', err);
+          this.empleadosEncontrados = [];
+          this.mostrandoResultados = false;
+        }
+      });
+    }
+
+    // Método para seleccionar un empleado
+  seleccionarEmpleado(empleado: any) {
+    this.empleadoSeleccionado = empleado;
+    this.empleadoBusqueda = empleado.nombre_completo;
+    this.mostrandoResultados = false;
+  }
+
+    // Método para limpiar la selección
+    limpiarBusquedaEmpleado() {
+      this.empleadoSeleccionado = null;
+      this.empleadoBusqueda = '';
+      this.empleadosEncontrados = [];
+      this.mostrandoResultados = false;
+    }
+
+
+      // Modificar el método generarReporteBiometricos
   generarReporteBiometricos() {
     if (!this.mesSeleccionado && !this.diaEspecifico) {
       alert('Seleccione un mes o un día específico para generar el reporte de eventos biométricos.');
@@ -138,14 +184,14 @@ generarReporte() {
 
     this.cargando = true;
 
-    // Determinar qué parámetro enviar
     const parametro = this.diaEspecifico ? this.diaEspecifico : this.mesSeleccionado;
     const tipoParametro = this.diaEspecifico ? 'dia' : 'mes';
+    const empleadoId = this.empleadoSeleccionado ? this.empleadoSeleccionado.id : undefined;
 
-    this.repService.getEventosBiometricos(parametro, tipoParametro).subscribe({
+    this.repService.getEventosBiometricos(parametro, tipoParametro, empleadoId).subscribe({
       next: (res) => {
         this.eventosBiometricos = res.eventos;
-        this.registros = []; // Limpiar registros de asistencia
+        this.registros = [];
         this.cargando = false;
       },
       error: (err) => {
@@ -156,7 +202,26 @@ generarReporte() {
     });
   }
 
- obtenerResumen() {
+  onTipoFiltroBiometricosChange() {
+    // Limpiar campos no utilizados según el tipo de filtro
+    if (this.tipoFiltroBiometricos === 'mes') {
+      this.diaEspecifico = '';
+      this.fechaDesde = '';
+      this.fechaHasta = '';
+    } else if (this.tipoFiltroBiometricos === 'dia') {
+      this.mesSeleccionado = '';
+      this.fechaDesde = '';
+      this.fechaHasta = '';
+    } else if (this.tipoFiltroBiometricos === 'rango') {
+      this.mesSeleccionado = '';
+      this.diaEspecifico = '';
+    }
+    
+    // Limpiar resultados anteriores
+    this.eventosBiometricos = [];
+  }
+
+obtenerResumen() {
     if (this.tipoReporte === 'biometricos') {
       const total = this.eventosBiometricos.length;
       const entradas = this.eventosBiometricos.filter(e => e.tipo_evento === 'ENTRADA').length;
@@ -204,18 +269,191 @@ generarReporte() {
     return '';
   }
 
-descargarPDF() {
-  if (this.registros.length === 0 && this.eventosBiometricos.length === 0) {
-    alert('No hay datos para exportar.');
-    return;
+descargarExcel() {
+    if (this.registros.length === 0 && this.eventosBiometricos.length === 0) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+
+    if (this.tipoReporte === 'biometricos') {
+      this.descargarExcelEventosBiometricos();
+    } else {
+      this.descargarExcelAsistencia();
+    }
   }
 
-  if (this.tipoReporte === 'biometricos') {
-    this.descargarPDFEventosBiometricos();
-  } else {
-    this.descargarPDFAsistencia();
+  descargarExcelAsistencia() {
+    if (this.registros.length === 0) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+
+    const nombreArea = this.obtenerNombreArea();
+    const fechaGen = new Date().toLocaleDateString('es-GT');
+    const rango = this.obtenerRangoSeleccionado();
+    
+    // Preparar datos para Excel
+    const datos = this.registros.map((r, index) => ({
+      '#': index + 1,
+      'Área': r.area,
+      'Jefe de Área': r.jefe_area || 'No asignado',
+      'Empleado': r.empleado,
+      'Cargo': r.cargo,
+      'Fecha': this.formatearFecha(r.fecha),
+      'Turno': r.turno_asignado || 'N/A',
+      'Tipo Turno': r.tipo_turno || 'N/A',
+      'Entrada Programada': r.hora_entrada_programada || 'N/A',
+      'Salida Programada': r.hora_salida_programada || 'N/A',
+      'Entrada Real': r.entrada_real ? this.formatearHora(r.entrada_real) : '--:--',
+      'Salida Real': r.salida_real ? this.formatearHora(r.salida_real) : '--:--',
+      'Cumplimiento': r.cumplimiento,
+      'Estado': r.estado_dia
+    }));
+
+    // Crear workbook y worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+
+    // Agregar encabezado con información del reporte
+    const encabezado = [
+      ['Hospital Regional de Occidente'],
+      ['Reporte de Asistencia por Área'],
+      [`Área: ${nombreArea}`],
+      [`Período: ${rango}`],
+      [`Tipo: ${this.obtenerTipoReporteTexto()}`],
+      [`Generado: ${fechaGen}`],
+      [`Total registros: ${this.registros.length}`],
+      [] // Línea en blanco
+    ];
+
+    XLSX.utils.sheet_add_aoa(ws, encabezado, { origin: 'A1' });
+
+    // Estilizar el encabezado
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 12 } });
+    ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 12 } });
+
+    // Ajustar anchos de columnas
+    const colWidths = [
+      { wch: 5 },   // #
+      { wch: 15 },  // Área
+      { wch: 20 },  // Jefe de Área
+      { wch: 25 },  // Empleado
+      { wch: 20 },  // Cargo
+      { wch: 12 },  // Fecha
+      { wch: 15 },  // Turno
+      { wch: 12 },  // Tipo Turno
+      { wch: 18 },  // Entrada Programada
+      { wch: 18 },  // Salida Programada
+      { wch: 15 },  // Entrada Real
+      { wch: 15 },  // Salida Real
+      { wch: 15 },  // Cumplimiento
+      { wch: 15 }   // Estado
+    ];
+    ws['!cols'] = colWidths;
+
+    // Agregar worksheet al workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Reporte Asistencia');
+
+    // Generar nombre de archivo
+    const nombreArchivo = `Reporte_Asistencia_${nombreArea.replace(/\s+/g, '_')}_${fechaGen.replace(/\//g, '-')}.xlsx`;
+
+    // Descargar archivo
+    XLSX.writeFile(wb, nombreArchivo);
   }
-}
+
+  descargarExcelEventosBiometricos() {
+    if (this.eventosBiometricos.length === 0) {
+      alert('No hay eventos biométricos para exportar.');
+      return;
+    }
+
+    const fechaGen = new Date().toLocaleDateString('es-GT');
+    const resumen = this.obtenerResumen();
+    
+    // Preparar datos para Excel
+    const datos = this.eventosBiometricos.map((evento, index) => ({
+      '#': index + 1,
+      'ID': evento.id,
+      'Empleado': evento.empleado || 'No identificado',
+      'Tipo Evento': evento.tipo_evento,
+      'Fecha': evento.fecha,
+      'Hora': evento.hora,
+      'Dispositivo IP': evento.dispositivo_ip || 'N/A',
+      'Código Evento': evento.codigo_evento || 'N/A',
+      'Origen': evento.origen,
+      'Procesado': evento.procesado ? 'Sí' : 'No',
+      'Registrado En': evento.creado_en ? 
+        `${this.formatearFecha(evento.creado_en)} ${this.formatearHora(evento.creado_en)}` : 'N/A'
+    }));
+
+    // Crear workbook y worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+
+    // Agregar encabezado con información del reporte
+    const periodoInfo = this.diaEspecifico ? 
+      `Día: ${this.formatearFecha(this.diaEspecifico)}` : 
+      `Mes: ${this.mesSeleccionado}`;
+
+    const encabezado = [
+      ['Hospital Regional de Occidente'],
+      ['Reporte de Eventos Biométricos'],
+      [periodoInfo],
+      [`Total eventos: ${resumen.total} | Entradas: ${resumen.entradas} | Salidas: ${resumen.salidas}`],
+      [`Generado: ${fechaGen}`],
+      [] // Línea en blanco
+    ];
+
+    XLSX.utils.sheet_add_aoa(ws, encabezado, { origin: 'A1' });
+
+    // Estilizar el encabezado
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } });
+    ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
+    ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 9 } });
+    ws['!merges'].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 9 } });
+
+    // Ajustar anchos de columnas
+    const colWidths = [
+      { wch: 5 },   // #
+      { wch: 8 },   // ID
+      { wch: 25 },  // Empleado
+      { wch: 12 },  // Tipo Evento
+      { wch: 12 },  // Fecha
+      { wch: 10 },  // Hora
+      { wch: 15 },  // Dispositivo IP
+      { wch: 15 },  // Código Evento
+      { wch: 10 },  // Origen
+      { wch: 10 },  // Procesado
+      { wch: 20 }   // Registrado En
+    ];
+    ws['!cols'] = colWidths;
+
+    // Agregar worksheet al workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Eventos Biométricos');
+
+    // Generar nombre de archivo
+    const nombreArchivo = `Reporte_Eventos_Biometricos_${this.mesSeleccionado || this.diaEspecifico}_${fechaGen.replace(/\//g, '-')}.xlsx`;
+
+    // Descargar archivo
+    XLSX.writeFile(wb, nombreArchivo);
+  }
+
+  descargarPDF() {
+    if (this.registros.length === 0 && this.eventosBiometricos.length === 0) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+
+    if (this.tipoReporte === 'biometricos') {
+      this.descargarPDFEventosBiometricos();
+    } else {
+      this.descargarPDFAsistencia();
+    }
+  }
+
+
 
 descargarPDFAsistencia() {
   if (this.registros.length === 0) {
@@ -400,15 +638,15 @@ descargarPDFAsistencia() {
 }
 
 
-obtenerTipoReporteTexto(): string {
-  switch (this.tipoReporte) {
-    case 'semana': return 'Por Semana';
-    case 'mes': return 'Mes Completo';
-    case 'todo': return 'Todo el Historial';
-    case 'biometricos': return 'Eventos Biométricos';
-    default: return 'No especificado';
+  obtenerTipoReporteTexto(): string {
+    switch (this.tipoReporte) {
+      case 'semana': return 'Por Semana';
+      case 'mes': return 'Mes Completo';
+      case 'todo': return 'Todo el Historial';
+      case 'biometricos': return 'Eventos Biométricos';
+      default: return 'No especificado';
+    }
   }
-}
 
 
   descargarPDFEventosBiometricos() {
@@ -577,16 +815,18 @@ obtenerTipoReporteTexto(): string {
     }
   }
 
-  obtenerRangoSeleccionado() {
-  if (this.tipoReporte === 'biometricos') {
-    if (this.diaEspecifico) {
-      return `Día específico: ${this.formatearFecha(this.diaEspecifico)}`;
-    } else if (this.mesSeleccionado) {
-      const [year, month] = this.mesSeleccionado.split('-');
-      const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
-      return `Mes completo: ${fecha.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })}`;
+ obtenerRangoSeleccionado() {
+    if (this.tipoReporte === 'biometricos') {
+      if (this.tipoFiltroBiometricos === 'dia') {
+        return `Día específico: ${this.formatearFecha(this.diaEspecifico)}`;
+      } else if (this.tipoFiltroBiometricos === 'rango') {
+        return `Rango: ${this.formatearFecha(this.fechaDesde)} a ${this.formatearFecha(this.fechaHasta)}`;
+      } else if (this.tipoFiltroBiometricos === 'mes') {
+        const [year, month] = this.mesSeleccionado.split('-');
+        const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
+        return `Mes completo: ${fecha.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })}`;
+      }
     }
-  }
 
     if (!this.semanaSeleccionada) return 'Sin rango';
     const { desde, hasta } = this.semanaSeleccionada;
@@ -597,14 +837,22 @@ obtenerTipoReporteTexto(): string {
     this.registros = [];
   }
 
-  onTipoReporteChange() {
-    // Resetear selección de semana cuando se cambia a "todo" o "biometricos"
+onTipoReporteChange() {
     if (this.tipoReporte === 'todo' || this.tipoReporte === 'biometricos') {
       this.semanaSeleccionada = null;
     }
-    // Resetear día específico cuando se cambia de tipo de reporte
-    this.diaEspecifico = '';
-    // Limpiar datos anteriores
+    
+    // Resetear filtros de eventos biométricos
+    if (this.tipoReporte === 'biometricos') {
+      this.tipoFiltroBiometricos = 'mes';
+      this.diaEspecifico = '';
+      this.fechaDesde = '';
+      this.fechaHasta = '';
+    } else {
+      this.diaEspecifico = '';
+    }
+    
+    this.limpiarBusquedaEmpleado();
     this.registros = [];
     this.eventosBiometricos = [];
   }
