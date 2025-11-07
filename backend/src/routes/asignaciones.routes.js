@@ -653,8 +653,6 @@ const { sendEmail} = require('../services/email.service.js');
             )
           ORDER BY ar.nombre_area, e.nombre_completo ASC;
         `, [fecha]);
-
-        console.log(`${rows.length} empleados disponibles encontrados`);
         res.json({ success: true, data: rows });
 
       } catch (error) {
