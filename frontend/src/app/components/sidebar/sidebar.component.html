@@ -1,53 +1,47 @@
-<ng-container *ngIf="vm$ | async as vm">
-  <div class="sidebar">
-    <!-- Encabezado -->
-    <div class="sidebar-header">
-      <div class="logo">HRO</div>
-      <div class="logo-text">
-        <h2>Hospital R. Occidente</h2>
-        <p>Panel de Administración</p>
-      </div>
-    </div>
-
-    <!-- Usuario (Keycloak) -->
-    <div class="sidebar-user" *ngIf="vm.ok">
-      <div class="avatar">{{ vm.initials }}</div>
-      <div class="user-info">
-        <div class="name">{{ vm.fullName }}</div>
-        <div class="username">@{{ vm.userName }}</div>
-        <div class="email" *ngIf="vm.email">{{ vm.email }}</div>
-
-        <button type="button" class="account-link" (click)="openAccount(vm.accountUrl)">
-          <i class="fa-solid fa-user-gear"></i>
-          <span>Mi cuenta</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Menú -->
-    <nav class="sidebar-nav">
-      <ul>
-        <li><a routerLink="/dashboard" routerLinkActive="active">
-          <i class="fas fa-home"></i><span>Dashboard</span></a></li>
-
-        <li><a routerLink="/empleados" routerLinkActive="active">
-          <i class="fas fa-users"></i><span>empleados</span></a></li>
-
-        <li><a routerLink="/asignar-turnos" routerLinkActive="active">
-          <i class="fas fa-clock"></i><span>asignar-turnos</span></a></li>
-
-        <li><a routerLink="/reportes" routerLinkActive="active">
-          <i class="fas fa-file-alt"></i><span>Reportes</span></a></li>
-
-      </ul>
-    </nav>
-
-    <!-- Botón abajo -->
-    <div class="sidebar-bottom">
-      <button type="button" (click)="logout()" class="logout-btn">
-        <i class="fas fa-right-from-bracket"></i>
-        <span>Cerrar sesión</span>
-      </button>
+<div class="sidebar">
+  <!-- Encabezado -->
+  <div class="sidebar-header">
+    <div class="logo">HRO</div>
+    <div class="logo-text">
+      <h2>Hospital R. Occidente</h2>
+      <p>Panel de Administración</p>
     </div>
   </div>
-</ng-container>
+
+  <!-- Menú principal -->
+  <nav class="sidebar-nav">
+    <ul>
+      <li>
+        <a routerLink="/dashboard" routerLinkActive="active">
+          <i class="fas fa-home"></i><span>Dashboard</span>
+        </a>
+      </li>
+
+      <li>
+        <a routerLink="/empleados" routerLinkActive="active">
+          <i class="fas fa-users"></i><span>Empleados</span>
+        </a>
+      </li>
+
+      <li>
+        <a routerLink="/asignar-turnos" routerLinkActive="active">
+          <i class="fas fa-clock"></i><span>Asignar Turnos</span>
+        </a>
+      </li>
+
+      <li>
+        <a routerLink="/reportes" routerLinkActive="active">
+          <i class="fas fa-file-alt"></i><span>Reportes</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Botón de cierre -->
+  <div class="sidebar-bottom">
+    <button type="button" (click)="logout()" class="logout-btn">
+      <i class="fas fa-right-from-bracket"></i>
+      <span>Cerrar sesión</span>
+    </button>
+  </div>
+</div>
