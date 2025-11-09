@@ -177,22 +177,62 @@ export class ReportesComponent implements OnInit {
 
       // Modificar el método generarReporteBiometricos
   generarReporteBiometricos() {
-    if (!this.mesSeleccionado && !this.diaEspecifico) {
-      alert('Seleccione un mes o un día específico para generar el reporte de eventos biométricos.');
+    // Validaciones según el tipo de filtro seleccionado
+    if (this.tipoFiltroBiometricos === 'mes' && !this.mesSeleccionado) {
+      alert('Seleccione un mes para generar el reporte de eventos biométricos.');
       return;
+    }
+
+    if (this.tipoFiltroBiometricos === 'dia' && !this.diaEspecifico) {
+      alert('Seleccione un día específico para generar el reporte de eventos biométricos.');
+      return;
+    }
+
+    if (this.tipoFiltroBiometricos === 'rango' && (!this.fechaDesde || !this.fechaHasta)) {
+      alert('Seleccione ambas fechas (desde y hasta) para generar el reporte de eventos biométricos.');
+      return;
+    }
+
+    if (this.tipoFiltroBiometricos === 'rango') {
+      const desde = new Date(this.fechaDesde);
+      const hasta = new Date(this.fechaHasta);
+      
+      if (desde > hasta) {
+        alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta".');
+        return;
+      }
+
+      // Validar que el rango no sea muy extenso (opcional)
+      const diffTime = Math.abs(hasta.getTime() - desde.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 31) {
+        if (!confirm(`Está solicitando un reporte de ${diffDays} días. Esto puede generar un archivo muy grande. ¿Desea continuar?`)) {
+          return;
+        }
+      }
     }
 
     this.cargando = true;
 
-    const parametro = this.diaEspecifico ? this.diaEspecifico : this.mesSeleccionado;
-    const tipoParametro = this.diaEspecifico ? 'dia' : 'mes';
+    const parametro = this.tipoFiltroBiometricos === 'dia' ? this.diaEspecifico : 
+                    this.tipoFiltroBiometricos === 'mes' ? this.mesSeleccionado : 
+                    this.fechaDesde; // Para rango, podemos enviar cualquier fecha como parámetro base
+
     const empleadoId = this.empleadoSeleccionado ? this.empleadoSeleccionado.id : undefined;
 
-    this.repService.getEventosBiometricos(parametro, tipoParametro, empleadoId).subscribe({
+    this.repService.getEventosBiometricos(
+      parametro, 
+      this.tipoFiltroBiometricos, 
+      empleadoId, 
+      this.fechaDesde, 
+      this.fechaHasta
+    ).subscribe({
       next: (res) => {
         this.eventosBiometricos = res.eventos;
         this.registros = [];
         this.cargando = false;
+        console.log('Reporte de eventos biométricos generado:', res.eventos.length, 'eventos');
       },
       error: (err) => {
         console.error('Error al generar reporte de eventos biométricos:', err);
