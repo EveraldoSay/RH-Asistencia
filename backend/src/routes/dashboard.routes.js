@@ -74,9 +74,9 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
     `);
 
     // 8) Alertas pendientes
-    const [[{ c: alertas }]] = await db.query(
-      "SELECT COUNT(*) AS c FROM alertas WHERE estado = 'PENDIENTE'"
-    );
+    // const [[{ c: alertas }]] = await db.query(
+    //   "SELECT COUNT(*) AS c FROM alertas WHERE estado = 'PENDIENTE'"
+    // );
 
     // 9) Próximos turnos
     const [prox] = await db.query(`
@@ -91,11 +91,11 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
       AND e.eliminado_en IS NULL
     `);
 
-    const bucket = {
-      manana: { enfermeros: 0, medicos: 0 },
-      tarde:  { enfermeros: 0, medicos: 0 },
-      noche:  { enfermeros: 0, medicos: 0 },
-    };
+    // const bucket = {
+    //   manana: { enfermeros: 0, medicos: 0 },
+    //   tarde:  { enfermeros: 0, medicos: 0 },
+    //   noche:  { enfermeros: 0, medicos: 0 },
+    // };
 
     for (const r of prox) {
       const name = (r.turno || '').toLowerCase();
@@ -147,7 +147,7 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
         turnosFijos,
         turnosRotativos,
         personalSinTurno,
-        alertas,
+        // alertas,
         asistenciaSemanal,
         distribucionArea
       }
