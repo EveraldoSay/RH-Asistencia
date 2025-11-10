@@ -603,3 +603,112 @@
   }
 }
 
+// En la sección de botones, agregar el estilo para el nuevo botón
+.botones-container {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+  
+  button {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    
+    // Botón Generar
+    &:first-of-type {
+      background: linear-gradient(135deg, #0b5ed7, #084298);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #084298, #06357a);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(11, 94, 215, 0.3);
+      }
+    }
+
+    // NUEVO BOTÓN ACTUALIZAR BIOMÉTRICO
+    &.btn-biometrico {
+      background: linear-gradient(135deg, #6f42c1, #4a2d8c);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #4a2d8c, #3a236e);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+      }
+    }
+
+    // Botón Excel
+    &.btn-excel {
+      background: linear-gradient(135deg, #198754, #0f5132);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #0f5132, #0a3622);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+      }
+    }
+
+    // Botón PDF
+    &:last-of-type {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #c82333, #a71e2a);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      }
+    }
+
+    &:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+// Responsive para botones
+@media (max-width: 768px) {
+  .botones-container {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+/* 🔧 Contenedor con ícono de calendario */
+.input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon input[type="date"] {
+  width: 100%;
+  padding-right: 30px;
+}
+
+.input-icon i {
+  position: absolute;
+  right: 10px;
+  color: #6c757d;
+  font-size: 1rem;
+  pointer-events: none;
+}
