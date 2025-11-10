@@ -255,6 +255,22 @@
 .empleados-table td { vertical-align: middle; }
 .action-buttons .actions-inline { display: inline-flex; align-items: center; gap: .5rem; white-space: nowrap; }
 
+/* === ANIMACIÓN DE ENTRADA (FADE-UP) === */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.empleados-container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
   
 /* Responsive */  
 @media (max-width: 768px) {  
