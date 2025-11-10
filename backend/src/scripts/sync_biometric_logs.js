@@ -34,6 +34,10 @@ async function fetchEvents(device) {
   let intento = 1;
 
   while (more) {
+
+    //crear nuevo cliente en cada iteración para renovar nonce
+    const client = new DigestFetch(device.user, device.pass);
+
     const body = {
       AcsEventCond: {
         searchID: `sync_${Date.now()}_${intento}`,
