@@ -22,9 +22,10 @@ export class ReportesComponent implements OnInit {
   areas: any[] = [];
   registros: any[] = [];
   eventosBiometricos: any[] = [];
+  actualizandoBiometrico = false;
 
   areaSeleccionada: number | null = null;
-  mesSeleccionado = '';   // formato YYYY-MM
+  mesSeleccionado = '';   
   semanaSeleccionada: any = null;
   semanas: any[] = [];
   tipoReporte: string = 'semana';
@@ -32,11 +33,12 @@ export class ReportesComponent implements OnInit {
 
   fechaDesde: string = '';
   fechaHasta: string = '';
-  tipoFiltroBiometricos: string = 'mes'; // 'mes', 'dia', 'r
+  tipoFiltroBiometricos: string = 'mes'; 
 
   cargando = false;
 
   ngOnInit() {
+    this.inicializarFechasPorDefecto();
     this.repService.getAreas().subscribe({
       next: (res) => {
         this.areas = res.areas;
@@ -45,6 +47,15 @@ export class ReportesComponent implements OnInit {
         console.error('Error cargando áreas:', err);
       }
     });
+  }
+
+  inicializarFechasPorDefecto() {
+    const hoy = new Date();
+    const haceUnaSemana = new Date();
+    haceUnaSemana.setDate(hoy.getDate() - 7);
+    
+    this.fechaDesde = haceUnaSemana.toISOString().split('T')[0];
+    this.fechaHasta = hoy.toISOString().split('T')[0];
   }
 
   obtenerNombreArea() {
@@ -175,9 +186,7 @@ export class ReportesComponent implements OnInit {
     }
 
 
-      // Modificar el método generarReporteBiometricos
-  generarReporteBiometricos() {
-    // Validaciones según el tipo de filtro seleccionado
+ generarReporteBiometricos() {
     if (this.tipoFiltroBiometricos === 'mes' && !this.mesSeleccionado) {
       alert('Seleccione un mes para generar el reporte de eventos biométricos.');
       return;
@@ -193,6 +202,7 @@ export class ReportesComponent implements OnInit {
       return;
     }
 
+    // NUEVA VALIDACIÓN: Rango de fechas válido
     if (this.tipoFiltroBiometricos === 'rango') {
       const desde = new Date(this.fechaDesde);
       const hasta = new Date(this.fechaHasta);
@@ -242,8 +252,33 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  onTipoFiltroBiometricosChange() {
-    // Limpiar campos no utilizados según el tipo de filtro
+// NUEVO MÉTODO PARA ACTUALIZAR BIOMÉTRICO
+  actualizarBiometrico() {
+    this.actualizandoBiometrico = true;
+    
+    this.repService.actualizarBiometrico().subscribe({
+      next: (res) => {
+        this.actualizandoBiometrico = false;
+        if (res.success) {
+          alert('Biométrico actualizado correctamente. Se encontraron ' + res.totalEventos + ' eventos.');
+          
+          // Si estamos en el reporte de eventos biométricos, actualizar automáticamente
+          if (this.tipoReporte === 'biometricos') {
+            this.generarReporteBiometricos();
+          }
+        } else {
+          alert('Error al actualizar biométrico: ' + res.message);
+        }
+      },
+      error: (err) => {
+        this.actualizandoBiometrico = false;
+        console.error('Error actualizando biométrico:', err);
+        alert('Error al actualizar biométrico: ' + err.message);
+      }
+    });
+  }
+
+ onTipoFiltroBiometricosChange() {
     if (this.tipoFiltroBiometricos === 'mes') {
       this.diaEspecifico = '';
       this.fechaDesde = '';
@@ -255,11 +290,14 @@ export class ReportesComponent implements OnInit {
     } else if (this.tipoFiltroBiometricos === 'rango') {
       this.mesSeleccionado = '';
       this.diaEspecifico = '';
+      // Inicializar rango si está vacío
+      if (!this.fechaDesde || !this.fechaHasta) {
+        this.inicializarFechasPorDefecto();
+      }
     }
-    
-    // Limpiar resultados anteriores
     this.eventosBiometricos = [];
   }
+  
 
 obtenerResumen() {
     if (this.tipoReporte === 'biometricos') {
@@ -877,7 +915,7 @@ descargarPDFAsistencia() {
     this.registros = [];
   }
 
-onTipoReporteChange() {
+  onTipoReporteChange() {
     if (this.tipoReporte === 'todo' || this.tipoReporte === 'biometricos') {
       this.semanaSeleccionada = null;
     }
@@ -888,6 +926,7 @@ onTipoReporteChange() {
       this.diaEspecifico = '';
       this.fechaDesde = '';
       this.fechaHasta = '';
+      this.inicializarFechasPorDefecto(); // Inicializar rango por defecto
     } else {
       this.diaEspecifico = '';
     }
@@ -896,4 +935,5 @@ onTipoReporteChange() {
     this.registros = [];
     this.eventosBiometricos = [];
   }
+
 }
