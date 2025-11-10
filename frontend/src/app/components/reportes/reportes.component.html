@@ -21,15 +21,44 @@
         </select>
       </div>
 
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
+        <label>Tipo Filtro:</label>
+        <select [(ngModel)]="tipoFiltroBiometricos" (change)="onTipoFiltroBiometricosChange()">
+          <option value="mes">Mes Completo</option>
+          <option value="dia">Día Específico</option>
+          <option value="rango">Rango de Fechas</option>
+        </select>
+      </div>
+
       <div class="filtro-group" *ngIf="tipoReporte !== 'todo'">
         <label>Mes:</label>
         <input type="month" [(ngModel)]="mesSeleccionado" (change)="generarSemanas()" />
       </div>
 
-      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'dia'">
         <label>Día específico:</label>
-        <input type="date" [(ngModel)]="diaEspecifico" />
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="diaEspecifico" />
+          <i class="fa fa-calendar"></i>
+        </div>
       </div>
+
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'rango'">
+        <label>Desde:</label>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaDesde" />
+          <i class="fa fa-calendar"></i>
+        </div>
+      </div>
+
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'rango'">
+        <label>Hasta:</label>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaHasta" />
+          <i class="fa fa-calendar"></i>
+        </div>
+      </div>
+
 
       <!-- En reportes.component.html - actualizar la sección de búsqueda -->
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
@@ -83,6 +112,7 @@
       </div>
     </div>
 
+    <!-- En la sección de botones, después del botón Generar -->
     <div class="botones-container">
       <button (click)="generarReporte()" 
         [disabled]="
@@ -94,11 +124,22 @@
         <span>Generar</span>
       </button>
 
-        <button (click)="descargarExcel()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
+      <!-- NUEVO BOTÓN ACTUALIZAR BIOMÉTRICO -->
+      <button (click)="actualizarBiometrico()" 
+              class="btn-biometrico"
+              [disabled]="actualizandoBiometrico">
+        <span *ngIf="!actualizandoBiometrico">Actualizar Biométrico</span>
+        <span *ngIf="actualizandoBiometrico">Actualizando...</span>
+      </button>
+
+      <button (click)="descargarExcel()" 
+              [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
               class="btn-excel">
         <span>Descargar Excel</span>
       </button>
-      <button (click)="descargarPDF()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0">
+      
+      <button (click)="descargarPDF()" 
+              [disabled]="registros.length === 0 && eventosBiometricos.length === 0">
         <span>Descargar PDF</span>
       </button>
     </div>
@@ -168,10 +209,9 @@
 
   <!-- TABLA PARA EVENTOS BIOMÉTRICOS -->
   <div *ngIf="!cargando && eventosBiometricos.length > 0 && tipoReporte === 'biometricos'" class="resultados">
-<!-- En la sección de resumen de eventos biométricos -->
     <p class="resumen">
       Resumen Eventos Biométricos: 
-      Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> | 
+      {{ obtenerRangoSeleccionado() }} | 
       Total eventos: <strong>{{ obtenerResumen().total }}</strong> | 
       Entradas: <strong>{{ obtenerResumen().entradas }}</strong> | 
       Salidas: <strong>{{ obtenerResumen().salidas }}</strong>
