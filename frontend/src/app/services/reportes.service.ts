@@ -28,7 +28,7 @@ export class ReportesService {
   }
 
   // Modificar para incluir filtro por empleado
-  getEventosBiometricos(fecha: string, tipo: string = 'mes', empleadoId?: number, desde?: string, hasta?: string) {
+getEventosBiometricos(fecha: string, tipo: string = 'mes', empleadoId?: number, desde?: string, hasta?: string) {
     let params = new HttpParams();
     
     if (tipo === 'rango') {
@@ -52,5 +52,10 @@ export class ReportesService {
   buscarEmpleados(query: string) {
     const params = new HttpParams().set('query', query);
     return this.http.get<any>(`${API}/buscar-empleados`, { params });
+  }
+
+  // Agrega este método en el servicio
+  actualizarBiometrico() {
+    return this.http.post<any>(`${API}/actualizar-biometrico`, {});
   }
 }
