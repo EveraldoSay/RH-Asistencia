@@ -20,13 +20,13 @@
       <button class="btn btn-primary" (click)="showNewAreaForm = true" [disabled]="loading">
         + Agregar Área
       </button>
-      <!-- <button class="btn btn-secondary" (click)="importarBiometrico()" [disabled]="loading">
-        Importar desde biométrico
-      </button> -->
+      <button class="btn btn-secondary" (click)="syncBiometricUsers()" [disabled]="loading">
+        Actualizar Empleados
+      </button>
 
     </div>
 
-    <!-- 🔎 Caja de búsqueda -->
+    <!-- Caja de búsqueda -->
     <div style="margin-left:auto; display:flex; gap:.5rem; align-items:center;">
       <input
         type="text"
