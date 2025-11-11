@@ -11,8 +11,6 @@ const LOGS_SCRIPT = path.join(__dirname, 'sync_biometric_logs.js');
 
 // ==================== FUNCIÓN AUXILIAR ====================
 function runScript(scriptPath, label) {
-  console.log(`[${new Date().toLocaleString()}] Ejecutando ${label}...`);
-
   const child = exec(`node "${scriptPath}"`, { env: process.env });
 
   child.stdout.on('data', data => {
@@ -24,12 +22,10 @@ function runScript(scriptPath, label) {
   });
 
   child.on('exit', code => {
-    console.log(`[${new Date().toLocaleString()}] ${label} finalizó con código ${code}\n`);
   });
 }
 
 // ==================== INICIO INMEDIATO ====================
-console.log('Iniciando Scheduler de sincronización biométrica');
 runScript(USERS_SCRIPT, 'Usuarios Biométricos');
 setTimeout(() => runScript(LOGS_SCRIPT, 'Eventos Biométricos'), 3000); // pequeño desfase
 
