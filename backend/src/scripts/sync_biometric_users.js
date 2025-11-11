@@ -11,7 +11,6 @@ const devices = [
 
 // Función para traer todos los usuarios de un biométrico
 async function fetchAllFromDevice(device) {
-  console.log(`Conectando a dispositivo ${device.ip}...`);
   const client = new DigestFetch(device.user, device.pass);
   const maxResults = 30;
   let position = 0;
@@ -48,10 +47,6 @@ async function fetchAllFromDevice(device) {
       allUsers.push(...list);
       const status = data?.UserInfoSearch?.responseStatusStrg;
 
-      console.log(
-        `[${device.ip}] Lote ${position} → ${list.length} usuarios`
-      );
-
       if (status === 'MORE') {
         position += maxResults;
       } else {
@@ -65,8 +60,6 @@ async function fetchAllFromDevice(device) {
       break;
     }
   }
-
-  console.log(`[${device.ip}] Total usuarios descargados: ${allUsers.length}`);
   return allUsers;
 }
 
@@ -84,7 +77,6 @@ function unifyUsers(devicesUsers) {
 
 // Guardar en la base de datos (opcional)
 async function saveToDatabase(users) {
-  console.log('Guardando en base de datos...');
   let insertados = 0;
 
   for (const u of users) {
@@ -104,8 +96,6 @@ async function saveToDatabase(users) {
 
     insertados++;
   }
-
-  console.log(`Total insertados o actualizados: ${insertados}`);
 }
 
 // Ejecución principal
@@ -118,12 +108,9 @@ async function saveToDatabase(users) {
     }
 
     const unified = unifyUsers(results);
-    console.log(`Total unificados (sin duplicados): ${unified.length}`);
 
     // Si quieres guardar en DB, descomenta la línea siguiente:
     await saveToDatabase(unified);
-
-    console.log('Sincronización completada correctamente');
     process.exit(0);
   } catch (err) {
     console.error('Error general:', err);
