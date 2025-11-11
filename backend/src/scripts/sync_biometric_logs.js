@@ -26,8 +26,6 @@ async function fetchEvents(device) {
     const iso = d.toISOString().split('.')[0];
     return iso + '-06:00';
   };
-
-  console.log(`Consultando eventos de ${device.ip}...`);
   const allEvents = [];
   let position = 0;
   let more = true;
@@ -71,7 +69,6 @@ async function fetchEvents(device) {
     const list = data?.AcsEvent?.InfoList || [];
     const status = data?.AcsEvent?.responseStatusStrg || '';
 
-    console.log(`${device.ip}: lote ${intento} (${list.length} eventos)`);
 
     allEvents.push(...list);
 
@@ -84,7 +81,6 @@ async function fetchEvents(device) {
     await new Promise(r => setTimeout(r, 300));
   }
 
-  console.log(`${device.ip}: ${allEvents.length} eventos obtenidos en total`);
   return allEvents.map(ev => ({
     ip: device.ip,
     empleado: ev.employeeNoString,
@@ -135,14 +131,12 @@ async function saveEvents(events) {
     }
   }
 
-  console.log(`Total registros insertados en registros_asistencia: ${insertados}`);
 }
 
 
 // === Proceso principal ===
 (async () => {
   try {
-    console.log('Iniciando sincronización biométrica...');
     const allEvents = [];
 
     for (const dev of devices) {
@@ -157,7 +151,6 @@ async function saveEvents(events) {
 
     await saveEvents(allEvents);
     await processDailyAttendance();
-    console.log('Sincronización completada.');
     process.exit(0);
   } catch (err) {
     console.error('Error general:', err.message);
@@ -167,7 +160,6 @@ async function saveEvents(events) {
 
 // === Consolidación diaria ===
 async function processDailyAttendance() {
-  console.log('Procesando asistencias consolidadas del día...');
 
   const [empleados] = await db.query(`
     SELECT DISTINCT empleado_id, DATE(fecha_hora) AS fecha
@@ -215,7 +207,6 @@ async function processDailyAttendance() {
 
     // Si no tiene turno asignado
     if (!turno) {
-      console.log(`Empleado ${empleado_id} no tiene turno activo para ${fecha}. Se omite.`);
       continue;
     }
 
@@ -234,7 +225,6 @@ async function processDailyAttendance() {
     }
 
     if (!esLaboral) {
-      console.log(`Empleado ${empleado_id} tiene descanso el ${fecha}.`);
       continue;
     }
 
@@ -281,5 +271,4 @@ async function processDailyAttendance() {
     procesadas++;
   }
 
-  console.log(`${procesadas} asistencias consolidadas en total.`);
 }
