@@ -23,6 +23,7 @@ export class ReportesComponent implements OnInit {
   registros: any[] = [];
   eventosBiometricos: any[] = [];
   actualizandoBiometrico = false;
+  sincronizandoMarcajes = false;
 
   areaSeleccionada: number | null = null;
   mesSeleccionado = '';   
@@ -242,7 +243,6 @@ export class ReportesComponent implements OnInit {
         this.eventosBiometricos = res.eventos;
         this.registros = [];
         this.cargando = false;
-        console.log('Reporte de eventos biométricos generado:', res.eventos.length, 'eventos');
       },
       error: (err) => {
         console.error('Error al generar reporte de eventos biométricos:', err);
@@ -278,25 +278,77 @@ export class ReportesComponent implements OnInit {
     });
   }
 
- onTipoFiltroBiometricosChange() {
-    if (this.tipoFiltroBiometricos === 'mes') {
-      this.diaEspecifico = '';
-      this.fechaDesde = '';
-      this.fechaHasta = '';
-    } else if (this.tipoFiltroBiometricos === 'dia') {
-      this.mesSeleccionado = '';
-      this.fechaDesde = '';
-      this.fechaHasta = '';
-    } else if (this.tipoFiltroBiometricos === 'rango') {
-      this.mesSeleccionado = '';
-      this.diaEspecifico = '';
-      // Inicializar rango si está vacío
-      if (!this.fechaDesde || !this.fechaHasta) {
-        this.inicializarFechasPorDefecto();
+  // Método para sincronizar marcajes anteriores
+  sincronizarMarcajesAnteriores() {
+    if (!this.fechaDesde || !this.fechaHasta) {
+      alert('Seleccione las fechas desde y hasta para sincronizar.');
+      return;
+    }
+
+    // Validar rango de fechas
+    const desde = new Date(this.fechaDesde);
+    const hasta = new Date(this.fechaHasta);
+    
+    if (desde > hasta) {
+      alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta".');
+      return;
+    }
+
+    // Validar que el rango no sea muy extenso
+    const diffTime = Math.abs(hasta.getTime() - desde.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 31) {
+      if (!confirm(`Está solicitando sincronizar ${diffDays} días. Esto puede tomar mucho tiempo. ¿Desea continuar?`)) {
+        return;
       }
     }
-    this.eventosBiometricos = [];
+
+    this.sincronizandoMarcajes = true;
+
+    this.repService.sincronizarMarcajesAnteriores(this.fechaDesde, this.fechaHasta).subscribe({
+      next: (res) => {
+        this.sincronizandoMarcajes = false;
+        if (res.success) {
+          alert(`Sincronización completada:\n
+            Eventos insertados: ${res.eventos}\n
+            Duplicados omitidos: ${res.duplicados}\n
+            Asistencias procesadas: ${res.asistencias}`);
+          
+          // Opcional: generar reporte automáticamente después de sincronizar
+          this.generarReporteBiometricos();
+        } else {
+          alert('Error al sincronizar marcajes: ' + res.message);
+        }
+      },
+      error: (err) => {
+        this.sincronizandoMarcajes = false;
+        console.error('Error sincronizando marcajes:', err);
+        alert('Error al sincronizar marcajes: ' + err.message);
+      }
+    });
   }
+
+// Modificar onTipoFiltroBiometricosChange para incluir la nueva opción
+onTipoFiltroBiometricosChange() {
+  if (this.tipoFiltroBiometricos === 'mes') {
+    this.diaEspecifico = '';
+    this.fechaDesde = '';
+    this.fechaHasta = '';
+  } else if (this.tipoFiltroBiometricos === 'dia') {
+    this.mesSeleccionado = '';
+    this.fechaDesde = '';
+    this.fechaHasta = '';
+  } else if (this.tipoFiltroBiometricos === 'rango' || this.tipoFiltroBiometricos === 'marcajes_anteriores') {
+    this.mesSeleccionado = '';
+    this.diaEspecifico = '';
+    // Inicializar rango si está vacío
+    if (!this.fechaDesde || !this.fechaHasta) {
+      this.inicializarFechasPorDefecto();
+    }
+  }
+  this.eventosBiometricos = [];
+}
   
 
 obtenerResumen() {
