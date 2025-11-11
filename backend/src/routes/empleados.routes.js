@@ -2,7 +2,10 @@ const express = require('express');
 const db = require('../db.js');
 const { audit } = require('../utils/audit.js');
 const router = express.Router();
-const biometricSvc = require('../services/biometric/hikvision.service');
+const path = require('path');
+const { exec } = require('child_process');
+const { requireAuth } = require('../middlewares/auth');
+
 
 //  helpers 
 function isISODate(d) { return /^\d{4}-\d{2}-\d{2}$/.test(String(d||'')); }
@@ -390,6 +393,12 @@ class EmpleadosModel {
     }
 
 
+
+
+
+
+  }
+
   // Liberar empleados cuyo turno expiró
   router.post('/liberar-expirados', async (_req, res) => {
     try {
@@ -415,7 +424,65 @@ class EmpleadosModel {
     }
   });
 
-}
+    // Ruta para ejecutar manualmente la sincronización de empleados desde biométricos
+  router.post('/sync-biometric', requireAuth, async (req, res) => {
+
+    try {
+      const scriptPath = path.join(__dirname, '../scripts/sync_biometric_users.js');
+      
+      // Ejecutar el script
+      exec(`node "${scriptPath}"`, { 
+        cwd: path.join(__dirname, '..'),
+        env: { ...process.env, NODE_PATH: '.' }
+      }, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error ejecutando sync_biometric_users:', error);
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Error ejecutando la sincronización',
+            error: error.message 
+          });
+        }
+        
+        if (stderr) {
+          console.warn('Advertencias en sincronización:', stderr);
+        }
+
+        console.log('Sincronización completada:', stdout);
+
+        // Contar empleados recién insertados (opcional)
+        db.query(`
+          SELECT COUNT(*) as total 
+          FROM empleados 
+          WHERE DATE(creado_en) = CURDATE()
+        `).then(([rows]) => {
+          const totalEmpleados = rows[0]?.total || 0;
+          
+          res.json({ 
+            success: true, 
+            message: 'Sincronización de empleados completada correctamente',
+            totalEmpleados: totalEmpleados,
+            output: stdout
+          });
+        }).catch(countError => {
+          console.error('Error contando empleados:', countError);
+          res.json({ 
+            success: true, 
+            message: 'Sincronización completada (error contando empleados)',
+            output: stdout
+          });
+        });
+      });
+
+    } catch (err) {
+      console.error('Error en ruta de sincronización de empleados:', err);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error interno del servidor',
+        error: err.message 
+      });
+    }
+  });
 
   //  RUTAS CRUD 
   router.get('/', EmpleadosController.getAllEmpleados);
@@ -426,6 +493,4 @@ class EmpleadosModel {
   router.delete('/:id', EmpleadosController.deactivateEmpleado);
   router.delete('/:id/permanent', EmpleadosController.deleteEmpleado);
   router.patch('/:id/activate', EmpleadosController.activateEmpleado);
-
-
   module.exports = router;
