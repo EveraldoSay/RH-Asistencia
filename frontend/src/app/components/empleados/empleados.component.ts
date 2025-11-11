@@ -193,6 +193,33 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
+    syncBiometricUsers() {
+    if (!confirm('La consulta tardara un momento. ¿Desea continuar?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+
+    this.empleadosService.syncBiometricUsers().subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        if (response.success) {
+          this.showToast('success', 'Sincronización completada exitosamente');
+          // Recargar la lista de empleados
+          this.loadEmpleados();
+        } else {
+          this.error = response.error || 'Error en la sincronización';
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = 'Error de conexión al servidor';
+        console.error('Error sincronizando empleados:', err);
+      }
+    });
+  }
+
   importarBiometrico() {
     this.loading = true;
     this.empleadosService.importarDesdeBiometrico().subscribe({
