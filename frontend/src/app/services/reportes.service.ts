@@ -58,4 +58,13 @@ getEventosBiometricos(fecha: string, tipo: string = 'mes', empleadoId?: number, 
   actualizarBiometrico() {
     return this.http.post<any>(`${API}/actualizar-biometrico`, {});
   }
+
+  // En reportes.service.ts - agregar este método
+sincronizarMarcajesAnteriores(fechaDesde: string, fechaHasta: string) {
+  const params = new HttpParams()
+    .set('desde', fechaDesde)
+    .set('hasta', fechaHasta);
+    
+  return this.http.post<any>(`${API}/sincronizar-marcajes-anteriores`, {}, { params });
+}
 }
