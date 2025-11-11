@@ -17,7 +17,6 @@ const asignacionesRoutes = require('./src/routes/asignaciones.routes.js');
 const attachActor     = require('./src/middlewares/actor.js');
 const auditRouter     = require('./src/routes/audit.routes.js');
 const reportesRouter  = require('./src/routes/reportes.routes.js');
-const reportesRoutes  = require('./src/routes/reportes.routes.js');
 const biometricPushRoutes = require('./src/routes/biometric.push.routes.js');
 
 
@@ -46,7 +45,6 @@ app.use('/api/asignaciones', requireAuth, requireRRHHorJefe, asignacionesRoutes)
 app.use('/api/audit',        requireAuth, attachActor, auditRouter);
 app.use('/api/audit', requireAuth, attachActor, auditRouter);
 app.use('/api/reportes', requireAuth, requireRRHHorJefe, reportesRouter);
-app.use('/api/reportes', requireAuth, requireRRHHorJefe, reportesRoutes);
 app.use('/api', biometricPushRoutes);
 
 
