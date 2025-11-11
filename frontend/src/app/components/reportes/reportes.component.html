@@ -27,6 +27,7 @@
           <option value="mes">Mes Completo</option>
           <option value="dia">Día Específico</option>
           <option value="rango">Rango de Fechas</option>
+           <option value="marcajes_anteriores">Marcajes Anteriores</option>
         </select>
       </div>
 
@@ -58,6 +59,25 @@
           <i class="fa fa-calendar"></i>
         </div>
       </div>
+
+      <!-- Nueva sección para Marcajes Anteriores -->
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
+        <label>Desde:</label>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaDesde" />
+          <i class="fa fa-calendar"></i>
+        </div>
+      </div>
+
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
+        <label>Hasta:</label>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaHasta" />
+          <i class="fa fa-calendar"></i>
+        </div>
+      </div>
+
+
 
 
       <!-- En reportes.component.html - actualizar la sección de búsqueda -->
@@ -142,6 +162,14 @@
               [disabled]="registros.length === 0 && eventosBiometricos.length === 0">
         <span>Descargar PDF</span>
       </button>
+
+        <button (click)="sincronizarMarcajesAnteriores()" 
+                *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
+                class="btn-marcajes-anteriores"
+                [disabled]="sincronizandoMarcajes || !fechaDesde || !fechaHasta">
+          <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
+          <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
+        </button>
     </div>
   </div>
 
