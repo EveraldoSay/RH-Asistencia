@@ -179,8 +179,6 @@ const path = require('path');
   router.get('/eventos-biometricos', requireAuth, async (req, res) => {
     try {
       const { mes, dia, empleado_id, desde, hasta } = req.query;
-      console.log('Parámetros recibidos para eventos biométricos:', { mes, dia, empleado_id, desde, hasta });
-
       // Validar que se proporcione al menos un tipo de filtro de fecha
       if (!mes && !dia && !desde) {
         return res.status(400).json({ 
@@ -195,18 +193,15 @@ const path = require('path');
         // Filtro por rango de fechas personalizado
         fechaDesde = new Date(desde).toISOString().split('T')[0];
         fechaHasta = new Date(hasta).toISOString().split('T')[0];
-        console.log(`Buscando eventos desde ${fechaDesde} hasta ${fechaHasta}`);
       } else if (dia) {
         // Filtro por día específico
         fechaDesde = new Date(dia).toISOString().split('T')[0];
         fechaHasta = fechaDesde;
-        console.log(`Buscando eventos para el día específico: ${fechaDesde}`);
       } else {
         // Filtro por mes (comportamiento original)
         const [year, month] = mes.split('-').map(Number);
         fechaDesde = new Date(year, month - 1, 1).toISOString().split('T')[0];
         fechaHasta = new Date(year, month, 0).toISOString().split('T')[0];
-        console.log(`Buscando eventos desde ${fechaDesde} hasta ${fechaHasta} (mes completo)`);
       }
 
       // Construir la consulta dinámicamente
@@ -239,8 +234,6 @@ const path = require('path');
 
       const [rawEventos] = await db.query(query, params);
 
-      console.log(`Total eventos crudos: ${rawEventos.length}`);
-
       // Agrupar eventos por empleado y fecha
       const agrupados = {};
       for (const ev of rawEventos) {
@@ -268,8 +261,6 @@ const path = require('path');
           });
         }
       }
-
-      console.log(`Total eventos filtrados (solo entrada/salida): ${eventos.length}`);
 
       res.json({
         success: true,
@@ -320,8 +311,6 @@ const path = require('path');
   // Ruta para ejecutar manualmente la sincronización biométrica
   router.post('/actualizar-biometrico', requireAuth, async (req, res) => {
     try {
-      console.log('Ejecutando sincronización biométrica manual...');
-      
       // Ruta al script de sincronización
       const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs.js');
       
@@ -338,8 +327,6 @@ const path = require('path');
             error: error.message 
           });
         }
-
-        console.log('Sincronización biométrica completada:', stdout);
         
         if (stderr) {
           console.warn('Advertencias en sincronización:', stderr);
@@ -372,6 +359,99 @@ const path = require('path');
 
     } catch (err) {
       console.error('Error en ruta de actualización biométrica:', err);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error interno del servidor',
+        error: err.message 
+      });
+    }
+  });
+
+  // En reportes.routes.js - agregar esta ruta
+  router.post('/sincronizar-marcajes-anteriores', requireAuth, async (req, res) => {
+    try {
+      const { desde, hasta } = req.query;
+      
+      if (!desde || !hasta) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Se requieren las fechas desde y hasta' 
+        });
+      }
+
+      // Validar formato de fechas
+      const fechaDesde = new Date(desde);
+      const fechaHasta = new Date(hasta);
+      
+      if (isNaN(fechaDesde.getTime()) || isNaN(fechaHasta.getTime())) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Formato de fecha inválido. Use YYYY-MM-DD' 
+        });
+      }
+
+      if (fechaDesde > fechaHasta) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'La fecha desde no puede ser mayor que la fecha hasta' 
+        });
+      }
+
+      // Validar que el rango no sea muy extenso (máximo 31 días)
+      const diffTime = Math.abs(fechaHasta - fechaDesde);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 31) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'El rango máximo permitido es de 31 días' 
+        });
+      }
+
+      // Ruta al script de sincronización histórica
+      const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs_historical.js');
+      
+      console.log(`Ejecutando sincronización histórica: ${desde} a ${hasta}`);
+
+      // Ejecutar el script con los parámetros
+      exec(`node "${scriptPath}" "${desde}" "${hasta}"`, { 
+        cwd: path.join(__dirname, '..'),
+        env: { ...process.env, NODE_PATH: '.' }
+      }, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error ejecutando sync_biometric_logs_historical:', error);
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Error ejecutando la sincronización histórica',
+            error: error.message 
+          });
+        }
+        
+        if (stderr) {
+          console.warn('Advertencias en sincronización histórica:', stderr);
+        }
+
+        // Extraer resultados del output
+        const output = stdout.toString();
+        console.log('Output sincronización histórica:', output);
+
+        // Buscar estadísticas en el output
+        const eventosMatch = output.match(/Eventos insertados: (\d+)/);
+        const duplicadosMatch = output.match(/Duplicados omitidos: (\d+)/);
+        const asistenciasMatch = output.match(/Asistencias procesadas: (\d+)/);
+
+        res.json({ 
+          success: true, 
+          message: 'Sincronización histórica completada',
+          eventos: eventosMatch ? parseInt(eventosMatch[1]) : 0,
+          duplicados: duplicadosMatch ? parseInt(duplicadosMatch[1]) : 0,
+          asistencias: asistenciasMatch ? parseInt(asistenciasMatch[1]) : 0,
+          output: output
+        });
+      });
+
+    } catch (err) {
+      console.error('Error en ruta de sincronización histórica:', err);
       res.status(500).json({ 
         success: false, 
         message: 'Error interno del servidor',
