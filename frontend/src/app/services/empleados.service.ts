@@ -138,4 +138,9 @@ importarDesdeBiometrico(): Observable<any> {
     );
   }
 
+  // En empleados.service.ts - Agrega este método en la clase
+  syncBiometricUsers(): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.empleadosUrl}/sync-biometric`, {});
+  }
+
 }
