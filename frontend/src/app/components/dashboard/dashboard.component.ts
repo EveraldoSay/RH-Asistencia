@@ -129,7 +129,7 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // 2️⃣ Gráfico de Asistencia Semanal
+    // Gráfico de Asistencia Semanal
     if (this.data.asistenciaSemanal && this.data.asistenciaSemanal.length > 0) {
       const ctx2 = document.getElementById('asistenciaChart') as HTMLCanvasElement;
       const labels = this.data.asistenciaSemanal.map((d: any) => d.fecha.slice(5));
