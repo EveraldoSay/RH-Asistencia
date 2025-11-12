@@ -34,8 +34,6 @@ async function fetchHistoricalEvents(device, fechaDesde, fechaHasta) {
   let more = true;
   let intento = 1;
 
-  console.log(`Buscando eventos en ${device.ip} desde ${fechaDesde} hasta ${fechaHasta}`);
-
   while (more) {
     // Crear nuevo cliente en cada iteración para renovar nonce
     const client = new DigestFetch(device.user, device.pass);
@@ -74,8 +72,6 @@ async function fetchHistoricalEvents(device, fechaDesde, fechaHasta) {
       const data = await res.json();
       const list = data?.AcsEvent?.InfoList || [];
       const status = data?.AcsEvent?.responseStatusStrg || '';
-
-      console.log(`Dispositivo ${device.ip}: Encontrados ${list.length} eventos en iteración ${intento}`);
 
       allEvents.push(...list);
 
@@ -154,13 +150,11 @@ async function saveHistoricalEvents(events) {
     }
   }
 
-  console.log(`Eventos históricos: ${insertados} insertados, ${duplicados} duplicados omitidos`);
   return { insertados, duplicados };
 }
 
 // === Procesar asistencias para el rango de fechas ===
 async function processHistoricalAttendance(fechaDesde, fechaHasta) {
-  console.log(`Procesando asistencias históricas desde ${fechaDesde} hasta ${fechaHasta}`);
 
   // Obtener todos los empleados que tienen eventos en el rango
   const [empleados] = await db.query(`
@@ -264,48 +258,34 @@ async function processHistoricalAttendance(fechaDesde, fechaHasta) {
     procesadas++;
   }
 
-  console.log(`Asistencias históricas procesadas: ${procesadas}`);
   return procesadas;
 }
 
 // === Función principal para búsqueda histórica ===
 async function syncHistoricalBiometricLogs(fechaDesde, fechaHasta) {
   try {
-    console.log(`=== INICIANDO SINCRONIZACIÓN HISTÓRICA ===`);
-    console.log(`Rango: ${fechaDesde} a ${fechaHasta}`);
 
     const allEvents = [];
 
     // Buscar eventos en todos los dispositivos
     for (const dev of devices) {
-      console.log(`Buscando en dispositivo: ${dev.ip}`);
       try {
         const evs = await fetchHistoricalEvents(dev, fechaDesde, fechaHasta);
         allEvents.push(...evs);
-        console.log(`Dispositivo ${dev.ip}: ${evs.length} eventos encontrados`);
       } catch (err) {
         console.error(`Error en dispositivo ${dev.ip}:`, err.message);
       }
     }
 
     if (allEvents.length === 0) {
-      console.log('No se encontraron eventos históricos en el rango especificado.');
       return { success: true, message: 'No se encontraron eventos', eventos: 0, procesados: 0 };
     }
-
-    console.log(`Total de eventos encontrados: ${allEvents.length}`);
 
     // Guardar eventos
     const { insertados, duplicados } = await saveHistoricalEvents(allEvents);
 
     // Procesar asistencias
     const procesadas = await processHistoricalAttendance(fechaDesde, fechaHasta);
-
-    console.log(`=== SINCRONIZACIÓN HISTÓRICA COMPLETADA ===`);
-    console.log(`Eventos insertados: ${insertados}`);
-    console.log(`Duplicados omitidos: ${duplicados}`);
-    console.log(`Asistencias procesadas: ${procesadas}`);
-
     return {
       success: true,
       message: 'Sincronización histórica completada',
@@ -330,8 +310,6 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   
   if (args.length < 2) {
-    console.log('Uso: node sync_biometric_logs_historical.js <fecha_desde> <fecha_hasta>');
-    console.log('Ejemplo: node sync_biometric_logs_historical.js 2024-01-01 2024-01-31');
     process.exit(1);
   }
 

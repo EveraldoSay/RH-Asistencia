@@ -19,7 +19,7 @@
     
     <div class="selection-options">
       <div class="option-card" (click)="abrirVistaRotativos()">
-        <div class="option-icon">🔄</div>
+        <div class="option-icon"></div>
         <h3>Turnos Rotativos</h3>
         <p>Asigne turnos con personal variable y horarios individualizados según las necesidades diarias</p>
         <div style="margin-top: 1rem; padding: 0.5rem; background: #f0f9ff; border-radius: 8px;">
@@ -28,7 +28,7 @@
       </div>
       
       <div class="option-card" (click)="abrirVistaFijos()">
-        <div class="option-icon">⏱️</div>
+        <div class="option-icon"></div>
         <h3>Turnos Fijos</h3>
         <p>Asigne turnos con personal estable y horarios uniformes para una operación consistente</p>
         <div style="margin-top: 1rem; padding: 0.5rem; background: #f0fdf4; border-radius: 8px;">
@@ -40,13 +40,13 @@
 
   <!-- Vista LISTA (rotativos/fijos) - Donde se muestran las configuraciones guardadas -->
   <section *ngIf="vista==='LISTA_ROTATIVOS' || vista==='LISTA_FIJOS'" class="card">
-      <h2 *ngIf="vista==='LISTA_ROTATIVOS'">🔄 Turnos Rotativos ({{ configuracionesRotativas.length }})</h2>
-      <h2 *ngIf="vista==='LISTA_FIJOS'">⏱️ Turnos Fijos ({{ configuracionesFijas.length }})</h2>
+      <h2 *ngIf="vista==='LISTA_ROTATIVOS'">Turnos Rotativos ({{ configuracionesRotativas.length }})</h2>
+      <h2 *ngIf="vista==='LISTA_FIJOS'">Turnos Fijos ({{ configuracionesFijas.length }})</h2>
 
     <div class="selection-options">
       <!-- Boton de crear -->
       <div class="option-card" (click)="abrirFormulario('NUEVO')">
-        <div class="option-icon">📅</div>
+        <div class="option-icon"></div>
         <h3>Crear nuevo {{ vista==='LISTA_ROTATIVOS' ? 'Rotativo' : 'Fijo' }}</h3>
         <p>Configurar un nuevo grupo de turnos desde cero</p>
       </div>
@@ -56,7 +56,7 @@
           *ngFor="let conf of (vista==='LISTA_ROTATIVOS' ? configuracionesRotativas : configuracionesFijas); trackBy: trackByConfigId"
           (click)="abrirFormulario(conf.id)">
         <button class="delete-conf-btn" (click)="eliminarConfiguracion(conf, vista); $event.stopPropagation()">×</button>
-        <div class="option-icon">{{ vista==='LISTA_ROTATIVOS' ? '🔄' : '📌' }}</div>
+        <div class="option-icon">{{ vista==='LISTA_ROTATIVOS' ? '' : '' }}</div>
         <h3>{{ conf.areaNombre }}</h3>
         <p>{{ conf.jefeNombre }} |  {{ conf.empleadosCount }} empleados</p>
         <p *ngIf="conf.tipo === 'FIJO'" style="color: #059669; font-size: 0.9rem;">
@@ -190,15 +190,15 @@
               <!-- Estado del área - MEJORADO -->
               <div class="estado-area">
                 <span *ngIf="!e.area_id" class="estado disponible">
-                  ✅ Disponible
+                  Disponible
                 </span>
                 <span *ngIf="e.area_id && e.area_id === areaJefeForm.controls.area_id.value" 
                       class="estado asignado-actual">
-                  🔄 En esta área: {{ getAreaNombre(e.area_id) }}
+                  En esta área: {{ getAreaNombre(e.area_id) }}
                 </span>
                 <span *ngIf="e.area_id && e.area_id !== areaJefeForm.controls.area_id.value" 
                       class="estado asignado-otra">
-                  ❌ Ocupado en: {{ getAreaNombre(e.area_id) }}
+                  Ocupado en: {{ getAreaNombre(e.area_id) }}
                 </span>
               </div>
               

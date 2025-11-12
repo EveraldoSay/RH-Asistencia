@@ -7,7 +7,7 @@ const { requireAuth, requireAdmin } = auth;
 
 router.use(requireAuth);
 
-// ---------- 🔌 TEST CONEXIÓN ----------
+// ---------- TEST CONEXIÓN ----------
 router.get('/test-connection', requireAdmin, async (_req, res) => {
   try {
     const data = await svc.testConnectionAll();

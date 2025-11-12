@@ -19,6 +19,7 @@ export class DashboardComponent implements OnInit {
     turnosFijos: 0,
     turnosRotativos: 0,
     personalSinTurno: 0,
+    // alertas: 0,
     proximosTurnos: {
       manana: { enfermeros: 0, medicos: 0 },
       tarde: { enfermeros: 0, medicos: 0 },
@@ -37,7 +38,7 @@ export class DashboardComponent implements OnInit {
     this.loadDashboardData();
   }
 
-  /** arga los datos del dashboard */
+  /** 🔹 Carga los datos del dashboard */
   loadDashboardData(): void {
     this.loading = true;
 
@@ -80,7 +81,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** Verifica si hay datos válidos */
+  /** 🔹 Verifica si hay datos válidos */
   private hasAnyData(d: DashboardSummary): boolean {
     if (!d) return false;
 
@@ -92,12 +93,13 @@ export class DashboardComponent implements OnInit {
     return hasPersonalData || hasTurnosData || hasAsistenciaData || hasDistribucionData;
   }
 
-  /** Renderiza los gráficos del dashboard */
+  /** 🔹 Renderiza los gráficos del dashboard */
   private renderCharts(): void {
+    // Limpia los gráficos previos
     Chart.getChart("areaChart")?.destroy();
     Chart.getChart("asistenciaChart")?.destroy();
 
-    // Gráfico de Distribución de Personal por Área
+    // 1️⃣ Gráfico de Distribución de Personal por Área
     if (this.data.distribucionArea && this.data.distribucionArea.length > 0) {
       const ctx1 = document.getElementById('areaChart') as HTMLCanvasElement;
       const areas = this.data.distribucionArea.map((a: any) => a.area || 'Sin área');
@@ -127,7 +129,7 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // Gráfico de Asistencia Semanal
+    // 2️⃣ Gráfico de Asistencia Semanal
     if (this.data.asistenciaSemanal && this.data.asistenciaSemanal.length > 0) {
       const ctx2 = document.getElementById('asistenciaChart') as HTMLCanvasElement;
       const labels = this.data.asistenciaSemanal.map((d: any) => d.fecha.slice(5));
@@ -148,7 +150,7 @@ export class DashboardComponent implements OnInit {
         },
         options: {
           scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+            y: { beginAtZero: true, },
             x: { grid: { display: false } }
           },
           plugins: { legend: { display: false } }
