@@ -614,7 +614,7 @@ const { sendEmail} = require('../services/email.service.js');
       return resultadosCorreos;
     }
 
-    // ========================= EMPLEADOS DISPONIBLES PARA REEMPLAZO (solo con rol y área) =========================
+    // ========================= EMPLEADOS DISPONIBLES PARA REEMPLAZO (SOLO SIN ÁREA) =========================
     router.get("/reemplazos/disponibles", async (req, res) => {
       try {
         const { fecha, turno_id } = req.query;
@@ -623,13 +623,7 @@ const { sendEmail} = require('../services/email.service.js');
           return res.status(400).json({ success: false, message: "Falta la fecha" });
         }
 
-        
-
-        // 🔹 Nueva lógica:
-        // 1) Solo empleados activos
-        // 2) Con rol asignado (e.rol_id IS NOT NULL)
-        // 3) Con área asignada (e.area_id IS NOT NULL)
-        // 4) Que no estén asignados ya a otro turno ese mismo día
+        // 🔹 CORREGIDO: Solo empleados SIN área asignada (area_id IS NULL)
         const [rows] = await db.query(`
           SELECT 
             e.id, 
@@ -643,16 +637,17 @@ const { sendEmail} = require('../services/email.service.js');
           LEFT JOIN areas ar ON e.area_id = ar.id
           LEFT JOIN roles_empleado r ON e.rol_id = r.id
           WHERE e.activo = 1
-            AND e.rol_id IS NOT NULL         
-            AND e.area_id IS NOT NULL        
-            AND e.id NOT IN (                 
+            AND e.rol_id IS NOT NULL         -- Con rol asignado
+            AND e.area_id IS NULL            -- 🔥 SOLO EMPLEADOS SIN ÁREA ASIGNADA
+            AND e.id NOT IN (                -- Que no tengan asignaciones en esa fecha
               SELECT a.empleado_id
               FROM asignacion_turnos a
               WHERE ? BETWEEN a.fecha_inicio AND a.fecha_fin
                 AND a.eliminado_en IS NULL
             )
-          ORDER BY ar.nombre_area, e.nombre_completo ASC;
+          ORDER BY e.nombre_completo ASC;
         `, [fecha]);
+
         res.json({ success: true, data: rows });
 
       } catch (error) {

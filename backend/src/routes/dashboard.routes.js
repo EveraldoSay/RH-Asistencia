@@ -34,11 +34,12 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
       'SELECT COUNT(*) AS c FROM empleados WHERE eliminado_en IS NULL'
     );
 
-    // 4) Turnos hoy
+    // 4) Turnos Hoy - CORREGIDO: Contar asignaciones activas HOY
     const [[{ c: turnosHoy }]] = await db.query(`
-      SELECT COUNT(DISTINCT at.empleado_id) AS c 
+      SELECT COUNT(*) AS c 
       FROM asignacion_turnos at 
       WHERE CURDATE() BETWEEN at.fecha_inicio AND IFNULL(at.fecha_fin, CURDATE())
+        AND at.eliminado_en IS NULL
         AND EXISTS (
           SELECT 1 FROM empleados e 
           WHERE e.id = at.empleado_id 
@@ -47,21 +48,24 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
         )
     `);
 
-    // 5) Turnos fijos
+    // 5) Turnos Fijos - CORREGIDO: Contar configuraciones activas de tipo FIJO
     const [[{ c: turnosFijos }]] = await db.query(`
-      SELECT COUNT(DISTINCT at.empleado_id) AS c 
-      FROM asignacion_turnos at
-      WHERE at.fecha_fin IS NULL 
-        OR at.fecha_fin > CURDATE()
+      SELECT COUNT(*) AS c 
+      FROM configuraciones_turnos ct
+      WHERE ct.tipo = 'FIJO'
+        AND ct.activo = 1
+        AND ct.eliminado_en IS NULL
+        AND (ct.fecha_fin IS NULL OR ct.fecha_fin >= CURDATE())
     `);
 
-    // 6) Turnos rotativos
+    // 6) Turnos Rotativos - CORREGIDO: Contar configuraciones activas de tipo ROTATIVO
     const [[{ c: turnosRotativos }]] = await db.query(`
-      SELECT COUNT(DISTINCT at.empleado_id) AS c 
-      FROM asignacion_turnos at
-      WHERE at.fecha_fin IS NOT NULL 
-        AND at.fecha_fin > CURDATE()
-        AND DATEDIFF(at.fecha_fin, at.fecha_inicio) <= 30
+      SELECT COUNT(*) AS c 
+      FROM configuraciones_turnos ct
+      WHERE ct.tipo = 'ROTATIVO'
+        AND ct.activo = 1
+        AND ct.eliminado_en IS NULL
+        AND (ct.fecha_fin IS NULL OR ct.fecha_fin >= CURDATE())
     `);
 
     // 7) Personal sin turno (SIN ÁREA ASIGNADA) - CORREGIDO
@@ -70,15 +74,16 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
       FROM empleados e
       WHERE e.activo = 1 
         AND e.eliminado_en IS NULL
-        AND e.area_id IS NULL  -- Solo empleados sin área asignada
+        AND e.area_id IS NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM asignacion_turnos at 
+          WHERE at.empleado_id = e.id 
+          AND at.eliminado_en IS NULL
+          AND CURDATE() BETWEEN at.fecha_inicio AND IFNULL(at.fecha_fin, CURDATE())
+        )
     `);
 
-    // 8) Alertas pendientes
-    // const [[{ c: alertas }]] = await db.query(
-    //   "SELECT COUNT(*) AS c FROM alertas WHERE estado = 'PENDIENTE'"
-    // );
-
-    // 9) Próximos turnos
+    // 8) Próximos turnos
     const [prox] = await db.query(`
       SELECT
         t.nombre_turno AS turno,
@@ -88,14 +93,15 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
       JOIN empleados e ON e.id = at.empleado_id
       LEFT JOIN roles_empleado re ON re.id = e.rol_id
       WHERE DATE_ADD(CURDATE(), INTERVAL 1 DAY) BETWEEN at.fecha_inicio AND at.fecha_fin
-      AND e.eliminado_en IS NULL
+        AND at.eliminado_en IS NULL
+        AND e.eliminado_en IS NULL
     `);
 
-    // const bucket = {
-    //   manana: { enfermeros: 0, medicos: 0 },
-    //   tarde:  { enfermeros: 0, medicos: 0 },
-    //   noche:  { enfermeros: 0, medicos: 0 },
-    // };
+    const bucket = {
+      manana: { enfermeros: 0, medicos: 0 },
+      tarde:  { enfermeros: 0, medicos: 0 },
+      noche:  { enfermeros: 0, medicos: 0 },
+    };
 
     for (const r of prox) {
       const name = (r.turno || '').toLowerCase();
@@ -111,17 +117,17 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
       else if (role.includes('medic')) bucket[slot].medicos += 1;
     }
 
-    // 10) Asistencia semanal
+    // 9) Asistencia semanal
     const days = last7Days();
     const [asistRaw] = await db.query(`
-      SELECT fecha AS dia, COUNT(*) AS entradas
-      FROM asistencias
-      WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-      GROUP BY fecha
+      SELECT DATE(fecha_hora) AS dia, COUNT(*) AS entradas
+      FROM registros_asistencia
+      WHERE fecha_hora >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        AND tipo_evento = 'ENTRADA'
+      GROUP BY DATE(fecha_hora)
     `);
 
-
-    // 11) Distribución de personal por área
+    // 10) Distribución de personal por área
     const [distribucionArea] = await db.query(`
       SELECT 
         IFNULL(a.nombre_area, 'Sin área') AS area,
@@ -133,7 +139,6 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
       ORDER BY cantidad DESC
     `);
 
-    
     const map = new Map(asistRaw.map(r => [r.dia.toISOString?.() ? r.dia.toISOString().slice(0,10) : String(r.dia), r.entradas]));
     const asistenciaSemanal = days.map(d => ({ fecha: d, entradas: map.get(d) || 0 }));
 
@@ -147,7 +152,7 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
         turnosFijos,
         turnosRotativos,
         personalSinTurno,
-        // alertas,
+        proximosTurnos: bucket,
         asistenciaSemanal,
         distribucionArea
       }

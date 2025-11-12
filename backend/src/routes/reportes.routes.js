@@ -410,8 +410,6 @@ const path = require('path');
 
       // Ruta al script de sincronización histórica
       const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs_historical.js');
-      
-      console.log(`Ejecutando sincronización histórica: ${desde} a ${hasta}`);
 
       // Ejecutar el script con los parámetros
       exec(`node "${scriptPath}" "${desde}" "${hasta}"`, { 
@@ -433,7 +431,6 @@ const path = require('path');
 
         // Extraer resultados del output
         const output = stdout.toString();
-        console.log('Output sincronización histórica:', output);
 
         // Buscar estadísticas en el output
         const eventosMatch = output.match(/Eventos insertados: (\d+)/);

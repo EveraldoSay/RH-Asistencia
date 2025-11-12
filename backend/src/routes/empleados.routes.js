@@ -448,8 +448,6 @@ class EmpleadosModel {
           console.warn('Advertencias en sincronización:', stderr);
         }
 
-        console.log('Sincronización completada:', stdout);
-
         // Contar empleados recién insertados (opcional)
         db.query(`
           SELECT COUNT(*) as total 
