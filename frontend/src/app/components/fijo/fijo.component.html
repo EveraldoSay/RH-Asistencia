@@ -112,15 +112,15 @@
             <!-- Estado del área -->
             <div class="estado-area">
               <span *ngIf="!e.area_id" class="estado disponible">
-                ✅ Disponible
+                Disponible
               </span>
               <span *ngIf="e.area_id && e.area_id === areaJefeForm.controls.area_id.value" 
                     class="estado asignado-actual">
-                🔄 En esta área
+                En esta área
               </span>
               <span *ngIf="e.area_id && e.area_id !== areaJefeForm.controls.area_id.value" 
                     class="estado asignado-otra">
-                ❌ Ocupado en: {{ getAreaNombre(e.area_id) }}
+                Ocupado en: {{ getAreaNombre(e.area_id) }}
               </span>
             </div>
           </div>
@@ -246,7 +246,7 @@
       <div class="resumen" *ngIf="turnoSeleccionado">
         <h3>Resumen del turno fijo</h3>
         <div class="info-box success">
-          <p>✅ <strong>Turno permanente asignado</strong></p>
+          <p><strong>Turno permanente asignado</strong></p>
           <p class="muted">El jefe y todos los miembros del equipo mantendrán este turno hasta que sea modificado</p>
         </div>
         
