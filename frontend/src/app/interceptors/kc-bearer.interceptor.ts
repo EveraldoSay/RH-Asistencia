@@ -10,7 +10,7 @@ function isApi(req: HttpRequest<unknown>): boolean {
 
   return (
     req.url.startsWith(environment.apiBase) ||
-    req.url.startsWith('http://localhost:3000') ||
+    req.url.startsWith('http://localhost:8020') ||
     req.url.startsWith('/api')
   );
 }
