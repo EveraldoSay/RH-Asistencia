@@ -15,16 +15,27 @@ RUN npm install
 COPY . .
 
 # Construimos la aplicación para producción
-RUN npx ng build frontend --configuration=production
+# Nota: El output path en angular.json es "dist/frontend", por eso usamos esa ruta.
+RUN npx ng build --configuration=production
 
 # --- Etapa 2: Despliegue (Serve) ---
 # Usamos una imagen de Nginx ligera
 FROM nginx:1.25-alpine
 
 # Copiamos los archivos estáticos construidos de la etapa anterior
+# El path es dist/frontend/browser por el builder @angular/build:application
 COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
 
-# El archivo nginx.conf (que crearemos después) se montará
-# en /etc/nginx/conf.d/default.conf, así que no necesitamos copiarlo aquí.
+# Copiamos y preparamos el script de entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# El archivo nginx.conf se montará como un volumen, por lo que no se copia aquí.
 
 EXPOSE 80
+
+# Usamos el script como entrypoint para reemplazar las variables de entorno
+ENTRYPOINT ["/entrypoint.sh"]
+
+# El comando por defecto es iniciar Nginx en primer plano
+CMD ["nginx", "-g", "daemon off;"]

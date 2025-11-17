@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBase: 'http://localhost:8020/api',
+  apiBase: 'https://sigsa.hro.gob.gt/api',
   keycloak: {
     url: 'https://sso.hro.gob.gt',
     realm: 'Hospital-O',

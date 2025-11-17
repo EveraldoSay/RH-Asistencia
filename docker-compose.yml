@@ -66,6 +66,11 @@ services:
       - sigsa-net
     depends_on:
       - backend 
+    environment:
+      - API_BASE=${FRONTEND_API_BASE}
+      - KEYCLOAK_URL=${FRONTEND_KEYCLOAK_URL}
+      - KEYCLOAK_REALM=${FRONTEND_KEYCLOAK_REALM}
+      - KEYCLOAK_CLIENT_ID=${FRONTEND_KEYCLOAK_CLIENT_ID}
 
 networks:
   sigsa-net:
