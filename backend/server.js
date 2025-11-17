@@ -23,7 +23,7 @@ const biometricPushRoutes = require('./src/routes/biometric.push.routes.js');
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: ['http://localhost:8020', 'http://127.0.0.1:8020', 'http://localhost:4200'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
