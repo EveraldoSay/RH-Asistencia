@@ -136,24 +136,29 @@ async function saveEvents(events) {
 
 // === Proceso principal ===
 (async () => {
+  console.log('Iniciando sincronización de logs biométricos...');
   try {
     const allEvents = [];
 
     for (const dev of devices) {
+      console.log(`Obteniendo eventos de ${dev.ip}...`);
       const evs = await fetchEvents(dev);
       allEvents.push(...evs);
+      console.log(`Se obtuvieron ${evs.length} eventos de ${dev.ip}`);
     }
 
     if (!allEvents.length) {
-      console.warn('No se encontraron eventos para procesar.');
+      console.warn('No se encontraron eventos nuevos para procesar.');
       process.exit(0);
     }
+    console.log(`Total de eventos a procesar: ${allEvents.length}`);
 
     await saveEvents(allEvents);
     await processDailyAttendance();
+    console.log('Sincronización de logs biométricos completada.');
     process.exit(0);
   } catch (err) {
-    console.error('Error general:', err.message);
+    console.error('Error general en la sincronización de logs:', err.message);
     process.exit(1);
   }
 })();

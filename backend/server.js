@@ -19,6 +19,7 @@ const attachActor     = require('./src/middlewares/actor.js');
 const auditRouter     = require('./src/routes/audit.routes.js');
 const reportesRouter  = require('./src/routes/reportes.routes.js');
 const biometricPushRoutes = require('./src/routes/biometric.push.routes.js');
+require('./src/scripts/scheduler.js');
 
 
 const app = express();
