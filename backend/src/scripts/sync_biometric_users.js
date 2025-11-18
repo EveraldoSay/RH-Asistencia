@@ -100,20 +100,25 @@ async function saveToDatabase(users) {
 
 // Ejecución principal
 (async () => {
+  console.log('Iniciando sincronización de usuarios biométricos...');
   try {
     const results = [];
     for (const device of devices) {
+      console.log(`Obteniendo usuarios de ${device.ip}...`);
       const users = await fetchAllFromDevice(device);
       results.push(users);
+      console.log(`Se obtuvieron ${users.length} usuarios de ${device.ip}`);
     }
 
     const unified = unifyUsers(results);
+    console.log(`Total de usuarios unificados: ${unified.length}`);
 
     // Si quieres guardar en DB, descomenta la línea siguiente:
     await saveToDatabase(unified);
+    console.log('Sincronización de usuarios biométricos completada.');
     process.exit(0);
   } catch (err) {
-    console.error('Error general:', err);
+    console.error('Error general en la sincronización de usuarios:', err);
     process.exit(1);
   }
 })();
