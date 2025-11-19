@@ -499,6 +499,11 @@ CREATE TABLE `usuarios_sistema` (
 -- Dumping data for table `usuarios_sistema`
 --
 
+Truncate table registros_asistencia;
+
+ALTER TABLE registros_asistencia
+ADD UNIQUE INDEX unique_log_evento (empleado_id, fecha_hora, dispositivo_ip);
+
 LOCK TABLES `usuarios_sistema` WRITE;
 /*!40000 ALTER TABLE `usuarios_sistema` DISABLE KEYS */;
 /*!40000 ALTER TABLE `usuarios_sistema` ENABLE KEYS */;

@@ -96,41 +96,61 @@ async function fetchEvents(device) {
 // === Guardar eventos en registros_asistencia ===
 async function saveEvents(events) {
   let insertados = 0;
+  
+  // 1. Ordenar eventos por fecha
+  events.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+
+  // 2. Filtrar ráfagas (Debounce)
+  const cleanEvents = [];
+  const lastSeen = {}; // Mapa para guardar última hora por empleado
 
   for (const ev of events) {
-    if (!ev.empleado || !ev.fechaHora) continue;
+    if (!ev.empleado) continue;
+    
+    const key = `${ev.ip}_${ev.empleado}`;
+    const evTime = new Date(ev.fechaHora).getTime();
+    
+    // Si ya vimos a este empleado en este dispositivo hace menos de 60 segundos (60000ms), ignorar
+    if (lastSeen[key] && (evTime - lastSeen[key] < 60000)) {
+        continue; 
+    }
+    
+    lastSeen[key] = evTime;
+    cleanEvents.push(ev);
+  }
 
+  console.log(`Eventos recibidos: ${events.length} | Eventos únicos (filtrados): ${cleanEvents.length}`);
+
+  // 3. Insertar solo los eventos limpios
+  for (const ev of cleanEvents) {
     try {
-      // Intentar encontrar el empleado en la BD
       const [rows] = await db.query(
         'SELECT id FROM empleados WHERE numero_empleado = ? LIMIT 1',
         [ev.empleado]
       );
-
-      // Si no existe, se guardará como NULL pero con su número biométrico
+      
       const empleado_id = rows.length ? rows[0].id : null;
 
-    await db.query(
-      `
-      INSERT INTO registros_asistencia
-        (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
-      VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
-      `,
-      [
-        empleado_id,
-        ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
-        new Date(ev.fechaHora),
-        ev.ip,
-        ev.modo
-      ]
-    );
-
+      await db.query(
+        `
+        INSERT IGNORE INTO registros_asistencia
+          (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
+        VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
+        `,
+        [
+          empleado_id,
+          ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
+          new Date(ev.fechaHora),
+          ev.ip,
+          ev.modo
+        ]
+      );
       insertados++;
     } catch (err) {
       console.error(`Error insertando evento ${ev.empleado}: ${err.message}`);
     }
   }
-
+  console.log(`Total insertados en DB: ${insertados}`);
 }
 
 
