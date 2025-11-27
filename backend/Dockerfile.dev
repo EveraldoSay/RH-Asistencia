@@ -1,0 +1,17 @@
+# Usa la misma imagen de Node.js que el original
+FROM node:20-alpine
+
+# Establece el directorio de trabajo
+WORKDIR /usr/src/app
+
+# Copia package.json y package-lock.json
+COPY package*.json ./
+
+# Instala TODAS las dependencias (incluyendo devDependencies como nodemon)
+RUN npm install
+
+# Copia el resto del código. A partir de aquí, los cambios se sincronizarán con el volumen.
+COPY . .
+
+# El comando se especificará en el archivo docker-compose.override.yml
+# para iniciar el servidor de desarrollo.
