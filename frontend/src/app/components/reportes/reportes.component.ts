@@ -919,16 +919,33 @@ descargarPDFAsistencia() {
 
   formatearFecha(fechaString: string): string {
     if (!fechaString) return 'N/A';
-    
-    try {
+
+    // Pattern for DD-MM-YYYY or DD/MM/YYYY
+    const europeanDateRegex = /^(\d{2})[-/](\d{2})[-/](\d{4})/;
+    const match = fechaString.match(europeanDateRegex);
+
+    let fecha;
+
+    if (match) {
+      // If it matches DD-MM-YYYY, parse it manually
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+      const year = parseInt(match[3], 10);
+      fecha = new Date(Date.UTC(year, month, day));
+    } else {
+      // Otherwise, try to parse it as is (handles ISO format YYYY-MM-DD and full ISO strings)
       const dateStringForParsing = /^\d{4}-\d{2}-\d{2}$/.test(fechaString)
         ? `${fechaString}T00:00:00Z`
         : fechaString;
-      const fecha = new Date(dateStringForParsing);
-      return fecha.toLocaleDateString('es-GT', { timeZone: 'America/Guatemala' });
-    } catch (e) {
+      fecha = new Date(dateStringForParsing);
+    }
+
+    // Check if the created date is valid
+    if (isNaN(fecha.getTime())) {
       return 'Fecha inválida';
     }
+
+    return fecha.toLocaleDateString('es-GT', { timeZone: 'UTC' });
   }
 
   formatearHora(fechaHoraString: string): string {
