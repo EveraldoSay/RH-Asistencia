@@ -921,9 +921,11 @@ descargarPDFAsistencia() {
     if (!fechaString) return 'N/A';
     
     try {
-      const fecha = new Date(fechaString);
-      fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
-      return fecha.toLocaleDateString('es-GT');
+      const dateStringForParsing = /^\d{4}-\d{2}-\d{2}$/.test(fechaString)
+        ? `${fechaString}T00:00:00Z`
+        : fechaString;
+      const fecha = new Date(dateStringForParsing);
+      return fecha.toLocaleDateString('es-GT', { timeZone: 'America/Guatemala' });
     } catch (e) {
       return 'Fecha inválida';
     }
@@ -934,11 +936,11 @@ descargarPDFAsistencia() {
     
     try { 
       const fecha = new Date(fechaHoraString);
-      fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
       return fecha.toLocaleTimeString('es-GT', { 
         hour: '2-digit', 
         minute: '2-digit',
-        hour12: false 
+        hour12: false,
+        timeZone: 'America/Guatemala'
       });
     } catch (e) {
       return '--:--';

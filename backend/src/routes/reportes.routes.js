@@ -211,12 +211,12 @@ const path = require('path');
           ra.empleado_id,
           e.nombre_completo AS empleado,
           ra.fecha_hora,
-          DATE(ra.fecha_hora) AS fecha, 
+          DATE_FORMAT(DATE(ra.fecha_hora), '%d-%m-%Y') AS fecha, 
           TIME(ra.fecha_hora) AS hora,
           ra.dispositivo_ip,
           ra.codigo_evento,
           ra.origen,
-          ra.creado_en
+          CONVERT_TZ(ra.creado_en, '+00:00', '-06:00') AS creado_en
         FROM registros_asistencia ra
         LEFT JOIN empleados e ON e.id = ra.empleado_id
         WHERE ra.fecha_hora BETWEEN ? AND ?

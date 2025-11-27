@@ -16,8 +16,10 @@ services:
       - ./Hospital.sql:/docker-entrypoint-initdb.d/Hospital.sql
     networks:
       - sigsa-net
-    expose:
-      - '3306'
+    #expose:
+    #  - '3306'
+    ports:
+      - "3307:3306"
     healthcheck: # <-- AÑADIDO: Chequeo de salud
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
