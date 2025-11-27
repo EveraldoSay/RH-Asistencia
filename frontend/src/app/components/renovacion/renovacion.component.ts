@@ -25,15 +25,9 @@ export class RenovacionComponent {
 
   constructor(private http: HttpClient) {}
 
-  // 🔹 Mostrar botón solo los 2 últimos días del mes
+  // 🔹 Botón de renovación siempre habilitado (restricción de fin de mes eliminada)
   puedeRenovar(): boolean {
-    const hoy = new Date();
-    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0); // último día del mes
-    const anteultimo = new Date(ultimoDia);
-    anteultimo.setDate(ultimoDia.getDate() - 1); // día anterior al último
-
-    // Solo visible en los dos últimos días del mes
-    return hoy >= anteultimo && hoy <= ultimoDia;
+    return true;
   }
 
   // 🔹 Enviar solicitud de renovación al backend
