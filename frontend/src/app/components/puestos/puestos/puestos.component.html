@@ -1,44 +1,127 @@
-<div class="container mt-4">
-  <h2>Gestionar Puestos</h2>
+<div class="container main-container">
+  <!-- Encabezado -->
+  <div class="header">
+    <h1>Gestión de Puestos</h1>
+  </div>
 
-  <div class="card">
-    <div class="card-header">
-      Crear Nuevo Puesto
+  <!-- Botones y Busqueda -->
+  <div class="actions" style="display:flex; gap:.75rem; align-items:center;">
+    <div style="display:flex; gap:.5rem;">
+      <button class="btn btn-primary" (click)="showCreateForm()" [disabled]="loading">
+        + Agregar Puesto
+      </button>
     </div>
-    <div class="card-body">
-      <form [formGroup]="puestoForm" (ngSubmit)="onSubmit()">
-        <div class="mb-3">
-          <label for="nombre" class="form-label">Nombre del Puesto</label>
-          <input type="text" id="nombre" formControlName="nombre" class="form-control">
-          <div *ngIf="puestoForm.get('nombre')?.invalid && puestoForm.get('nombre')?.touched" class="text-danger">
-            El nombre es requerido.
-          </div>
-        </div>
-        <div class="mb-3">
-          <label for="descripcion" class="form-label">Descripción</label>
-          <textarea id="descripcion" formControlName="descripcion" class="form-control"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary" [disabled]="puestoForm.invalid">Guardar</button>
-      </form>
-      <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
-      <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
+
+    <!-- Caja de búsqueda -->
+    <div style="margin-left:auto; display:flex; gap:.5rem; align-items:center;">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+        [disabled]="loading"
+        placeholder="Buscar puesto..."
+        style="min-width: 320px; padding:.5rem .75rem; border:1px solid #ccc; border-radius:.5rem;"
+      />
+      <button *ngIf="searchTerm" class="btn btn-secondary btn-small" (click)="clearSearch()">Limpiar</button>
     </div>
   </div>
 
-  <div class="card mt-4">
-    <div class="card-header">
-      Listado de Puestos
+  <!-- Mensajes de error/exito -->
+  <div class="alert alert-error" *ngIf="error">
+    {{ error }}
+    <button (click)="error = null">&times;</button>
+  </div>
+  <div class="alert" style="background-color: #d4edda; color: #155724; border-color: #c3e6cb;" *ngIf="success">
+    {{ success }}
+    <button (click)="success = null">&times;</button>
+  </div>
+
+  <!-- Formulario de creación/edición -->
+  <div class="form-container" *ngIf="showForm">
+    <h3>{{ editingPuesto ? 'Editar Puesto' : 'Nuevo Puesto' }}</h3>
+
+    <form [formGroup]="puestoForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label>Nombre del Puesto *</label>
+        <input
+          type="text"
+          formControlName="nombre"
+          placeholder="Ej: Médico General"
+        />
+        <small class="field-error" *ngIf="puestoForm.get('nombre')?.invalid && puestoForm.get('nombre')?.touched">
+          El nombre es obligatorio.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <textarea
+          formControlName="descripcion"
+          placeholder="Descripción del puesto..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading || puestoForm.invalid">
+          {{ editingPuesto ? 'Actualizar' : 'Guardar' }}
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="cancelForm()" [disabled]="loading">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabla de Puestos -->
+  <div class="table-container" *ngIf="!loading && !showForm">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let puesto of paginatedPuestos">
+          <td>{{ puesto.id }}</td>
+          <td>{{ puesto.nombre_rol }}</td>
+          <td>{{ puesto.descripcion || '—' }}</td>
+          <td class="action-buttons">
+            <!-- <button class="btn btn-edit btn-small" (click)="showEditForm(puesto)">Editar</button> --> 
+            <!-- Nota: El servicio actual parece no tener updatePuesto, solo create y delete segun lo visto, 
+                 pero dejaremos la estructura lista o solo delete si es lo unico soportado. 
+                 Asumiremos solo delete por ahora si no hay update en el servicio. -->
+             <button class="btn btn-danger btn-small" (click)="onDelete(puesto.id)">Eliminar</button>
+          </td>
+        </tr>
+
+        <tr *ngIf="paginatedPuestos.length === 0">
+          <td colspan="4" class="no-data">
+            {{ searchTerm ? 'Sin coincidencias.' : 'No hay puestos registrados.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Paginación -->
+    <div class="pagination-controls" *ngIf="filteredPuestos.length > itemsPerPage">
+      <button class="btn btn-secondary btn-small" (click)="prevPage()" [disabled]="currentPage === 1">
+        Anterior
+      </button>
+      <span class="pagination-info">
+        Página {{ currentPage }} de {{ totalPages }}
+      </span>
+      <button class="btn btn-secondary btn-small" (click)="nextPage()" [disabled]="currentPage === totalPages">
+        Siguiente
+      </button>
     </div>
-    <div class="card-body">
-      <ul class="list-group">
-        <li *ngFor="let puesto of puestos" class="list-group-item d-flex justify-content-between align-items-center">
-          <div>
-            <h5>{{ puesto.nombre_rol }}</h5>
-            <p>{{ puesto.descripcion }}</p>
-          </div>
-          <button class="btn btn-danger btn-sm" (click)="onDelete(puesto.id)">Eliminar</button>
-        </li>
-      </ul>
-    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="loading" *ngIf="loading && !showForm">
+    Cargando puestos...
   </div>
 </div>
