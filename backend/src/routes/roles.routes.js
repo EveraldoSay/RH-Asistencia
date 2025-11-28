@@ -38,4 +38,36 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'ID de rol inválido' });
+    }
+
+    // Check if the role is being used by any employee
+    const [[{ count }]] = await db.query(
+      'SELECT COUNT(*) as count FROM empleados WHERE rol_id = ?',
+      [id]
+    );
+
+    if (count > 0) {
+      return res.status(409).json({ success: false, error: 'El puesto está en uso y no se puede eliminar' });
+    }
+
+    const [r] = await db.query(
+      'DELETE FROM roles_empleado WHERE id = ?',
+      [id]
+    );
+
+    if (r.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'El rol no existe' });
+    }
+
+    return res.json({ success: true, message: 'Puesto eliminado' });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: 'Error eliminando el puesto', message: e.message });
+  }
+});
+
 module.exports = router;
