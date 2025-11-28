@@ -1,0 +1,41 @@
+<div class="container mt-4">
+  <h2>Gestionar Departamentos</h2>
+
+  <div class="card">
+    <div class="card-header">
+      Crear Nuevo Departamento
+    </div>
+    <div class="card-body">
+      <form [formGroup]="departamentoForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Nombre del Departamento</label>
+          <input type="text" id="nombre" formControlName="nombre" class="form-control">
+          <div *ngIf="departamentoForm.get('nombre')?.invalid && departamentoForm.get('nombre')?.touched" class="text-danger">
+            El nombre es requerido.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <textarea id="descripcion" formControlName="descripcion" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" [disabled]="departamentoForm.invalid">Guardar</button>
+      </form>
+      <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+      <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">
+      Listado de Departamentos
+    </div>
+    <div class="card-body">
+      <ul class="list-group">
+        <li *ngFor="let depto of departamentos" class="list-group-item">
+          <h5>{{ depto.nombre_area }}</h5>
+          <p>{{ depto.descripcion }}</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
