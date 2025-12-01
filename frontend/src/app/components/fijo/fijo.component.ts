@@ -280,6 +280,7 @@ export class FijoComponent implements OnInit {
     if (!areaId || isNaN(areaId)) {
       this.jefesFiltrados = [];
       this.areaJefeForm.controls.jefe_id.setValue(null);
+      this.areaJefeForm.controls.jefe_id.enable();
       console.warn('No hay área seleccionada o ID inválido');
       return;
     }
@@ -294,8 +295,10 @@ export class FijoComponent implements OnInit {
     if (this.jefesFiltrados.length > 0) {
       const primerJefe = this.jefesFiltrados[0];
       this.areaJefeForm.controls.jefe_id.setValue(primerJefe.id);
+      this.areaJefeForm.controls.jefe_id.disable(); // Auto-select and disable
     } else {
       this.areaJefeForm.controls.jefe_id.setValue(null);
+      this.areaJefeForm.controls.jefe_id.enable();
       console.warn(' No se encontraron jefes activos para esta área');
     }
 
@@ -335,12 +338,14 @@ export class FijoComponent implements OnInit {
     // 1. Estén activos
     // 2. Tengan un rol asignado (rol_id no nulo) ← ESTA ES LA CONDICIÓN CLAVE
     // 3. No tengan área asignada (null) O ya estén en esta área
-    // 4. Excluir al jefe seleccionado
+    // 4. Excluir al jefe seleccionado (usando getRawValue para incluir si está deshabilitado)
+    const jefeId = this.areaJefeForm.getRawValue().jefe_id;
+
     let empleadosDisponibles = this.empleados.filter(emp =>
       emp.activo &&
       emp.rol_id !== null && // ← SOLO EMPLEADOS CON ROL ASIGNADO
       (emp.area_id === null || emp.area_id === areaId) &&
-      emp.id !== this.areaJefeForm.controls.jefe_id.value
+      emp.id !== jefeId
     );
 
     // Aplicar filtro de búsqueda
@@ -481,32 +486,56 @@ export class FijoComponent implements OnInit {
     return this.descansoGrupal.some(d => d);
   }
 
+  // Mapeo de índices UI (0=Lunes) a Backend (1=Domingo, 2=Lunes...)
+  mapDiaToBackend(uiIndex: number): number {
+    // UI: 0=Lunes, 1=Martes, ..., 6=Domingo
+    // MariaDB: 2=Lunes, 3=Martes, ..., 7=Sábado, 1=Domingo
+    const map = [2, 3, 4, 5, 6, 7, 1];
+    return map[uiIndex];
+  }
+
   getDiasDescansoSeleccionados(): string {
     return this.descansoGrupal
-      .map((seleccionado, index) => seleccionado ? index.toString() : null)
+      .map((seleccionado, index) => seleccionado ? this.mapDiaToBackend(index).toString() : null)
       .filter(Boolean)
       .join(',');
   }
 
   getDiasDescansoNombres(): string {
     const mapaDias: Record<string, string> = {
-      '1': 'Lunes',
-      '2': 'Martes',
-      '3': 'Miércoles',
-      '4': 'Jueves',
-      '5': 'Viernes',
-      '6': 'Sábado',
-      '0': 'Domingo'
+      '2': 'Lunes',
+      '3': 'Martes',
+      '4': 'Miércoles',
+      '5': 'Jueves',
+      '6': 'Viernes',
+      '7': 'Sábado',
+      '1': 'Domingo'
     };
 
     // Filtrar los seleccionados y convertirlos a nombres
     const diasSeleccionados = this.descansoGrupal
-      .map((seleccionado, index) => (seleccionado ? index.toString() : null))
+      .map((seleccionado, index) => (seleccionado ? this.mapDiaToBackend(index).toString() : null))
       .filter(Boolean)
       .map(num => mapaDias[num!])
       .join(', ');
 
     return diasSeleccionados || 'Ninguno';
+  }
+
+  validarSuperposicion(empleadosIds: number[], turnoId: number): string | null {
+    // Esta es una validación básica del lado del cliente.
+    // Verifica si alguno de los empleados seleccionados ya tiene un turno fijo activo.
+    // Nota: Esto asume que 'configuraciones' tiene la lista completa de asignaciones vigentes.
+
+    // Si no tenemos datos suficientes en el cliente, confiamos en el backend.
+    if (!this.configuraciones || this.configuraciones.length === 0) return null;
+
+    // TODO: Implementar lógica más compleja si 'configuraciones' tuviera el detalle de empleados.
+    // Por ahora, como 'configuraciones' es un resumen por área/turno, no podemos saber
+    // qué empleados específicos están en cada grupo solo con esa lista.
+    // La validación real debe ocurrir en el backend.
+
+    return null;
   }
 
   // En fijo.component.ts - método guardarTurnosFijos()
@@ -517,7 +546,8 @@ export class FijoComponent implements OnInit {
     }
 
     const areaId = this.areaJefeForm.controls.area_id.value;
-    const jefeId = this.areaJefeForm.controls.jefe_id.value;
+    // Usar getRawValue para obtener el valor incluso si el control está deshabilitado
+    const jefeId = this.areaJefeForm.getRawValue().jefe_id;
 
     // Incluir al jefe en el equipo completo si no está
     const jefe = this.jefesCandidatos.find(j => j.id === jefeId);
@@ -526,6 +556,13 @@ export class FijoComponent implements OnInit {
       : this.equipoCompleto;
 
     const empleadosIds = todosLosEmpleados.map(emp => emp.id);
+
+    // Validar superposición (Client-side check placeholder)
+    const conflicto = this.validarSuperposicion(empleadosIds, this.turnoSeleccionado);
+    if (conflicto) {
+      this.error = `Conflicto de horario: ${conflicto}`;
+      return;
+    }
 
     this.loading = true;
     this.error = null;
@@ -572,6 +609,8 @@ export class FijoComponent implements OnInit {
 
         if (err.status === 400) {
           this.error = 'Error en los datos: ' + (err.error?.message || 'Verifique los campos');
+        } else if (err.status === 409) { // Conflict
+          this.error = 'Conflicto de horario: ' + (err.error?.message || 'Superposición detectada');
         } else if (err.status === 500) {
           this.error = 'Error del servidor: ' + (err.error?.error || 'Intente más tarde');
         } else {
