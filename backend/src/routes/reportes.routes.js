@@ -6,30 +6,32 @@ const { exec } = require('child_process');
 const path = require('path');
 
 
-  // Listar todas las áreas
-  router.get('/areas', requireAuth, async (req, res) => {
-    try {
-      const [rows] = await db.query(`
+// Listar todas las áreas
+router.get('/areas', requireAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
         SELECT id, nombre_area FROM areas WHERE eliminado_en IS NULL ORDER BY nombre_area
       `);
-      res.json({ success: true, areas: rows });
-    } catch (err) {
-      console.error('Error obteniendo áreas:', err);
-      res.status(500).json({ success: false, message: 'Error al obtener áreas' });
+    res.json({ success: true, areas: rows });
+  } catch (err) {
+    console.error('Error obteniendo áreas:', err);
+    res.status(500).json({ success: false, message: 'Error al obtener áreas' });
+  }
+});
+
+// GENERAR REPORTE POR ÁREA Y RANGO DE FECHAS
+router.get('/asistencia', requireAuth, async (req, res) => {
+  try {
+    const { area_id, desde, hasta, tipo_reporte = 'semana' } = req.query;
+
+    if (!area_id || !desde || !hasta) {
+      return res.status(400).json({ success: false, message: 'Faltan parámetros: área, desde y hasta son obligatorios.' });
     }
-  });
 
-  // GENERAR REPORTE POR ÁREA Y RANGO DE FECHAS
-  router.get('/asistencia', requireAuth, async (req, res) => {
-    try {
-      const { area_id, desde, hasta, tipo_reporte = 'semana' } = req.query;
+    console.log(`[DEBUG] Generando reporte asistencia. Area: ${area_id}, Desde: ${desde}, Hasta: ${hasta}`);
 
-      if (!area_id || !desde || !hasta) {
-        return res.status(400).json({ success: false, message: 'Faltan parámetros: área, desde y hasta son obligatorios.' });
-      }
-
-      // ==================== CONSULTA BASE (ROTATIVOS) - VERSIÓN COMPLETA ====================
-      const [rotativos] = await db.query(`
+    // ==================== CONSULTA BASE (ROTATIVOS) - VERSIÓN COMPLETA ====================
+    const [rotativos] = await db.query(`
         SELECT 
           ar.nombre_area AS area,
           jefe.nombre_completo AS jefe_area,
@@ -72,10 +74,10 @@ const path = require('path');
         ORDER BY e.nombre_completo, at.fecha_inicio;
       `, [area_id, desde, hasta]);
 
-      let registros = [...rotativos];
+    let registros = [...rotativos];
 
-      // ==================== CONSULTA TURNOS FIJOS ====================
-      const [fijos] = await db.query(`
+    // ==================== CONSULTA TURNOS FIJOS ====================
+    const [fijos] = await db.query(`
         SELECT 
           ar.nombre_area AS area,
           jefe.nombre_completo AS jefe_area,
@@ -101,111 +103,115 @@ const path = require('path');
           AND af.eliminado_en IS NULL;
       `, [area_id]);
 
-      // ==================== EXPANDIR FECHAS DE FIJOS ====================
-      if (fijos.length > 0) {
-        const inicio = new Date(desde);
-        const fin = new Date(hasta);
+    console.log(`[DEBUG] Turnos fijos encontrados: ${fijos.length}`);
 
-        for (const f of fijos) {
-          if (!f.empleado_id) continue;
-          const diasDescanso = f.dias_descanso ? f.dias_descanso.split(',').map(Number) : [];
-          const fechaInicioLote = f.fecha_inicio ? new Date(f.fecha_inicio) : null;
+    // ==================== EXPANDIR FECHAS DE FIJOS ====================
+    if (fijos.length > 0) {
+      const inicio = new Date(desde);
+      const fin = new Date(hasta);
 
-          for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
-            const diaSemana = d.getDay();
-            if (fechaInicioLote && d < fechaInicioLote) continue;
-            if (diasDescanso.includes(diaSemana)) continue;
+      for (const f of fijos) {
+        if (!f.empleado_id) continue;
+        const diasDescanso = f.dias_descanso ? f.dias_descanso.split(',').map(Number) : [];
+        const fechaInicioLote = f.fecha_inicio ? new Date(f.fecha_inicio) : null;
 
-            const [asist] = await db.query(`
+        for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+          const diaSemana = d.getDay();
+          if (fechaInicioLote && d < fechaInicioLote) continue;
+          if (diasDescanso.includes(diaSemana)) continue;
+
+          const [asist] = await db.query(`
               SELECT entrada_real, salida_real, estado 
               FROM asistencias 
-              WHERE empleado_id = ? AND fecha = ?`, 
-              [f.empleado_id, d.toISOString().split('T')[0]]
-            );
+              WHERE empleado_id = ? AND fecha = ?`,
+            [f.empleado_id, d.toISOString().split('T')[0]]
+          );
 
-            let entrada_real = null;
-            let salida_real = null;
-            let estado = null;
-            if (asist.length > 0) {
-              entrada_real = asist[0].entrada_real;
-              salida_real = asist[0].salida_real;
-              estado = asist[0].estado;
-            }
-
-            registros.push({
-              area: f.area,
-              jefe_area: f.jefe_area,
-              empleado: f.empleado,
-              cargo: f.cargo,
-              fecha: d.toISOString().split('T')[0],
-              turno_asignado: f.turno_asignado,
-              tipo_turno: f.tipo_turno,
-              hora_entrada_programada: f.hora_entrada_programada,
-              hora_salida_programada: f.hora_salida_programada,
-              entrada_real,
-              salida_real,
-              cumplimiento: estado ? 
-                (estado === 'COMPLETO' ? 'Cumple horario' :
-                estado === 'TARDE' ? 'Retraso' :
-                estado === 'FALTA' ? 'Ausente' : 'Ausente') 
-                : 'No aplica marcaje',
-              estado_dia: estado ? 
-                (['COMPLETO', 'TARDE'].includes(estado) ? 'Presente' : 'Ausente') 
-                : 'Presente (No obligatorio)'
-            });
+          let entrada_real = null;
+          let salida_real = null;
+          let estado = null;
+          if (asist.length > 0) {
+            entrada_real = asist[0].entrada_real;
+            salida_real = asist[0].salida_real;
+            estado = asist[0].estado;
+          } else {
+            // console.log(`[DEBUG] No asistencia found for Emp ${f.empleado_id} on ${d.toISOString().split('T')[0]}`);
           }
+
+          registros.push({
+            area: f.area,
+            jefe_area: f.jefe_area,
+            empleado: f.empleado,
+            cargo: f.cargo,
+            fecha: d.toISOString().split('T')[0],
+            turno_asignado: f.turno_asignado,
+            tipo_turno: f.tipo_turno,
+            hora_entrada_programada: f.hora_entrada_programada,
+            hora_salida_programada: f.hora_salida_programada,
+            entrada_real,
+            salida_real,
+            cumplimiento: estado ?
+              (estado === 'COMPLETO' ? 'Cumple horario' :
+                estado === 'TARDE' ? 'Retraso' :
+                  estado === 'FALTA' ? 'Ausente' : 'Ausente')
+              : 'No aplica marcaje',
+            estado_dia: estado ?
+              (['COMPLETO', 'TARDE'].includes(estado) ? 'Presente' : 'Ausente')
+              : 'Presente (No obligatorio)'
+          });
         }
       }
+    }
 
-      // ==================== ORDEN FINAL ====================
-      registros.sort((a, b) => {
-        if (a.empleado < b.empleado) return -1;
-        if (a.empleado > b.empleado) return 1;
-        return new Date(a.fecha) - new Date(b.fecha);
-      });
-      res.json({ success: true, registros });
+    // ==================== ORDEN FINAL ====================
+    registros.sort((a, b) => {
+      if (a.empleado < b.empleado) return -1;
+      if (a.empleado > b.empleado) return 1;
+      return new Date(a.fecha) - new Date(b.fecha);
+    });
+    res.json({ success: true, registros });
 
-    } catch (err) {
-      console.error('Error generando reporte:', err);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error al generar reporte',
-        error: err.message 
+  } catch (err) {
+    console.error('Error generando reporte:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar reporte',
+      error: err.message
+    });
+  }
+});
+
+// En reportes.routes.js - modificar la ruta /eventos-biometricos
+router.get('/eventos-biometricos', requireAuth, async (req, res) => {
+  try {
+    const { mes, dia, empleado_id, desde, hasta } = req.query;
+    // Validar que se proporcione al menos un tipo de filtro de fecha
+    if (!mes && !dia && !desde) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere al menos un parámetro de fecha: mes, dia o desde/hasta.'
       });
     }
-  });
 
-  // En reportes.routes.js - modificar la ruta /eventos-biometricos
-  router.get('/eventos-biometricos', requireAuth, async (req, res) => {
-    try {
-      const { mes, dia, empleado_id, desde, hasta } = req.query;
-      // Validar que se proporcione al menos un tipo de filtro de fecha
-      if (!mes && !dia && !desde) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Se requiere al menos un parámetro de fecha: mes, dia o desde/hasta.' 
-        });
-      }
+    let fechaDesde, fechaHasta;
 
-      let fechaDesde, fechaHasta;
-      
-      if (desde && hasta) {
-        // Filtro por rango de fechas personalizado
-        fechaDesde = new Date(desde).toISOString().split('T')[0];
-        fechaHasta = new Date(hasta).toISOString().split('T')[0];
-      } else if (dia) {
-        // Filtro por día específico
-        fechaDesde = new Date(dia).toISOString().split('T')[0];
-        fechaHasta = fechaDesde;
-      } else {
-        // Filtro por mes (comportamiento original)
-        const [year, month] = mes.split('-').map(Number);
-        fechaDesde = new Date(year, month - 1, 1).toISOString().split('T')[0];
-        fechaHasta = new Date(year, month, 0).toISOString().split('T')[0];
-      }
+    if (desde && hasta) {
+      // Filtro por rango de fechas personalizado
+      fechaDesde = new Date(desde).toISOString().split('T')[0];
+      fechaHasta = new Date(hasta).toISOString().split('T')[0];
+    } else if (dia) {
+      // Filtro por día específico
+      fechaDesde = new Date(dia).toISOString().split('T')[0];
+      fechaHasta = fechaDesde;
+    } else {
+      // Filtro por mes (comportamiento original)
+      const [year, month] = mes.split('-').map(Number);
+      fechaDesde = new Date(year, month - 1, 1).toISOString().split('T')[0];
+      fechaHasta = new Date(year, month, 0).toISOString().split('T')[0];
+    }
 
-      // Construir la consulta dinámicamente
-      let query = `
+    // Construir la consulta dinámicamente
+    let query = `
         SELECT 
           ra.id,
           ra.empleado_id,
@@ -221,73 +227,73 @@ const path = require('path');
         LEFT JOIN empleados e ON e.id = ra.empleado_id
         WHERE ra.fecha_hora BETWEEN ? AND ?
       `;
-      
-      const params = [`${fechaDesde} 00:00:00`, `${fechaHasta} 23:59:59`];
 
-      // Agregar filtro por empleado si se especifica
-      if (empleado_id && empleado_id !== '') {
-        query += ` AND ra.empleado_id = ?`;
-        params.push(empleado_id);
-      }
+    const params = [`${fechaDesde} 00:00:00`, `${fechaHasta} 23:59:59`];
 
-      query += ` ORDER BY e.nombre_completo, ra.fecha_hora ASC`;
-
-      const [rawEventos] = await db.query(query, params);
-
-      // Agrupar eventos por empleado y fecha
-      const agrupados = {};
-      for (const ev of rawEventos) {
-        const clave = `${ev.empleado_id || 'sin_id'}_${ev.fecha}`;
-        if (!agrupados[clave]) agrupados[clave] = [];
-        agrupados[clave].push(ev);
-      }
-
-      // Construir el resultado filtrando solo entrada/salida
-      const eventos = [];
-      for (const [clave, lista] of Object.entries(agrupados)) {
-        if (lista.length === 1) {
-          eventos.push({
-            ...lista[0],
-            tipo_evento: 'ENTRADA',
-          });
-        } else if (lista.length > 1) {
-          eventos.push({
-            ...lista[0],
-            tipo_evento: 'ENTRADA',
-          });
-          eventos.push({
-            ...lista[lista.length - 1],
-            tipo_evento: 'SALIDA',
-          });
-        }
-      }
-
-      res.json({
-        success: true,
-        eventos: eventos.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora)),
-        periodo: { desde: fechaDesde, hasta: fechaHasta }
-      });
-
-    } catch (err) {
-      console.error('Error generando reporte de eventos biométricos:', err);
-      res.status(500).json({
-        success: false,
-        message: 'Error al generar reporte de eventos biométricos',
-        error: err.message
-      });
+    // Agregar filtro por empleado si se especifica
+    if (empleado_id && empleado_id !== '') {
+      query += ` AND ra.empleado_id = ?`;
+      params.push(empleado_id);
     }
-  });
-  // En reportes.routes.js - corregir la ruta /buscar-empleados
-  router.get('/buscar-empleados', requireAuth, async (req, res) => {
-    try {
-      const { query } = req.query;
-      
-      if (!query || query.length < 2) {
-        return res.json({ success: true, empleados: [] });
-      }
 
-      // Verificar qué columnas existen en tu tabla empleados
-      const [empleados] = await db.query(`
+    query += ` ORDER BY e.nombre_completo, ra.fecha_hora ASC`;
+
+    const [rawEventos] = await db.query(query, params);
+
+    // Agrupar eventos por empleado y fecha
+    const agrupados = {};
+    for (const ev of rawEventos) {
+      const clave = `${ev.empleado_id || 'sin_id'}_${ev.fecha}`;
+      if (!agrupados[clave]) agrupados[clave] = [];
+      agrupados[clave].push(ev);
+    }
+
+    // Construir el resultado filtrando solo entrada/salida
+    const eventos = [];
+    for (const [clave, lista] of Object.entries(agrupados)) {
+      if (lista.length === 1) {
+        eventos.push({
+          ...lista[0],
+          tipo_evento: 'ENTRADA',
+        });
+      } else if (lista.length > 1) {
+        eventos.push({
+          ...lista[0],
+          tipo_evento: 'ENTRADA',
+        });
+        eventos.push({
+          ...lista[lista.length - 1],
+          tipo_evento: 'SALIDA',
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      eventos: eventos.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora)),
+      periodo: { desde: fechaDesde, hasta: fechaHasta }
+    });
+
+  } catch (err) {
+    console.error('Error generando reporte de eventos biométricos:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar reporte de eventos biométricos',
+      error: err.message
+    });
+  }
+});
+// En reportes.routes.js - corregir la ruta /buscar-empleados
+router.get('/buscar-empleados', requireAuth, async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.length < 2) {
+      return res.json({ success: true, empleados: [] });
+    }
+
+    // Verificar qué columnas existen en tu tabla empleados
+    const [empleados] = await db.query(`
         SELECT id, nombre_completo, renglon 
         FROM empleados 
         WHERE (nombre_completo LIKE ? OR renglon LIKE ?) 
@@ -297,165 +303,165 @@ const path = require('path');
         LIMIT 20
       `, [`%${query}%`, `%${query}%`]);
 
-      res.json({ success: true, empleados });
-    } catch (err) {
-      console.error('Error buscando empleados:', err);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error al buscar empleados',
-        error: err.message 
-      });
-    }
-  });
+    res.json({ success: true, empleados });
+  } catch (err) {
+    console.error('Error buscando empleados:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error al buscar empleados',
+      error: err.message
+    });
+  }
+});
 
-  // Ruta para ejecutar manualmente la sincronización biométrica
-  router.post('/actualizar-biometrico', requireAuth, async (req, res) => {
-    try {
-      // Ruta al script de sincronización
-      const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs.js');
-      
-      // Ejecutar el script
-      exec(`node "${scriptPath}"`, { 
-        cwd: path.join(__dirname, '..'),
-        env: { ...process.env, NODE_PATH: '.' }
-      }, (error, stdout, stderr) => {
-        if (error) {
-          console.error('Error ejecutando sync_biometric_logs:', error);
-          return res.status(500).json({ 
-            success: false, 
-            message: 'Error ejecutando la sincronización',
-            error: error.message 
-          });
-        }
-        
-        if (stderr) {
-          console.warn('Advertencias en sincronización:', stderr);
-        }
+// Ruta para ejecutar manualmente la sincronización biométrica
+router.post('/actualizar-biometrico', requireAuth, async (req, res) => {
+  try {
+    // Ruta al script de sincronización
+    const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs.js');
 
-        // Contar eventos recién insertados (opcional)
-        db.query(`
+    // Ejecutar el script
+    exec(`node "${scriptPath}"`, {
+      cwd: path.join(__dirname, '..'),
+      env: { ...process.env, NODE_PATH: '.' }
+    }, (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error ejecutando sync_biometric_logs:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error ejecutando la sincronización',
+          error: error.message
+        });
+      }
+
+      if (stderr) {
+        console.warn('Advertencias en sincronización:', stderr);
+      }
+
+      // Contar eventos recién insertados (opcional)
+      db.query(`
           SELECT COUNT(*) as total 
           FROM registros_asistencia 
           WHERE DATE(creado_en) = CURDATE() 
           AND origen = 'BIOMETRICO'
         `).then(([rows]) => {
-          const totalEventos = rows[0]?.total || 0;
-          
-          res.json({ 
-            success: true, 
-            message: 'Sincronización completada correctamente',
-            totalEventos: totalEventos,
-            output: stdout
-          });
-        }).catch(countError => {
-          console.error('Error contando eventos:', countError);
-          res.json({ 
-            success: true, 
-            message: 'Sincronización completada (error contando eventos)',
-            output: stdout
-          });
+        const totalEventos = rows[0]?.total || 0;
+
+        res.json({
+          success: true,
+          message: 'Sincronización completada correctamente',
+          totalEventos: totalEventos,
+          output: stdout
+        });
+      }).catch(countError => {
+        console.error('Error contando eventos:', countError);
+        res.json({
+          success: true,
+          message: 'Sincronización completada (error contando eventos)',
+          output: stdout
         });
       });
+    });
 
-    } catch (err) {
-      console.error('Error en ruta de actualización biométrica:', err);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error interno del servidor',
-        error: err.message 
-      });
-    }
-  });
+  } catch (err) {
+    console.error('Error en ruta de actualización biométrica:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: err.message
+    });
+  }
+});
 
-  // En reportes.routes.js - agregar esta ruta
-  router.post('/sincronizar-marcajes-anteriores', requireAuth, async (req, res) => {
-    try {
-      const { desde, hasta } = req.query;
-      
-      if (!desde || !hasta) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Se requieren las fechas desde y hasta' 
-        });
-      }
+// En reportes.routes.js - agregar esta ruta
+router.post('/sincronizar-marcajes-anteriores', requireAuth, async (req, res) => {
+  try {
+    const { desde, hasta } = req.query;
 
-      // Validar formato de fechas
-      const fechaDesde = new Date(desde);
-      const fechaHasta = new Date(hasta);
-      
-      if (isNaN(fechaDesde.getTime()) || isNaN(fechaHasta.getTime())) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Formato de fecha inválido. Use YYYY-MM-DD' 
-        });
-      }
-
-      if (fechaDesde > fechaHasta) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'La fecha desde no puede ser mayor que la fecha hasta' 
-        });
-      }
-
-      // Validar que el rango no sea muy extenso (máximo 31 días)
-      const diffTime = Math.abs(fechaHasta - fechaDesde);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays > 31) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'El rango máximo permitido es de 31 días' 
-        });
-      }
-
-      // Ruta al script de sincronización histórica
-      const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs_historical.js');
-
-      // Ejecutar el script con los parámetros
-      exec(`node "${scriptPath}" "${desde}" "${hasta}"`, { 
-        cwd: path.join(__dirname, '..'),
-        env: { ...process.env, NODE_PATH: '.' }
-      }, (error, stdout, stderr) => {
-        if (error) {
-          console.error('Error ejecutando sync_biometric_logs_historical:', error);
-          return res.status(500).json({ 
-            success: false, 
-            message: 'Error ejecutando la sincronización histórica',
-            error: error.message 
-          });
-        }
-        
-        if (stderr) {
-          console.warn('Advertencias en sincronización histórica:', stderr);
-        }
-
-        // Extraer resultados del output
-        const output = stdout.toString();
-
-        // Buscar estadísticas en el output
-        const eventosMatch = output.match(/Eventos insertados: (\d+)/);
-        const duplicadosMatch = output.match(/Duplicados omitidos: (\d+)/);
-        const asistenciasMatch = output.match(/Asistencias procesadas: (\d+)/);
-
-        res.json({ 
-          success: true, 
-          message: 'Sincronización histórica completada',
-          eventos: eventosMatch ? parseInt(eventosMatch[1]) : 0,
-          duplicados: duplicadosMatch ? parseInt(duplicadosMatch[1]) : 0,
-          asistencias: asistenciasMatch ? parseInt(asistenciasMatch[1]) : 0,
-          output: output
-        });
-      });
-
-    } catch (err) {
-      console.error('Error en ruta de sincronización histórica:', err);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error interno del servidor',
-        error: err.message 
+    if (!desde || !hasta) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requieren las fechas desde y hasta'
       });
     }
-  });
+
+    // Validar formato de fechas
+    const fechaDesde = new Date(desde);
+    const fechaHasta = new Date(hasta);
+
+    if (isNaN(fechaDesde.getTime()) || isNaN(fechaHasta.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de fecha inválido. Use YYYY-MM-DD'
+      });
+    }
+
+    if (fechaDesde > fechaHasta) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha desde no puede ser mayor que la fecha hasta'
+      });
+    }
+
+    // Validar que el rango no sea muy extenso (máximo 31 días)
+    const diffTime = Math.abs(fechaHasta - fechaDesde);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 31) {
+      return res.status(400).json({
+        success: false,
+        message: 'El rango máximo permitido es de 31 días'
+      });
+    }
+
+    // Ruta al script de sincronización histórica
+    const scriptPath = path.join(__dirname, '../scripts/sync_biometric_logs_historical.js');
+
+    // Ejecutar el script con los parámetros
+    exec(`node "${scriptPath}" "${desde}" "${hasta}"`, {
+      cwd: path.join(__dirname, '..'),
+      env: { ...process.env, NODE_PATH: '.' }
+    }, (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error ejecutando sync_biometric_logs_historical:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error ejecutando la sincronización histórica',
+          error: error.message
+        });
+      }
+
+      if (stderr) {
+        console.warn('Advertencias en sincronización histórica:', stderr);
+      }
+
+      // Extraer resultados del output
+      const output = stdout.toString();
+
+      // Buscar estadísticas en el output
+      const eventosMatch = output.match(/Eventos insertados: (\d+)/);
+      const duplicadosMatch = output.match(/Duplicados omitidos: (\d+)/);
+      const asistenciasMatch = output.match(/Asistencias procesadas: (\d+)/);
+
+      res.json({
+        success: true,
+        message: 'Sincronización histórica completada',
+        eventos: eventosMatch ? parseInt(eventosMatch[1]) : 0,
+        duplicados: duplicadosMatch ? parseInt(duplicadosMatch[1]) : 0,
+        asistencias: asistenciasMatch ? parseInt(asistenciasMatch[1]) : 0,
+        output: output
+      });
+    });
+
+  } catch (err) {
+    console.error('Error en ruta de sincronización histórica:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: err.message
+    });
+  }
+});
 
 
 module.exports = router;
