@@ -16,6 +16,7 @@ export class GestionTurnosComponent implements OnInit {
     isEditing = false;
     currentTurnoId: number | null = null;
     loading = false;
+    showForm = false;
 
     constructor(
         private turnosService: TurnosService,
@@ -52,6 +53,16 @@ export class GestionTurnosComponent implements OnInit {
         });
     }
 
+    showCreateForm() {
+        this.resetForm();
+        this.showForm = true;
+    }
+
+    cancelForm() {
+        this.showForm = false;
+        this.resetForm();
+    }
+
     onSubmit() {
         if (this.turnoForm.invalid) return;
 
@@ -63,6 +74,7 @@ export class GestionTurnosComponent implements OnInit {
                 next: (res) => {
                     if (res.success) {
                         alert('Turno actualizado correctamente');
+                        this.showForm = false;
                         this.resetForm();
                         this.loadTurnos();
                     }
@@ -77,6 +89,7 @@ export class GestionTurnosComponent implements OnInit {
                 next: (res) => {
                     if (res.success) {
                         alert('Turno creado correctamente');
+                        this.showForm = false;
                         this.resetForm();
                         this.loadTurnos();
                     }
@@ -92,6 +105,7 @@ export class GestionTurnosComponent implements OnInit {
     editTurno(turno: Turno) {
         this.isEditing = true;
         this.currentTurnoId = turno.id;
+        this.showForm = true;
         this.turnoForm.patchValue({
             nombre_turno: turno.nombre_turno,
             tipo: turno.tipo_turno || 'ROTATIVO', // Map backend tipo_turno to frontend tipo

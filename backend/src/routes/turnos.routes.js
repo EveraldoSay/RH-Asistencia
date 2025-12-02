@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
       [nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO']
     );
 
-    const [rows] = await db.query(`SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
+    const [rows] = await db.query(`SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
                                    FROM turnos WHERE id=?`, [result.insertId]);
     res.status(201).json({ success: true, data: rows[0] });
   } catch (err) {
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (_req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno 
+      SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno 
       FROM turnos 
       ORDER BY id ASC`);
     res.json({ success: true, data: rows });
@@ -43,7 +43,7 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await db.query(
-      `SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno 
+      `SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno 
        FROM turnos WHERE id=?`,
       [id]
     );
@@ -109,7 +109,7 @@ router.put('/:id', async (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Turno no encontrado' });
 
     const [rows] = await db.query(
-      `SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
+      `SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
        FROM turnos WHERE id=?`,
       [id]
     );
