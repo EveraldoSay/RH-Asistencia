@@ -482,15 +482,11 @@ export class FijoComponent implements OnInit {
     this.descansoGrupal[index] = !this.descansoGrupal[index];
   }
 
-  tieneDiasDescanso(): boolean {
-    return this.descansoGrupal.some(d => d);
-  }
-
-  // Mapeo de índices UI (0=Lunes) a Backend (1=Domingo, 2=Lunes...)
+  // Mapeo de índices UI (0=Lunes) a Backend (JS getDay: 0=Domingo, 1=Lunes...)
   mapDiaToBackend(uiIndex: number): number {
-    // UI: 0=Lunes, 1=Martes, ..., 6=Domingo
-    // MariaDB: 2=Lunes, 3=Martes, ..., 7=Sábado, 1=Domingo
-    const map = [2, 3, 4, 5, 6, 7, 1];
+    // UI: 0=Lunes, 1=Martes, ..., 5=Sábado, 6=Domingo
+    // Backend (JS getDay): 1=Lunes, 2=Martes, ..., 6=Sábado, 0=Domingo
+    const map = [1, 2, 3, 4, 5, 6, 0];
     return map[uiIndex];
   }
 
@@ -509,14 +505,15 @@ export class FijoComponent implements OnInit {
       '5': 'Jueves',
       '6': 'Viernes',
       '7': 'Sábado',
-      '1': 'Domingo'
+      '1': 'Domingo',
+      '0': 'Domingo' // Add 0 for JS getDay compatibility
     };
 
     // Filtrar los seleccionados y convertirlos a nombres
     const diasSeleccionados = this.descansoGrupal
       .map((seleccionado, index) => (seleccionado ? this.mapDiaToBackend(index).toString() : null))
       .filter(Boolean)
-      .map(num => mapaDias[num!])
+      .map(num => mapaDias[num!] || 'Desconocido')
       .join(', ');
 
     return diasSeleccionados || 'Ninguno';
