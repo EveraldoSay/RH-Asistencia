@@ -4,8 +4,8 @@ const router = express.Router();
 
 // Crear un turno
 router.post('/', async (req, res) => {
-  const { nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
-  if (!nombre || !hora_inicio || !hora_fin) {
+  const { nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
+  if (!nombre_turno || !hora_inicio || !hora_fin) {
     return res.status(400).json({ success: false, message: 'Faltan datos' });
   }
 
@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO turnos (nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno)
        VALUES (?,?,?,?,?,?)`,
-      [nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO']
+      [nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO']
     );
 
     const [rows] = await db.query(`SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
@@ -97,13 +97,13 @@ router.get('/activos-hoy', async (_req, res) => {
 // Actualizar un turno
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
+  const { nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
 
   try {
     const [result] = await db.query(
       `UPDATE turnos SET nombre_turno=?, hora_inicio=?, hora_fin=?, tolerancia_entrada_minutos=?, tolerancia_salida_minutos=?, tipo_turno=? 
        WHERE id=?`,
-      [nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO', id]
+      [nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO', id]
     );
 
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Turno no encontrado' });

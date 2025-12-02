@@ -141,7 +141,15 @@ export class FijoComponent implements OnInit {
     this.http.get<any>(`${API}/asignaciones/configuraciones`).subscribe({
       next: (res) => {
         if (res.success) {
-          this.configuraciones = res.data.filter((c: any) => c.tipo === 'FIJO');
+          this.configuraciones = res.data
+            .filter((c: any) => c.tipo === 'FIJO')
+            .map((c: any) => {
+              const config = typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion;
+              return {
+                ...c,
+                diasDescanso: this.getDiasDescansoLabels(config?.dias_descanso || [])
+              };
+            });
           this.applyDefaultFilter();
         }
         this.loading = false;
@@ -683,5 +691,21 @@ export class FijoComponent implements OnInit {
 
   tieneDiasDescanso(): boolean {
     return this.descansoGrupal.some(d => d);
+  }
+
+  getDiasDescansoLabels(dias: any[]): string {
+    if (!dias || dias.length === 0) return '';
+
+    const map: Record<string, string> = {
+      '0': 'Domingo',
+      '1': 'Lunes',
+      '2': 'Martes',
+      '3': 'Miércoles',
+      '4': 'Jueves',
+      '5': 'Viernes',
+      '6': 'Sábado'
+    };
+
+    return dias.map(d => map[d.toString()] || d).join(', ');
   }
 }
