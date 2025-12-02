@@ -1,5 +1,4 @@
 require('dotenv').config();
-const DigestFetch = require('digest-fetch').default || require('digest-fetch');
 const db = require('../db');
 
 // === Dispositivos ===
@@ -19,6 +18,7 @@ function getTimeRange() {
 }
 
 async function fetchEvents(device) {
+  const { default: DigestFetch } = await import('digest-fetch');
   const client = new DigestFetch(device.user, device.pass);
   const { start, end } = getTimeRange();
 
@@ -96,7 +96,7 @@ async function fetchEvents(device) {
 // === Guardar eventos en registros_asistencia ===
 async function saveEvents(events) {
   let insertados = 0;
-  
+
   // 1. Ordenar eventos por fecha
   events.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
 
@@ -106,15 +106,15 @@ async function saveEvents(events) {
 
   for (const ev of events) {
     if (!ev.empleado) continue;
-    
+
     const key = `${ev.ip}_${ev.empleado}`;
     const evTime = new Date(ev.fechaHora).getTime();
-    
+
     // Si ya vimos a este empleado en este dispositivo hace menos de 60 segundos (60000ms), ignorar
     if (lastSeen[key] && (evTime - lastSeen[key] < 60000)) {
-        continue; 
+      continue;
     }
-    
+
     lastSeen[key] = evTime;
     cleanEvents.push(ev);
   }
@@ -128,7 +128,7 @@ async function saveEvents(events) {
         'SELECT id FROM empleados WHERE numero_empleado = ? LIMIT 1',
         [ev.empleado]
       );
-      
+
       const empleado_id = rows.length ? rows[0].id : null;
 
       await db.query(
@@ -184,116 +184,11 @@ async function saveEvents(events) {
 })();
 
 // === Consolidación diaria ===
+// === Consolidación diaria ===
+const { procesarAsistenciaDia } = require('../services/asistencia.service');
+
 async function processDailyAttendance() {
-
-  const [empleados] = await db.query(`
-    SELECT DISTINCT empleado_id, DATE(fecha_hora) AS fecha
-    FROM registros_asistencia
-    WHERE DATE(fecha_hora) = CURDATE()
-      AND empleado_id IS NOT NULL
-  `);
-
-  let procesadas = 0;
-
-  for (const emp of empleados) {
-    const { empleado_id, fecha } = emp;
-
-    // Todas las marcas del día
-    const [marcas] = await db.query(`
-      SELECT DISTINCT fecha_hora
-      FROM registros_asistencia
-      WHERE empleado_id = ? AND DATE(fecha_hora) = ?
-      ORDER BY fecha_hora ASC
-    `, [empleado_id, fecha]);
-
-    if (!marcas.length) continue;
-
-    const entrada_real = marcas[0].fecha_hora;
-    const salida_real = marcas.length > 1 ? marcas[marcas.length - 1].fecha_hora : null;
-
-    // Buscar turno asignado y configuración activa
-    const [[turno]] = await db.query(`
-      SELECT 
-        t.id AS turno_id,
-        t.hora_inicio,
-        t.hora_fin,
-        t.tolerancia_entrada_minutos,
-        t.tolerancia_salida_minutos,
-        c.configuracion AS config_json
-      FROM asignacion_turnos a
-      INNER JOIN turnos t ON t.id = a.turno_id
-      LEFT JOIN configuraciones_turnos c 
-        ON c.turno_id = t.id 
-       AND c.area_id = (SELECT e.area_id FROM empleados e WHERE e.id = a.empleado_id)
-      WHERE a.empleado_id = ?
-        AND ? BETWEEN a.fecha_inicio AND a.fecha_fin
-      LIMIT 1;
-    `, [empleado_id, fecha]);
-
-    // Si no tiene turno asignado
-    if (!turno) {
-      continue;
-    }
-
-    // Verificar si es día laborable
-    let esLaboral = true;
-    try {
-      if (turno.config_json) {
-        const conf = JSON.parse(turno.config_json);
-        const diaSemana = new Date(fecha).getDay(); // 0=domingo
-        if (conf.dias_descanso && conf.dias_descanso.includes(String(diaSemana))) {
-          esLaboral = false;
-        }
-      }
-    } catch (e) {
-      console.warn(`Configuración JSON inválida para turno ${turno.turno_id}:`, e.message);
-    }
-
-    if (!esLaboral) {
-      continue;
-    }
-
-    // Evaluar cumplimiento
-    let estado = 'INCOMPLETO';
-    let minutos_retraso = 0;
-
-    const horaInicio = new Date(`${fecha}T${turno.hora_inicio}`);
-    const horaFin = new Date(`${fecha}T${turno.hora_fin}`);
-
-    if (!salida_real) {
-      estado = 'INCOMPLETO';
-    } else if (
-      entrada_real > new Date(horaInicio.getTime() + turno.tolerancia_entrada_minutos * 60000)
-    ) {
-      estado = 'TARDE';
-      minutos_retraso = Math.floor((entrada_real - horaInicio) / 60000);
-    } else if (entrada_real < horaInicio) {
-      estado = 'TEMPRANO';
-    } else {
-      estado = 'COMPLETO';
-    }
-
-    // Insertar o actualizar asistencia
-    await db.query(`
-      INSERT INTO asistencias
-        (empleado_id, fecha, turno_id, entrada_real, salida_real, estado, minutos_retraso)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        entrada_real = VALUES(entrada_real),
-        salida_real  = VALUES(salida_real),
-        estado       = VALUES(estado),
-        minutos_retraso = VALUES(minutos_retraso);
-    `, [
-      empleado_id,
-      fecha,
-      turno.turno_id,
-      entrada_real,
-      salida_real,
-      estado,
-      minutos_retraso
-    ]);
-
-    procesadas++;
-  }
-
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`Procesando asistencia diaria para: ${today}`);
+  await procesarAsistenciaDia(today);
 }
