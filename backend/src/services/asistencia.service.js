@@ -1,20 +1,38 @@
-const db = require('../db'); 
+const db = require('../db');
 
 async function procesarAsistenciaDia(fecha) {
   // 1. obtener todas las asignaciones del día
-  const asignaciones = await db.query(`
+  const [asignaciones] = await db.query(`
     SELECT at.id as asig_id, at.empleado_id, at.turno_id, 
            t.hora_inicio, t.hora_fin, 
            t.tolerancia_entrada_minutos, t.tolerancia_salida_minutos,
-           t.cruza_medianoche
+           t.cruza_medianoche,
+           c.configuracion as config_json
     FROM asignacion_turnos at
     JOIN turnos t ON at.turno_id = t.id
-    WHERE at.fecha = ?
+    LEFT JOIN configuraciones_turnos c ON c.turno_id = t.id AND c.area_id = (SELECT area_id FROM empleados WHERE id = at.empleado_id)
+    WHERE ? BETWEEN at.fecha_inicio AND at.fecha_fin
+      AND at.eliminado_en IS NULL
+      AND at.empleado_id IS NOT NULL
   `, [fecha]);
 
   for (const asig of asignaciones) {
     const { empleado_id, turno_id, hora_inicio, hora_fin,
-            tolerancia_entrada_minutos, tolerancia_salida_minutos } = asig;
+      tolerancia_entrada_minutos, tolerancia_salida_minutos, config_json } = asig;
+
+    // 1.1 Validar días de descanso
+    if (config_json) {
+      try {
+        const conf = JSON.parse(config_json);
+        const diaSemana = new Date(fecha).getDay(); // 0=Domingo, 1=Lunes...
+        // Backend usa 0=Domingo, 1=Lunes (JS standard)
+        if (conf.dias_descanso && conf.dias_descanso.includes(String(diaSemana))) {
+          continue; // Es día de descanso, no procesar
+        }
+      } catch (e) {
+        console.warn(`Error parsing config for assignment ${asig.asig_id}`, e);
+      }
+    }
 
     // 2. buscar eventos de ese empleado en registros_asistencia
     const eventos = await db.query(`
@@ -25,11 +43,11 @@ async function procesarAsistenciaDia(fecha) {
     `, [empleado_id, fecha]);
 
     const entrada = eventos.find(e => e.tipo_evento === 'ENTRADA');
-    const salida  = [...eventos].reverse().find(e => e.tipo_evento === 'SALIDA');
+    const salida = [...eventos].reverse().find(e => e.tipo_evento === 'SALIDA');
 
     // 3. calcular estado
     const entradaEsperada = new Date(`${fecha}T${hora_inicio}`);
-    const salidaEsperada  = new Date(`${fecha}T${hora_fin}`);
+    const salidaEsperada = new Date(`${fecha}T${hora_fin}`);
 
     let estado = 'FALTA';
     let minutos_retraso = 0;
@@ -87,40 +105,6 @@ async function procesarAsistenciaDia(fecha) {
       ]);
     }
   }
-}
-
-
-function compararTurnoConEventos(turno, eventos) {
-  const { horaInicio, horaFin, toleranciaEntrada, toleranciaSalida } = turno;
-
-  // Convertir strings a Date
-  const inicioTurno = new Date(horaInicio);
-  const finTurno = new Date(horaFin);
-
-  const entradaPermitida = new Date(inicioTurno.getTime() + toleranciaEntrada * 60000);
-  const salidaPermitida = new Date(finTurno.getTime() - toleranciaSalida * 60000);
-
-  const entrada = eventos.find(e => e.attendanceStatus === "checkIn");
-  const salida = eventos.find(e => e.attendanceStatus === "checkOut");
-
-  let resultado = {
-    asistencia: false,
-    puntualidad: "sin datos",
-    salida: "sin datos"
-  };
-
-  if (entrada) {
-    resultado.asistencia = true;
-    resultado.puntualidad =
-      new Date(entrada.time) <= entradaPermitida ? "a tiempo" : "tarde";
-  }
-
-  if (salida) {
-    resultado.salida =
-      new Date(salida.time) >= salidaPermitida ? "cumplida" : "salida anticipada";
-  }
-
-  return resultado;
 }
 
 module.exports = {
