@@ -14,28 +14,35 @@ export const routes: Routes = [
 
   {
     path: 'dashboard',
-    component: DashboardComponent, 
+    component: DashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
   {
-    path: 'empleados',             
-    component: EmpleadosComponent,  
+    path: 'empleados',
+    component: EmpleadosComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
   {
-    path: 'asignar-turnos',             
-    component: AsignarTurnosComponent,  
+    path: 'asignar-turnos',
+    component: AsignarTurnosComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
   {
-    path: 'reportes',             
-    component: ReportesComponent,  
+    path: 'turnos',
+    loadComponent: () => import('./components/gestion-turnos/gestion-turnos.component').then(m => m.GestionTurnosComponent),
+    canActivate: [AuthGuard],
+    data: { roles: ['rrhh', 'jefe'] }
+  },
+
+  {
+    path: 'reportes',
+    component: ReportesComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },

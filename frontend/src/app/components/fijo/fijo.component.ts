@@ -680,4 +680,8 @@ export class FijoComponent implements OnInit {
   trackByRol(index: number, rol: any): string {
     return rol;
   }
+
+  tieneDiasDescanso(): boolean {
+    return this.descansoGrupal.some(d => d);
+  }
 }

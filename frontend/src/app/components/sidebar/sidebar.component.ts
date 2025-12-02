@@ -24,26 +24,26 @@ export class SidebarComponent {
   vm$ = this.isAuthenticated$.pipe(
     switchMap(ok => ok
       ? from(this.kc.loadUserProfile()).pipe(
-          map(profile => {
-            const userName = profile.username ?? '';
-            const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || userName;
-            const email = profile.email ?? '';
-            const roles = this.kc.getUserRoles(true) || [];
-            const isAdminRole = roles.includes('admin') || roles.includes('realm-admin');
-            const initials = (fullName || userName)
-              .split(/\s+/).map(p => p[0]).join('').slice(0,2).toUpperCase();
+        map(profile => {
+          const userName = profile.username ?? '';
+          const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || userName;
+          const email = profile.email ?? '';
+          const roles = this.kc.getUserRoles(true) || [];
+          const isAdminRole = roles.includes('admin') || roles.includes('realm-admin');
+          const initials = (fullName || userName)
+            .split(/\s+/).map((p: string) => p[0]).join('').slice(0, 2).toUpperCase();
 
-            const base = environment.keycloak.url.replace(/\/+$/, '');
-            const realm = environment.keycloak.realm;
-            const accountUrl = `${base}/realms/${realm}/account`;
+          const base = environment.keycloak.url.replace(/\/+$/, '');
+          const realm = environment.keycloak.realm;
+          const accountUrl = `${base}/realms/${realm}/account`;
 
-            return { ok, userName, fullName, email, initials, isAdminRole, accountUrl };
-          }),
-          catchError(() => of({ ok: true, userName:'', fullName:'', email:'', initials:'', isAdminRole:false, accountUrl:'' }))
-        )
-      : of({ ok: false, userName:'', fullName:'', email:'', initials:'', isAdminRole:false, accountUrl:'' })
+          return { ok, userName, fullName, email, initials, isAdminRole, accountUrl };
+        }),
+        catchError(() => of({ ok: true, userName: '', fullName: '', email: '', initials: '', isAdminRole: false, accountUrl: '' }))
+      )
+      : of({ ok: false, userName: '', fullName: '', email: '', initials: '', isAdminRole: false, accountUrl: '' })
     ),
-    take(1) 
+    take(1)
   );
 
   openAccount(url: string) { if (url) window.open(url, '_blank'); }
@@ -62,5 +62,5 @@ export class SidebarComponent {
 
     }
   }
-  
+
 }
