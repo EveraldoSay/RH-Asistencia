@@ -75,11 +75,11 @@ interface Asignacion {
   selector: 'app-asignar-turnos',
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    FormsModule, 
-    CalendarioTurnosComponent, 
-    RemplazoComponent, 
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    CalendarioTurnosComponent,
+    RemplazoComponent,
     RenovacionComponent,
     FijoComponent
   ],
@@ -87,13 +87,13 @@ interface Asignacion {
   styleUrls: ['./asignar-turnos.component.scss']
 })
 export class AsignarTurnosComponent implements OnInit, OnDestroy {
-  
+
 
   private destroy$ = new Subject<void>();
   private filtroTimeout: any;
 
   private empleadosService = inject(EmpleadosService);
-  constructor(private turnosService: TurnosService) {}
+  constructor(private turnosService: TurnosService) { }
 
   // ===== Estado de vistas =====
   vista: 'HOME' | 'LISTA_ROTATIVOS' | 'LISTA_FIJOS' | 'FORMULARIO' = 'HOME';
@@ -193,7 +193,7 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
           length: emp.length ?? 0,
           asignacionesPrevias: emp.asignacionesPrevias ?? undefined
         }));
-        
+
         if (this.vista === 'FORMULARIO' && this.step === 2) {
           setTimeout(() => this.filtrarEmpleados(), 100);
         }
@@ -203,101 +203,101 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     if (this.filtroTimeout) {
       clearTimeout(this.filtroTimeout);
     }
   }
 
   // ===== Métodos de navegación =====
- abrirFormulario(id: any) {
-  this.editandoId = id === 'NUEVO' ? 'NUEVO' : id;
-  this.modo = this.vista === 'LISTA_ROTATIVOS' ? 'ROTATIVO' : 'FIJO';
-  this.vista = 'FORMULARIO';
-  this.resetFormulario();
+  abrirFormulario(id: any) {
+    this.editandoId = id === 'NUEVO' ? 'NUEVO' : id;
+    this.modo = this.vista === 'LISTA_ROTATIVOS' ? 'ROTATIVO' : 'FIJO';
+    this.vista = 'FORMULARIO';
+    this.resetFormulario();
 
-  // Si es un nuevo turno, no hay problema
-  if (id === 'NUEVO') return;
+    // Si es un nuevo turno, no hay problema
+    if (id === 'NUEVO') return;
 
-  // Si es una configuración existente
-  const conf = this.modo === 'ROTATIVO'
-    ? this.configuracionesRotativas.find(c => c.id === id)
-    : this.configuracionesFijas.find(c => c.id === id);
+    // Si es una configuración existente
+    const conf = this.modo === 'ROTATIVO'
+      ? this.configuracionesRotativas.find(c => c.id === id)
+      : this.configuracionesFijas.find(c => c.id === id);
 
-  if (conf) {
-    // Cargar datos básicos
-    this.areaJefeForm.patchValue({
-      area_id: conf.areaId || conf.area_id,
-      jefe_id: conf.jefeId || conf.jefe_id
-    });
+    if (conf) {
+      // Cargar datos básicos
+      this.areaJefeForm.patchValue({
+        area_id: conf.areaId || conf.area_id,
+        jefe_id: conf.jefeId || conf.jefe_id
+      });
 
-    this.fechasForm.patchValue({
-      fecha_inicio: conf.fecha_inicio,
-      fecha_fin: conf.fecha_fin,
-      patron: conf.patron || 'NORMAL'
-    });
+      this.fechasForm.patchValue({
+        fecha_inicio: conf.fecha_inicio,
+        fecha_fin: conf.fecha_fin,
+        patron: conf.patron || 'NORMAL'
+      });
 
-    this.reemplazos = [...(conf.reemplazos || [])];
+      this.reemplazos = [...(conf.reemplazos || [])];
 
-    // REEMPLAZO CLAVE:
-    // Si el equipo no viene cargado, lo reconstruimos desde la BD
-    if (!conf.equipo || conf.equipo.length === 0) {
-      // Intentar extraer los IDs de empleados guardados en configuraciones_turnos
-      try {
-        // Algunos backends devuelven empleados_ids como JSON string o array
-        const ids = Array.isArray(conf.empleados_ids)
-          ? conf.empleados_ids
-          : JSON.parse(conf.empleados_ids || '[]');
+      // REEMPLAZO CLAVE:
+      // Si el equipo no viene cargado, lo reconstruimos desde la BD
+      if (!conf.equipo || conf.equipo.length === 0) {
+        // Intentar extraer los IDs de empleados guardados en configuraciones_turnos
+        try {
+          // Algunos backends devuelven empleados_ids como JSON string o array
+          const ids = Array.isArray(conf.empleados_ids)
+            ? conf.empleados_ids
+            : JSON.parse(conf.empleados_ids || '[]');
 
-        if (ids.length > 0) {
-          this.cargarEmpleadosDelLote(ids);
-        } else {
-          console.warn('No se encontraron empleados_ids en la configuración');
+          if (ids.length > 0) {
+            this.cargarEmpleadosDelLote(ids);
+          } else {
+            console.warn('No se encontraron empleados_ids en la configuración');
+            this.equipoCompleto = [];
+          }
+        } catch (e) {
+          console.error('Error parseando empleados_ids:', e);
           this.equipoCompleto = [];
         }
-      } catch (e) {
-        console.error('Error parseando empleados_ids:', e);
-        this.equipoCompleto = [];
-      }
-    } else {
-      // Si ya vienen los datos del equipo
-      this.equipoCompleto = [...conf.equipo];
-    }
-
-    // Cargar asignaciones existentes si hay fechas
-    if (conf.fecha_inicio && conf.fecha_fin) {
-      this.cargarAsignacionesEquipoCompleto(conf.fecha_inicio, conf.fecha_fin);
-    }
-
-    // Mostrar paso 4 directamente (selector de empleado)
-    this.step = 4;
-  }
-}
-
-cargarEmpleadosDelLote(ids: number[]) {
-  if (!ids || ids.length === 0) return;
-
-  this.http.post(`${API}/asignaciones/empleados/por-ids`, { ids }).subscribe({
-    next: (resp: any) => {
-      if (resp.success) {
-        this.equipoCompleto = resp.data;
-        console.info(`Equipo reconstruido (${resp.data.length} empleados)`);
       } else {
-        console.warn('No se pudo cargar el equipo del lote');
+        // Si ya vienen los datos del equipo
+        this.equipoCompleto = [...conf.equipo];
       }
-    },
-    error: (err) => console.error('Error al cargar empleados del lote:', err)
-  });
-}
+
+      // Cargar asignaciones existentes si hay fechas
+      if (conf.fecha_inicio && conf.fecha_fin) {
+        this.cargarAsignacionesEquipoCompleto(conf.fecha_inicio, conf.fecha_fin);
+      }
+
+      // Mostrar paso 4 directamente (selector de empleado)
+      this.step = 4;
+    }
+  }
+
+  cargarEmpleadosDelLote(ids: number[]) {
+    if (!ids || ids.length === 0) return;
+
+    this.http.post(`${API}/asignaciones/empleados/por-ids`, { ids }).subscribe({
+      next: (resp: any) => {
+        if (resp.success) {
+          this.equipoCompleto = resp.data;
+          console.info(`Equipo reconstruido (${resp.data.length} empleados)`);
+        } else {
+          console.warn('No se pudo cargar el equipo del lote');
+        }
+      },
+      error: (err) => console.error('Error al cargar empleados del lote:', err)
+    });
+  }
 
 
 
-cargarConfiguraciones() {
+  cargarConfiguraciones() {
     this.turnosService.getConfiguraciones().subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO');
-          this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO');
+          this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO').map((c: any) => ({ ...c, configuracion: typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion }));
+          this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO').map((c: any) => ({ ...c, configuracion: typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion }));
         }
       },
       error: (err) => {
@@ -318,14 +318,14 @@ cargarConfiguraciones() {
   }
 
   abrirModalRemplazo(conf: any) {
-  this.conf = conf;
-  this.mostrarModalRemplazo = true;
+    this.conf = conf;
+    this.mostrarModalRemplazo = true;
   }
 
   // Cerrar modal de reemplazo
   cerrarModalRemplazo() {
     this.mostrarModalRemplazo = false;
-}
+  }
 
 
 
@@ -393,11 +393,11 @@ cargarConfiguraciones() {
 
   // ===== Métodos para turnos fijos =====
   onFijoGuardado(configuracion: any): void {
-    
+
     this.configuracionesFijas = [...this.configuracionesFijas, configuracion];
     this.vista = 'LISTA_FIJOS';
     this.info = `Turno fijo creado correctamente para ${configuracion.empleadosCount} empleado(s)`;
-    
+
     setTimeout(() => {
       this.info = null;
     }, 3000);
@@ -409,7 +409,7 @@ cargarConfiguraciones() {
     } else {
       this.configuracionesFijas = this.configuracionesFijas.filter(c => c.id !== conf.id);
     }
-    
+
     this.info = 'Configuración eliminada correctamente';
     setTimeout(() => this.info = null, 3000);
   }
@@ -429,29 +429,29 @@ cargarConfiguraciones() {
           this.http.get<any>(`${API}/areas`).toPromise(),
           this.http.get<any>(`${API}/roles`).toPromise()
         ])
-        .then(([t, a, r]) => {
-          this.turnos = [...turnosPersonalizados, ...(t?.data || [])];
-          
-          this.areas = (a?.data || []).map((x: any) => ({ 
-            id: x.id, 
-            nombre: x.nombre || x.nombre_area || 'Sin nombre' 
-          }));
-          
-          this.roles = (r?.data || []).map((rol: any) => ({
-            id: rol.id,
-            nombre: rol.nombre_rol || rol.nombre,
-            nivel: rol.nivel
-          }));
-          this.filtrarEmpleados();
-        })
-        .catch((error) => {
-          console.error('Error cargando catálogos:', error);
-          this.error = 'No se pudieron cargar algunos catálogos.';
-          this.filtrarEmpleados(); 
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+          .then(([t, a, r]) => {
+            this.turnos = [...turnosPersonalizados, ...(t?.data || [])];
+
+            this.areas = (a?.data || []).map((x: any) => ({
+              id: x.id,
+              nombre: x.nombre || x.nombre_area || 'Sin nombre'
+            }));
+
+            this.roles = (r?.data || []).map((rol: any) => ({
+              id: rol.id,
+              nombre: rol.nombre_rol || rol.nombre,
+              nivel: rol.nivel
+            }));
+            this.filtrarEmpleados();
+          })
+          .catch((error) => {
+            console.error('Error cargando catálogos:', error);
+            this.error = 'No se pudieron cargar algunos catálogos.';
+            this.filtrarEmpleados();
+          })
+          .finally(() => {
+            this.loading = false;
+          });
       },
       error: (error) => {
         console.error('Error cargando empleados:', error);
@@ -475,7 +475,7 @@ cargarConfiguraciones() {
           tolerancia_entrada_minutos: t.tolerancia_entrada_minutos,
           tolerancia_salida_minutos: t.tolerancia_salida_minutos,
           cruza_medianoche: t.cruza_medianoche ?? false,
-          esPersonalizado: true 
+          esPersonalizado: true
         }));
       },
       error: (err) => console.error('Error cargando turnos:', err)
@@ -488,7 +488,7 @@ cargarConfiguraciones() {
     if (id !== null) {
       this.cargarJefesCandidatos(id);
     }
-    
+
     setTimeout(() => {
       this.filtrarEmpleados();
     }, 100);
@@ -499,7 +499,7 @@ cargarConfiguraciones() {
       this.jefesCandidatos = [];
       return;
     }
-    this.jefesCandidatos = this.empleados.filter(emp => 
+    this.jefesCandidatos = this.empleados.filter(emp =>
       emp.area_id === areaId && emp.activo
     );
   }
@@ -509,19 +509,19 @@ cargarConfiguraciones() {
     if (this.filtroTimeout) {
       clearTimeout(this.filtroTimeout);
     }
-    
+
     this.filtroTimeout = setTimeout(() => {
       let filtrados = this.empleados.filter(e => e.activo);
 
       if (this.filtroBusqueda) {
         const search = this.filtroBusqueda.toLowerCase();
-        filtrados = filtrados.filter(e => 
+        filtrados = filtrados.filter(e =>
           e.nombre_completo.toLowerCase().includes(search)
         );
       }
 
       if (this.filtroRol) {
-        filtrados = filtrados.filter(e => 
+        filtrados = filtrados.filter(e =>
           this.getTipoRolPorNombre(e.rol_id) === this.filtroRol
         );
       } else {
@@ -542,13 +542,13 @@ cargarConfiguraciones() {
     }
 
     const index = this.equipoCompleto.findIndex(e => e.id === empleado.id);
-    
+
     if (index === -1) {
       this.equipoCompleto.push({ ...empleado });
     } else {
       this.equipoCompleto.splice(index, 1);
     }
-    
+
     this.error = null;
   }
 
@@ -569,14 +569,14 @@ cargarConfiguraciones() {
 
   getEmpleadosDisponiblesRotativos(): Empleado[] {
     const areaId = this.areaJefeForm.controls.area_id.value;
-    
+
     return this.empleados.filter(emp => {
       if (!emp.activo) return false;
-      
+
       const tipoRol = this.getTipoRolPorNombre(emp.rol_id);
-      
+
       if (!['ENFERMERO', 'AUX_ENFERMERIA', 'AUX_HOSPITAL'].includes(tipoRol)) return false;
-      
+
       return emp.area_id === null || emp.area_id === areaId;
     });
   }
@@ -609,7 +609,7 @@ cargarConfiguraciones() {
     this.http.post<any>(`${API}/turnos`, nuevo).subscribe({
       next: (res) => {
         const turnoGuardado = res.data;
-        
+
         this.turnos.push({
           ...turnoGuardado,
           id: turnoGuardado.id,
@@ -620,16 +620,16 @@ cargarConfiguraciones() {
           tolerancia_salida_minutos: turnoGuardado.tolerancia_salida_minutos,
           minutos_descanso: turnoGuardado.minutos_descanso || 0,
           cruza_medianoche: turnoGuardado.cruza_medianoche || false,
-          esPersonalizado: true 
+          esPersonalizado: true
         });
-        
+
         this.info = 'Turno creado correctamente';
-        this.nuevoTurno = { 
-          nombre: '', 
-          hora_inicio: '08:00', 
-          hora_fin: '16:00', 
-          tolerancia_entrada_minutos: 15, 
-          tolerancia_salida_minutos: 15 
+        this.nuevoTurno = {
+          nombre: '',
+          hora_inicio: '08:00',
+          hora_fin: '16:00',
+          tolerancia_entrada_minutos: 15,
+          tolerancia_salida_minutos: 15
         };
       },
       error: (err) => {
@@ -641,7 +641,7 @@ cargarConfiguraciones() {
 
   eliminarTurno(id: number) {
     const turno = this.turnos.find(t => t.id === id);
-    
+
     if (!turno) {
       this.error = 'Turno no encontrado';
       return;
@@ -676,24 +676,24 @@ cargarConfiguraciones() {
       const nuevasAsignaciones = event.map(asig => ({
         empleado_id: asig.empleado_id,
         turno_id: asig.turno_id,
-        fecha_inicio: asig.fecha_inicio || asig.fecha, 
+        fecha_inicio: asig.fecha_inicio || asig.fecha,
         fecha_fin: asig.fecha_fin || asig.fecha,
         hora_entrada: asig.hora_entrada,
         hora_salida: asig.hora_salida
       }));
       this.asignacionesCalendario = [...this.asignacionesCalendario, ...nuevasAsignaciones];
-    } 
+    }
     else if (event && event.empleado_id) {
       const nuevaAsignacion: Asignacion = {
         empleado_id: event.empleado_id,
         turno_id: event.turno_id,
-        fecha_inicio: event.fecha_inicio || event.fecha, 
+        fecha_inicio: event.fecha_inicio || event.fecha,
         fecha_fin: event.fecha_fin || event.fecha,
         hora_entrada: event.hora_entrada,
         hora_salida: event.hora_salida
       };
       this.asignacionesCalendario.push(nuevaAsignacion);
-      
+
       const empleado = this.equipoCompleto.find(e => e.id === event.empleado_id);
       if (empleado) {
         empleado.turnoAsignado = event.turno_id;
@@ -786,7 +786,7 @@ cargarConfiguraciones() {
   // ===== Métodos auxiliares =====
   private cargarAsignacionesEquipoCompleto(fechaInicio: string, fechaFin: string) {
     ('Cargando asignaciones del equipo completo...');
-    
+
     this.equipoCompleto.forEach(empleado => {
       this.turnosService.getAsignacionesEmpleado(empleado.id, fechaInicio, fechaFin).subscribe({
         next: (res) => {
@@ -795,7 +795,7 @@ cargarConfiguraciones() {
               empleado.asignacionesPrevias = [];
             }
             empleado.asignacionesPrevias = [...res.asignaciones];
-            
+
             if (this.empleadoCalendarioSeleccionado === empleado.id) {
               this.actualizarCalendarioConAsignacionesPrevias();
             }
@@ -809,7 +809,7 @@ cargarConfiguraciones() {
   }
 
   onEmpleadoCalendarioChange() {
-    
+
     if (this.empleadoCalendarioSeleccionado) {
       this.actualizarCalendarioConAsignacionesPrevias();
     }
@@ -817,7 +817,7 @@ cargarConfiguraciones() {
 
   private actualizarCalendarioConAsignacionesPrevias() {
     if (!this.empleadoCalendarioSeleccionado) return;
-    
+
     const empleado = this.equipoCompleto.find(e => e.id === this.empleadoCalendarioSeleccionado);
     if (empleado && empleado.asignacionesPrevias) {
       this.recibirAsignaciones(empleado.asignacionesPrevias);
@@ -849,7 +849,7 @@ cargarConfiguraciones() {
 
   abrirModalReemplazo(empleado: any) {
     this.EmpleadoSeleccionado = empleado;
-    this.mostrarModalReemplazo  = true;
+    this.mostrarModalReemplazo = true;
   }
 
   private async asignarAreasDefinitivas(): Promise<void> {
@@ -866,7 +866,7 @@ cargarConfiguraciones() {
     });
 
     await Promise.all(promesas);
-    
+
     this.equipoCompleto.forEach(empleado => {
       empleado.area_id = areaId;
     });
@@ -881,9 +881,9 @@ cargarConfiguraciones() {
   private mostrarResumenAsignaciones(): void {
     const areaNombre = this.getAreaNombre(this.areaJefeForm.controls.area_id.value);
     const empleadosCount = this.equipoCompleto.length;
-    
+
     this.info = ` ${empleadosCount} empleados asignados al área ${areaNombre} y turnos guardados correctamente`;
-    
+
     setTimeout(() => {
       ('Resumen de asignaciones:');
       this.equipoCompleto.forEach(emp => {
@@ -1015,7 +1015,7 @@ cargarConfiguraciones() {
     return config.id || index;
   }
 
-  trackByDiaSemana(index: number, dia: any): number { 
+  trackByDiaSemana(index: number, dia: any): number {
     return index;
   }
 
@@ -1029,5 +1029,20 @@ cargarConfiguraciones() {
 
   trackByAsignacionId(index: number, asignacion: any): number {
     return asignacion.id || index;
+  }
+  getDiasDescansoLabels(dias: any[]): string {
+    if (!dias || dias.length === 0) return '';
+
+    const map: Record<string, string> = {
+      '0': 'Domingo',
+      '1': 'Lunes',
+      '2': 'Martes',
+      '3': 'Miércoles',
+      '4': 'Jueves',
+      '5': 'Viernes',
+      '6': 'Sábado'
+    };
+
+    return dias.map(d => map[d.toString()] || d).join(', ');
   }
 }

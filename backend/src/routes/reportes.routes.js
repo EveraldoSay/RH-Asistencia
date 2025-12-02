@@ -74,6 +74,7 @@ router.get('/asistencia', requireAuth, async (req, res) => {
         ORDER BY e.nombre_completo, at.fecha_inicio;
       `, [area_id, desde, hasta]);
 
+    // console.log(`[DEBUG] Rotativos encontrados: ${rotativos.length}`);
     let registros = [...rotativos];
 
     // ==================== CONSULTA TURNOS FIJOS ====================
@@ -88,8 +89,8 @@ router.get('/asistencia', requireAuth, async (req, res) => {
           t.tipo_turno,
           DATE_FORMAT(t.hora_inicio, '%H:%i') AS hora_entrada_programada,
           DATE_FORMAT(t.hora_fin, '%H:%i') AS hora_salida_programada,
-          al.dias_descanso,
-          al.fecha_inicio
+          c.configuracion,
+          c.fecha_inicio
         FROM asignacion_turnos af
         JOIN turnos t ON af.turno_id = t.id
         JOIN empleados e ON af.empleado_id = e.id
@@ -97,13 +98,13 @@ router.get('/asistencia', requireAuth, async (req, res) => {
         LEFT JOIN roles_empleado re ON re.id = e.rol_id
         LEFT JOIN area_supervisores sup ON sup.area_id = ar.id AND sup.es_titular = 1
         LEFT JOIN empleados jefe ON jefe.id = sup.empleado_id
-        LEFT JOIN asignaciones_lote al ON al.turno_id = t.id AND al.area_id = ar.id
+        LEFT JOIN configuraciones_turnos c ON c.turno_id = t.id AND c.area_id = ar.id
         WHERE ar.id = ? 
           AND t.tipo_turno = 'FIJO'
           AND af.eliminado_en IS NULL;
       `, [area_id]);
 
-    console.log(`[DEBUG] Turnos fijos encontrados: ${fijos.length}`);
+    // console.log(`[DEBUG] Turnos fijos encontrados: ${fijos.length}`);
 
     // ==================== EXPANDIR FECHAS DE FIJOS ====================
     if (fijos.length > 0) {
@@ -112,11 +113,24 @@ router.get('/asistencia', requireAuth, async (req, res) => {
 
       for (const f of fijos) {
         if (!f.empleado_id) continue;
-        const diasDescanso = f.dias_descanso ? f.dias_descanso.split(',').map(Number) : [];
+
+        let diasDescanso = [];
+        if (f.configuracion) {
+          try {
+            const conf = typeof f.configuracion === 'string' ? JSON.parse(f.configuracion) : f.configuracion;
+            if (conf.dias_descanso) {
+              diasDescanso = conf.dias_descanso.map(Number);
+            }
+          } catch (e) {
+            console.warn('Error parsing configuracion for fixed shift:', e);
+          }
+        }
+
         const fechaInicioLote = f.fecha_inicio ? new Date(f.fecha_inicio) : null;
 
         for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
-          const diaSemana = d.getDay();
+          const diaSemana = d.getUTCDay(); // Use UTC day to avoid timezone issues
+
           if (fechaInicioLote && d < fechaInicioLote) continue;
           if (diasDescanso.includes(diaSemana)) continue;
 
@@ -134,8 +148,6 @@ router.get('/asistencia', requireAuth, async (req, res) => {
             entrada_real = asist[0].entrada_real;
             salida_real = asist[0].salida_real;
             estado = asist[0].estado;
-          } else {
-            // console.log(`[DEBUG] No asistencia found for Emp ${f.empleado_id} on ${d.toISOString().split('T')[0]}`);
           }
 
           registros.push({

@@ -35,7 +35,7 @@ async function procesarAsistenciaDia(fecha) {
     }
 
     // 2. buscar eventos de ese empleado en registros_asistencia
-    const eventos = await db.query(`
+    const [eventos] = await db.query(`
       SELECT * FROM registros_asistencia
       WHERE empleado_id = ? 
         AND DATE(fecha_hora) = ?
