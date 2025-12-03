@@ -94,6 +94,7 @@ async function fetchEvents(device) {
 }
 
 // === Guardar eventos en registros_asistencia ===
+// === Guardar eventos en registros_asistencia ===
 async function saveEvents(events) {
   let insertados = 0;
 
@@ -121,36 +122,69 @@ async function saveEvents(events) {
 
   console.log(`Eventos recibidos: ${events.length} | Eventos únicos (filtrados): ${cleanEvents.length}`);
 
-  // 3. Insertar solo los eventos limpios
+  // 3. Agrupar por empleado para determinar Entrada/Salida (Lógica Toggle)
+  const eventsByEmp = {};
   for (const ev of cleanEvents) {
+    if (!eventsByEmp[ev.empleado]) eventsByEmp[ev.empleado] = [];
+    eventsByEmp[ev.empleado].push(ev);
+  }
+
+  // 4. Procesar y guardar
+  for (const empNo in eventsByEmp) {
+    const empEvents = eventsByEmp[empNo];
+    // Asegurar orden cronológico
+    empEvents.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+
+    // Obtener ID de empleado una sola vez
+    let empleado_id = null;
     try {
       const [rows] = await db.query(
         'SELECT id FROM empleados WHERE numero_empleado = ? LIMIT 1',
-        [ev.empleado]
+        [empNo]
       );
-
-      const empleado_id = rows.length ? rows[0].id : null;
-
-      await db.query(
-        `
-        INSERT IGNORE INTO registros_asistencia
-          (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
-        VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
-        `,
-        [
-          empleado_id,
-          ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
-          new Date(ev.fechaHora),
-          ev.ip,
-          ev.modo
-        ]
-      );
-      insertados++;
+      if (rows.length) empleado_id = rows[0].id;
     } catch (err) {
-      console.error(`Error insertando evento ${ev.empleado}: ${err.message}`);
+      console.error(`Error buscando empleado ${empNo}:`, err.message);
+      continue;
+    }
+
+    if (!empleado_id) continue;
+
+    // Determinar tipo de evento alternando (Entrada, Salida, Entrada...)
+    // Asumimos que el primer evento del día es ENTRADA.
+    // TODO: Si se quisiera ser más robusto ante reinicios parciales, se debería consultar el último estado en BD.
+    // Pero dado que este script corre para "todo el día" (getTimeRange), reconstruir la secuencia completa es lo mejor.
+
+    for (let i = 0; i < empEvents.length; i++) {
+      const ev = empEvents[i];
+      // Lógica Toggle: Pares (0, 2, 4...) son ENTRADA, Impares (1, 3...) son SALIDA
+      const tipoEvento = (i % 2 === 0) ? 'ENTRADA' : 'SALIDA';
+
+      try {
+        await db.query(
+          `
+              INSERT INTO registros_asistencia
+                (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
+              VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
+              ON DUPLICATE KEY UPDATE 
+                tipo_evento = VALUES(tipo_evento),
+                procesado = 0
+              `,
+          [
+            empleado_id,
+            tipoEvento,
+            new Date(ev.fechaHora),
+            ev.ip,
+            ev.modo
+          ]
+        );
+        insertados++;
+      } catch (err) {
+        console.error(`Error insertando evento ${ev.empleado}: ${err.message}`);
+      }
     }
   }
-  console.log(`Total insertados en DB: ${insertados}`);
+  console.log(`Total procesados en DB: ${insertados}`);
 }
 
 
