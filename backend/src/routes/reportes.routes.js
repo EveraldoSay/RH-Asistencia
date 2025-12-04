@@ -475,7 +475,6 @@ router.post('/sincronizar-marcajes-anteriores', requireAuth, async (req, res) =>
   }
 });
 
-
 // Endpoint para reporte de horarios (Planificación)
 router.get('/horarios', requireAuth, async (req, res) => {
   try {
@@ -494,14 +493,19 @@ router.get('/horarios', requireAuth, async (req, res) => {
         DATE_FORMAT(t.hora_inicio, '%H:%i') as hora_inicio,
         DATE_FORMAT(t.hora_fin, '%H:%i') as hora_fin,
         at.fecha_inicio,
-        'ROTATIVO' as tipo
+        al.fecha_inicio as lote_fecha_inicio,
+        al.fecha_fin as lote_fecha_fin,
+        'ROTATIVO' as tipo,
+        al.dias_descanso as dias_descanso_db
       FROM asignacion_turnos at
       JOIN empleados e ON at.empleado_id = e.id
       LEFT JOIN roles_empleado r ON e.rol_id = r.id
       JOIN turnos t ON at.turno_id = t.id
+      LEFT JOIN asignaciones_lote al ON at.lote_id = al.id
       WHERE e.area_id = ? 
       AND at.fecha_inicio BETWEEN ? AND ?
       AND at.eliminado_en IS NULL
+      AND t.tipo_turno != 'FIJO'
       ORDER BY e.nombre_completo, at.fecha_inicio
     `, [area_id, desde, hasta]);
 
@@ -515,6 +519,8 @@ router.get('/horarios', requireAuth, async (req, res) => {
         t.nombre_turno,
         DATE_FORMAT(t.hora_inicio, '%H:%i') as hora_inicio,
         DATE_FORMAT(t.hora_fin, '%H:%i') as hora_fin,
+        at.fecha_inicio,
+        at.fecha_fin,
         c.configuracion
       FROM asignacion_turnos at
       JOIN empleados e ON at.empleado_id = e.id
@@ -524,11 +530,28 @@ router.get('/horarios', requireAuth, async (req, res) => {
       WHERE e.area_id = ?
       AND t.tipo_turno = 'FIJO'
       AND at.eliminado_en IS NULL
-    `, [area_id]);
+      AND at.fecha_inicio <= ?
+      AND (at.fecha_fin >= ? OR at.fecha_fin IS NULL)
+    `, [area_id, hasta, desde]);
 
     // Procesar datos para el reporte
     // Queremos una lista de empleados con sus horarios detallados
     const empleadosMap = new Map();
+
+    // Helper para generar rango de fechas
+    const getDatesInRange = (startDate, endDate) => {
+      const date = new Date(startDate);
+      const end = new Date(endDate);
+      const dates = [];
+      while (date <= end) {
+        dates.push(new Date(date).toISOString().split('T')[0]);
+        date.setDate(date.getDate() + 1);
+      }
+      return dates;
+    };
+
+    const allDates = getDatesInRange(desde, hasta);
+    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
     // Procesar rotativos
     rotativos.forEach(r => {
@@ -537,11 +560,21 @@ router.get('/horarios', requireAuth, async (req, res) => {
           nombre_completo: r.nombre_completo,
           rol_nombre: r.nombre_rol,
           horarios: [],
-          dias_descanso: [] // Rotativos no tienen "dias descanso" fijos en config, se infiere por ausencia de turno
+          fechasAsignadas: new Set(), // Para rastrear días trabajados
+          dias_descanso: [],
+          dias_descanso_db: r.dias_descanso_db, // Guardar valor de DB
+          fecha_inicio: r.lote_fecha_inicio ? new Date(r.lote_fecha_inicio).toISOString().split('T')[0] : null,
+          fecha_fin: r.lote_fecha_fin ? new Date(r.lote_fecha_fin).toISOString().split('T')[0] : null,
+          tipo: r.tipo // 'ROTATIVO'
         });
       }
       const emp = empleadosMap.get(r.nombre_completo);
-      emp.horarios.push(`${r.fecha_inicio.toISOString().split('T')[0]}: ${r.hora_inicio}-${r.hora_fin}`);
+      // Asegurar que fecha_inicio sea Date
+      const fechaObj = new Date(r.fecha_inicio);
+      const fechaStr = fechaObj.toISOString().split('T')[0];
+
+      emp.horarios.push(`${fechaStr}: ${r.hora_inicio}-${r.hora_fin}`);
+      emp.fechasAsignadas.add(fechaStr);
     });
 
     // Procesar fijos (proyectar si es necesario, o mostrar resumen)
@@ -553,8 +586,7 @@ router.get('/horarios', requireAuth, async (req, res) => {
           try {
             const conf = typeof f.configuracion === 'string' ? JSON.parse(f.configuracion) : f.configuracion;
             if (conf.dias_descanso) {
-              const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-              descanso = conf.dias_descanso.map(d => dias[d]).join(', ');
+              descanso = conf.dias_descanso.map(d => diasSemana[d]).join(', ');
             }
           } catch (e) { }
         }
@@ -564,25 +596,63 @@ router.get('/horarios', requireAuth, async (req, res) => {
           rol_nombre: f.nombre_rol,
           detalle_horario: `${f.nombre_turno} (${f.hora_inicio} - ${f.hora_fin})`,
           dias_descanso: descanso,
+          fecha_inicio: f.fecha_inicio ? new Date(f.fecha_inicio).toISOString().split('T')[0] : null,
+          fecha_fin: f.fecha_fin ? new Date(f.fecha_fin).toISOString().split('T')[0] : null,
           tipo: 'FIJO'
         });
       }
     });
 
-    // Convertir a array
+    // Convertir a array y calcular descansos para rotativos
     const data = Array.from(empleadosMap.values()).map(e => {
       if (e.horarios) {
-        // Formatear horarios rotativos para que no sea una lista gigante si no es necesario
-        // O simplemente devolver la lista. Para el PDF, tal vez queramos un resumen.
-        // Por ahora, unimos los primeros o mostramos "Ver detalle"
-        e.detalle_horario = e.horarios.map(h => h.split(': ')[1]).join(', '); // Simplificado
-        // Mejor: Agrupar por horas si son iguales
+        // Calcular días de descanso para rotativos
+        if (!e.tipo || e.tipo !== 'FIJO') {
+          // PRIORIDAD 1: Usar lo que viene de asignaciones_lote (si existe)
+          if (e.dias_descanso_db) {
+            try {
+              // Puede venir como string "0,6" o array
+              const diasDB = typeof e.dias_descanso_db === 'string'
+                ? e.dias_descanso_db.split(',').map(Number)
+                : e.dias_descanso_db;
+
+              if (Array.isArray(diasDB) && diasDB.length > 0) {
+                e.dias_descanso = diasDB.map(d => diasSemana[d]).join(', ');
+              }
+            } catch (err) {
+              console.warn('Error parseando dias_descanso_db:', err);
+            }
+          }
+
+          // PRIORIDAD 2: Si no hay dato en DB, inferir por huecos (días sin turno en el rango)
+          if (!e.dias_descanso || e.dias_descanso.length === 0) {
+            const descansos = [];
+            allDates.forEach(date => {
+              if (!e.fechasAsignadas.has(date)) {
+                const d = new Date(date);
+                // Usar UTC day para evitar problemas de zona horaria con fechas YYYY-MM-DD
+                const diaIndex = d.getUTCDay();
+                const diaNombre = diasSemana[diaIndex];
+                const diaNumero = date.split('-')[2];
+                descansos.push(`${diaNombre} ${diaNumero}`);
+              }
+            });
+            e.dias_descanso = descansos.join(', ');
+          }
+        }
+
+        // Formatear horarios rotativos
         const horasUnicas = [...new Set(e.horarios.map(h => h.split(': ')[1]))];
         if (horasUnicas.length === 1) {
           e.detalle_horario = `Todos los días: ${horasUnicas[0]}`;
         } else {
+          // Si son muchos, mostrar resumen o rango
           e.detalle_horario = horasUnicas.join(' / ');
         }
+
+        // Limpiar propiedades auxiliares
+        delete e.fechasAsignadas;
+        delete e.dias_descanso_db;
       }
       return e;
     });

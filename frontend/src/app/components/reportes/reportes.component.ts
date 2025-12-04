@@ -97,6 +97,12 @@ export class ReportesComponent implements OnInit {
     }
 
     this.semanaSeleccionada = null;
+
+    // Si es reporte de horarios, actualizar automáticamente el rango de fechas
+    if (this.tipoReporte === 'horarios') {
+      this.fechaDesde = `${year}-${month.toString().padStart(2, '0')}-01`;
+      this.fechaHasta = `${year}-${month.toString().padStart(2, '0')}-${diasMes}`;
+    }
   }
 
   generarReporteHorarios() {
