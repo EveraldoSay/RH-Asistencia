@@ -53,7 +53,7 @@
       </div>
 
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'dia'">
-        <label>DÃ­a especÃ­fico:</label>
+        <label>Día Específico:</label>
         <div class="input-icon">
           <input type="date" [(ngModel)]="diaEspecifico" />
           <i class="fa fa-calendar"></i>
@@ -100,7 +100,7 @@
         <div class="busqueda-empleado-container">
           <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()"
             (focus)="mostrandoResultados = empleadosEncontrados.length > 0"
-            placeholder="Nombre o renglÃ³n del empleado..." class="busqueda-input" />
+            placeholder="Nombre o renglón del empleado..." class="busqueda-input" />
 
           <!-- BotÃ³n para limpiar bÃºsqueda -->
           <button *ngIf="empleadoSeleccionado" (click)="limpiarBusquedaEmpleado()" class="btn-limpiar" type="button">
