@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+﻿import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportesService } from '../../services/reportes.service';
@@ -46,7 +46,7 @@ export class ReportesComponent implements OnInit {
         this.areas = res.areas;
       },
       error: (err) => {
-        console.error('Error cargando áreas:', err);
+        console.error('Error cargando Ã¡reas:', err);
       }
     });
   }
@@ -61,7 +61,7 @@ export class ReportesComponent implements OnInit {
   }
 
   obtenerNombreArea() {
-    const areaObj = this.areas.find(a => a.id === this.areaSeleccionada);
+    const areaObj = this.areas.find(a => a.id == this.areaSeleccionada);
     return areaObj ? areaObj.nombre_area : 'Área no encontrada';
   }
 
@@ -74,7 +74,7 @@ export class ReportesComponent implements OnInit {
 
     this.semanas = [];
 
-    // Agregar opción "Mes Completo"
+    // Agregar opciÃ³n "Mes Completo"
     this.semanas.push({
       numero: 0,
       desde: `${year}-${month.toString().padStart(2, '0')}-01`,
@@ -90,7 +90,7 @@ export class ReportesComponent implements OnInit {
       const fin = Math.min(diaActual + 6, diasMes);
       const desde = new Date(year, month - 1, inicio).toISOString().split('T')[0];
       const hasta = new Date(year, month - 1, fin).toISOString().split('T')[0];
-      const texto = `Semana ${numeroSemana}: ${inicio}–${fin} ${fechaInicioMes.toLocaleString('es', { month: 'short' })}`;
+      const texto = `Semana ${numeroSemana}: ${inicio}â€“${fin} ${fechaInicioMes.toLocaleString('es', { month: 'short' })}`;
       this.semanas.push({ numero: numeroSemana, desde, hasta, texto });
       diaActual += 7;
       numeroSemana++;
@@ -98,7 +98,7 @@ export class ReportesComponent implements OnInit {
 
     this.semanaSeleccionada = null;
 
-    // Si es reporte de horarios, actualizar automáticamente el rango de fechas
+    // Si es reporte de horarios, actualizar automÃ¡ticamente el rango de fechas
     if (this.tipoReporte === 'horarios') {
       this.fechaDesde = `${year}-${month.toString().padStart(2, '0')}-01`;
       this.fechaHasta = `${year}-${month.toString().padStart(2, '0')}-${diasMes}`;
@@ -107,7 +107,7 @@ export class ReportesComponent implements OnInit {
 
   generarReporteHorarios() {
     if (!this.areaSeleccionada) {
-      alert('Seleccione un área.');
+      alert('Seleccione un Ã¡rea.');
       return;
     }
     if (!this.fechaDesde || !this.fechaHasta) {
@@ -234,7 +234,7 @@ export class ReportesComponent implements OnInit {
 
   generarReporteAsistencia() {
     if (!this.areaSeleccionada) {
-      alert('Seleccione un área.');
+      alert('Seleccione un Ã¡rea.');
       return;
     }
 
@@ -266,7 +266,7 @@ export class ReportesComponent implements OnInit {
     this.repService.getReporte(this.areaSeleccionada, desde, hasta, this.tipoReporte).subscribe({
       next: (res) => {
         this.registros = res.registros;
-        this.eventosBiometricos = []; // Limpiar eventos biométricos
+        this.eventosBiometricos = []; // Limpiar eventos Biométricos
         this.cargando = false;
       },
       error: (err) => {
@@ -297,14 +297,14 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  // Método para seleccionar un empleado
+  // MÃ©todo para seleccionar un empleado
   seleccionarEmpleado(empleado: any) {
     this.empleadoSeleccionado = empleado;
     this.empleadoBusqueda = empleado.nombre_completo;
     this.mostrandoResultados = false;
   }
 
-  // Método para limpiar la selección
+  // MÃ©todo para limpiar la selecciÃ³n
   limpiarBusquedaEmpleado() {
     this.empleadoSeleccionado = null;
     this.empleadoBusqueda = '';
@@ -315,21 +315,21 @@ export class ReportesComponent implements OnInit {
 
   generarReporteBiometricos() {
     if (this.tipoFiltroBiometricos === 'mes' && !this.mesSeleccionado) {
-      alert('Seleccione un mes para generar el reporte de eventos biométricos.');
+      alert('Seleccione un mes para generar el reporte de eventos Biométricos.');
       return;
     }
 
     if (this.tipoFiltroBiometricos === 'dia' && !this.diaEspecifico) {
-      alert('Seleccione un día específico para generar el reporte de eventos biométricos.');
+      alert('Seleccione un dÃ­a especÃ­fico para generar el reporte de eventos Biométricos.');
       return;
     }
 
     if (this.tipoFiltroBiometricos === 'rango' && (!this.fechaDesde || !this.fechaHasta)) {
-      alert('Seleccione ambas fechas (desde y hasta) para generar el reporte de eventos biométricos.');
+      alert('Seleccione ambas fechas (desde y hasta) para generar el reporte de eventos Biométricos.');
       return;
     }
 
-    // NUEVA VALIDACIÓN: Rango de fechas válido
+    // NUEVA VALIDACIÃ“N: Rango de fechas vÃ¡lido
     if (this.tipoFiltroBiometricos === 'rango') {
       const desde = new Date(this.fechaDesde);
       const hasta = new Date(this.fechaHasta);
@@ -344,7 +344,7 @@ export class ReportesComponent implements OnInit {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays > 31) {
-        if (!confirm(`Está solicitando un reporte de ${diffDays} días. Esto puede generar un archivo muy grande. ¿Desea continuar?`)) {
+        if (!confirm(`EstÃ¡ solicitando un reporte de ${diffDays} Días. Esto puede generar un archivo muy grande. Â¿Desea continuar?`)) {
           return;
         }
       }
@@ -354,7 +354,7 @@ export class ReportesComponent implements OnInit {
 
     const parametro = this.tipoFiltroBiometricos === 'dia' ? this.diaEspecifico :
       this.tipoFiltroBiometricos === 'mes' ? this.mesSeleccionado :
-        this.fechaDesde; // Para rango, podemos enviar cualquier fecha como parámetro base
+        this.fechaDesde; // Para rango, podemos enviar cualquier fecha como parÃ¡metro base
 
     const empleadoId = this.empleadoSeleccionado ? this.empleadoSeleccionado.id : undefined;
 
@@ -371,14 +371,14 @@ export class ReportesComponent implements OnInit {
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error al generar reporte de eventos biométricos:', err);
+        console.error('Error al generar reporte de eventos Biométricos:', err);
         this.cargando = false;
-        alert('Error al generar el reporte de eventos biométricos: ' + err.message);
+        alert('Error al generar el reporte de eventos Biométricos: ' + err.message);
       }
     });
   }
 
-  // NUEVO MÉTODO PARA ACTUALIZAR BIOMÉTRICO
+  // NUEVO MÃ‰TODO PARA ACTUALIZAR BIOMÃ‰TRICO
   actualizarBiometrico() {
     this.actualizandoBiometrico = true;
 
@@ -388,23 +388,23 @@ export class ReportesComponent implements OnInit {
         if (res.success) {
           alert('Biométrico actualizado correctamente. Se encontraron ' + res.totalEventos + ' eventos.');
 
-          // Si estamos en el reporte de eventos biométricos, actualizar automáticamente
+          // Si estamos en el reporte de eventos Biométricos, actualizar automÃ¡ticamente
           if (this.tipoReporte === 'biometricos') {
             this.generarReporteBiometricos();
           }
         } else {
-          alert('Error al actualizar biométrico: ' + res.message);
+          alert('Error al actualizar Biométrico: ' + res.message);
         }
       },
       error: (err) => {
         this.actualizandoBiometrico = false;
-        console.error('Error actualizando biométrico:', err);
-        alert('Error al actualizar biométrico: ' + err.message);
+        console.error('Error actualizando Biométrico:', err);
+        alert('Error al actualizar Biométrico: ' + err.message);
       }
     });
   }
 
-  // Método para sincronizar marcajes anteriores
+  // MÃ©todo para sincronizar marcajes anteriores
   sincronizarMarcajesAnteriores() {
     if (!this.fechaDesde || !this.fechaHasta) {
       alert('Seleccione las fechas desde y hasta para sincronizar.');
@@ -425,7 +425,7 @@ export class ReportesComponent implements OnInit {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays > 31) {
-      if (!confirm(`Está solicitando sincronizar ${diffDays} días. Esto puede tomar mucho tiempo. ¿Desea continuar?`)) {
+      if (!confirm(`EstÃ¡ solicitando sincronizar ${diffDays} Días. Esto puede tomar mucho tiempo. Â¿Desea continuar?`)) {
         return;
       }
     }
@@ -436,12 +436,12 @@ export class ReportesComponent implements OnInit {
       next: (res) => {
         this.sincronizandoMarcajes = false;
         if (res.success) {
-          alert(`Sincronización completada:\n
+          alert(`SincronizaciÃ³n completada:\n
             Eventos insertados: ${res.eventos}\n
             Duplicados omitidos: ${res.duplicados}\n
             Asistencias procesadas: ${res.asistencias}`);
 
-          // Opcional: generar reporte automáticamente después de sincronizar
+          // Opcional: generar reporte automÃ¡ticamente despuÃ©s de sincronizar
           this.generarReporteBiometricos();
         } else {
           alert('Error al sincronizar marcajes: ' + res.message);
@@ -455,7 +455,7 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  // Modificar onTipoFiltroBiometricosChange para incluir la nueva opción
+  // Modificar onTipoFiltroBiometricosChange para incluir la nueva opciÃ³n
   onTipoFiltroBiometricosChange() {
     if (this.tipoFiltroBiometricos === 'mes') {
       this.diaEspecifico = '';
@@ -468,7 +468,7 @@ export class ReportesComponent implements OnInit {
     } else if (this.tipoFiltroBiometricos === 'rango' || this.tipoFiltroBiometricos === 'marcajes_anteriores') {
       this.mesSeleccionado = '';
       this.diaEspecifico = '';
-      // Inicializar rango si está vacío
+      // Inicializar rango si estÃ¡ vacÃ­o
       if (!this.fechaDesde || !this.fechaHasta) {
         this.inicializarFechasPorDefecto();
       }
@@ -502,7 +502,7 @@ export class ReportesComponent implements OnInit {
   }
 
 
-  // MÉTODOS PARA LAS CLASES DINÁMICAS
+  // MÃ‰TODOS PARA LAS CLASES DINÃMICAS
   getCumplimientoClass(valor: string): string {
     if (!valor) return '';
     const v = valor.toLowerCase();
@@ -570,16 +570,16 @@ export class ReportesComponent implements OnInit {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(datos);
 
-    // Agregar encabezado con información del reporte
+    // Agregar encabezado con informaciÃ³n del reporte
     const encabezado = [
       ['Hospital Regional de Occidente'],
       ['Reporte de Asistencia por Área'],
       [`Área: ${nombreArea}`],
-      [`Período: ${rango}`],
+      [`PerÃ­odo: ${rango}`],
       [`Tipo: ${this.obtenerTipoReporteTexto()}`],
       [`Generado: ${fechaGen}`],
       [`Total registros: ${this.registros.length}`],
-      [] // Línea en blanco
+      [] // LÃ­nea en blanco
     ];
 
     XLSX.utils.sheet_add_aoa(ws, encabezado, { origin: 'A1' });
@@ -620,7 +620,7 @@ export class ReportesComponent implements OnInit {
 
   descargarExcelEventosBiometricos() {
     if (this.eventosBiometricos.length === 0) {
-      alert('No hay eventos biométricos para exportar.');
+      alert('No hay eventos Biométricos para exportar.');
       return;
     }
 
@@ -636,9 +636,9 @@ export class ReportesComponent implements OnInit {
       'Fecha': evento.fecha,
       'Hora': evento.hora,
       'Dispositivo IP': evento.dispositivo_ip || 'N/A',
-      'Código Evento': evento.codigo_evento || 'N/A',
+      'CÃ³digo Evento': evento.codigo_evento || 'N/A',
       'Origen': evento.origen,
-      'Procesado': evento.procesado ? 'Sí' : 'No',
+      'Procesado': evento.procesado ? 'SÃ­' : 'No',
       'Registrado En': evento.creado_en ?
         `${this.formatearFecha(evento.creado_en)} ${this.formatearHora(evento.creado_en)}` : 'N/A'
     }));
@@ -647,9 +647,9 @@ export class ReportesComponent implements OnInit {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(datos);
 
-    // Agregar encabezado con información del reporte
+    // Agregar encabezado con informaciÃ³n del reporte
     const periodoInfo = this.diaEspecifico ?
-      `Día: ${this.formatearFecha(this.diaEspecifico)}` :
+      `DÃ­a: ${this.formatearFecha(this.diaEspecifico)}` :
       `Mes: ${this.mesSeleccionado}`;
 
     const encabezado = [
@@ -658,7 +658,7 @@ export class ReportesComponent implements OnInit {
       [periodoInfo],
       [`Total eventos: ${resumen.total} | Entradas: ${resumen.entradas} | Salidas: ${resumen.salidas}`],
       [`Generado: ${fechaGen}`],
-      [] // Línea en blanco
+      [] // LÃ­nea en blanco
     ];
 
     XLSX.utils.sheet_add_aoa(ws, encabezado, { origin: 'A1' });
@@ -679,7 +679,7 @@ export class ReportesComponent implements OnInit {
       { wch: 12 },  // Fecha
       { wch: 10 },  // Hora
       { wch: 15 },  // Dispositivo IP
-      { wch: 15 },  // Código Evento
+      { wch: 15 },  // CÃ³digo Evento
       { wch: 10 },  // Origen
       { wch: 10 },  // Procesado
       { wch: 20 }   // Registrado En
@@ -723,8 +723,8 @@ export class ReportesComponent implements OnInit {
     }
 
     if (!this.areaSeleccionada) {
-      console.error('No hay área seleccionada para el PDF');
-      alert('Error: No se ha seleccionado un área válida.');
+      console.error('No hay Ã¡rea seleccionada para el PDF');
+      alert('Error: No se ha seleccionado un Ã¡rea vÃ¡lida.');
       return;
     }
 
@@ -855,7 +855,7 @@ export class ReportesComponent implements OnInit {
             }
           }
 
-          // Colorear estado del día
+          // Colorear estado del dÃ­a
           if (data.column.dataKey === 'estado_dia' && data.cell.raw) {
             const estado = typeof data.cell.raw === 'string' ? data.cell.raw.toLowerCase() : '';
             if (estado.includes('presente') && !estado.includes('no obligatorio')) {
@@ -878,7 +878,7 @@ export class ReportesComponent implements OnInit {
           const pageHeight = pageSize.height || pageSize.getHeight();
           doc.setFontSize(8);
           doc.text(
-            `Página ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
+            `PÃ¡gina ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
             14,
             pageHeight - 5
           );
@@ -911,7 +911,7 @@ export class ReportesComponent implements OnInit {
 
   descargarPDFEventosBiometricos() {
     if (this.eventosBiometricos.length === 0) {
-      alert('No hay eventos biométricos para exportar.');
+      alert('No hay eventos Biométricos para exportar.');
       return;
     }
 
@@ -940,9 +940,9 @@ export class ReportesComponent implements OnInit {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
 
-      // Mostrar mes o día específico según corresponda
+      // Mostrar mes o dÃ­a especÃ­fico segÃºn corresponda
       if (this.diaEspecifico) {
-        doc.text(`Día: ${this.formatearFecha(this.diaEspecifico)}`, 14, 38);
+        doc.text(`DÃ­a: ${this.formatearFecha(this.diaEspecifico)}`, 14, 38);
       } else {
         doc.text(`Mes: ${this.mesSeleccionado}`, 14, 38);
       }
@@ -951,14 +951,14 @@ export class ReportesComponent implements OnInit {
       doc.text(`Entradas: ${resumen.entradas} | Salidas: ${resumen.salidas}`, 140, 38);
       doc.text(`Generado: ${fechaGen}`, 200, 38);
 
-      // Columnas para eventos biométricos
+      // Columnas para eventos Biométricos
       const columnas = [
         { header: 'Empleado', dataKey: 'empleado' },
         { header: 'Tipo Evento', dataKey: 'tipo_evento' },
         { header: 'Fecha', dataKey: 'fecha' },
         { header: 'Hora', dataKey: 'hora' },
         { header: 'Dispositivo IP', dataKey: 'dispositivo_ip' },
-        { header: 'Código Evento', dataKey: 'codigo_evento' },
+        { header: 'CÃ³digo Evento', dataKey: 'codigo_evento' },
         { header: 'Origen', dataKey: 'origen' },
         { header: 'Procesado', dataKey: 'procesado' }
       ];
@@ -971,7 +971,7 @@ export class ReportesComponent implements OnInit {
         dispositivo_ip: e.dispositivo_ip || 'N/A',
         codigo_evento: e.codigo_evento || 'N/A',
         origen: e.origen,
-        procesado: e.procesado ? 'Sí' : 'No'
+        procesado: e.procesado ? 'SÃ­' : 'No'
       }));
 
       autoTable(doc, {
@@ -1013,7 +1013,7 @@ export class ReportesComponent implements OnInit {
 
           // Colorear estado de procesado
           if (data.column.dataKey === 'procesado' && data.cell.raw) {
-            if (data.cell.raw === 'Sí') {
+            if (data.cell.raw === 'SÃ­') {
               data.cell.styles.textColor = [25, 135, 84]; // Verde
               data.cell.styles.fontStyle = 'bold';
             } else {
@@ -1027,7 +1027,7 @@ export class ReportesComponent implements OnInit {
           const pageHeight = pageSize.height || pageSize.getHeight();
           doc.setFontSize(8);
           doc.text(
-            `Página ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
+            `PÃ¡gina ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
             14,
             pageHeight - 5
           );
@@ -1071,7 +1071,7 @@ export class ReportesComponent implements OnInit {
 
     // Check if the created date is valid
     if (isNaN(fecha.getTime())) {
-      return 'Fecha inválida';
+      return 'Fecha invÃ¡lida';
     }
 
     return fecha.toLocaleDateString('es-GT', { timeZone: 'UTC' });
@@ -1096,7 +1096,7 @@ export class ReportesComponent implements OnInit {
   obtenerRangoSeleccionado() {
     if (this.tipoReporte === 'biometricos') {
       if (this.tipoFiltroBiometricos === 'dia') {
-        return `Día específico: ${this.formatearFecha(this.diaEspecifico)}`;
+        return `DÃ­a especÃ­fico: ${this.formatearFecha(this.diaEspecifico)}`;
       } else if (this.tipoFiltroBiometricos === 'rango') {
         return `Rango: ${this.formatearFecha(this.fechaDesde)} a ${this.formatearFecha(this.fechaHasta)}`;
       } else if (this.tipoFiltroBiometricos === 'mes') {
@@ -1120,13 +1120,17 @@ export class ReportesComponent implements OnInit {
       this.semanaSeleccionada = null;
     }
 
+    // Resetear filtros de eventos Biométricos
     // Resetear filtros de eventos biométricos
-    if (this.tipoReporte === 'biometricos' || this.tipoReporte === 'horarios') {
+    if (this.tipoReporte === 'biometricos') {
       this.tipoFiltroBiometricos = 'mes';
       this.diaEspecifico = '';
       this.fechaDesde = '';
       this.fechaHasta = '';
       this.inicializarFechasPorDefecto(); // Inicializar rango por defecto
+    } else if (this.tipoReporte === 'horarios') {
+      this.fechaDesde = '';
+      this.fechaHasta = '';
     } else {
       this.diaEspecifico = '';
     }
