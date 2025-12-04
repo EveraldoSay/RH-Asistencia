@@ -1,4 +1,4 @@
-// calendario-turnos.component.ts
+﻿// calendario-turnos.component.ts
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -43,7 +43,7 @@ export class CalendarioTurnosComponent implements OnInit {
   mesActual: number;
   anioActual: number;
   diasCalendario: DiaCalendario[] = [];
-  diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  diasSemana = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
   meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -67,7 +67,7 @@ export class CalendarioTurnosComponent implements OnInit {
     this.empleadoOriginal = event.empleadoOriginal;
     this.turnoIdReemplazo = event.turnoId;
 
-    alert(`Seleccione los días que ${this.empleadoReemplazo.nombre_completo} cubrirá a ${this.empleadoOriginal.nombre_completo}`);
+    alert(`Seleccione los dÃ­as que ${this.empleadoReemplazo.nombre_completo} cubrirÃ¡ a ${this.empleadoOriginal.nombre_completo}`);
   }
 
 
@@ -91,7 +91,7 @@ export class CalendarioTurnosComponent implements OnInit {
     this.generarCalendario();
     this.cargarAsignaciones();
     
-    // 🔥 NUEVO: Si hay asignaciones previas, marcarlas inmediatamente
+    // ðŸ”¥ NUEVO: Si hay asignaciones previas, marcarlas inmediatamente
     if (this.asignacionesPrevias.length > 0) {
       setTimeout(() => {
         this.marcarAsignacionesPrevias();
@@ -108,7 +108,7 @@ export class CalendarioTurnosComponent implements OnInit {
         dia.hora_entrada = asign.hora_entrada || asign.hora_inicio;
         dia.hora_salida = asign.hora_salida || asign.hora_fin;
         
-        // 🔥 NUEVO: Agregar a las asignaciones visuales
+        // ðŸ”¥ NUEVO: Agregar a las asignaciones visuales
         if (!dia.asignaciones.some(a => a.fecha === asign.fecha && a.turno_id === asign.turno_id)) {
           dia.asignaciones.push({
             fecha: asign.fecha,
@@ -123,13 +123,13 @@ export class CalendarioTurnosComponent implements OnInit {
           });
         }
         
-        (`✅ Día ${asign.fecha} marcado como asignado`);
+        (`âœ… DÃ­a ${asign.fecha} marcado como asignado`);
       } else {
-        (`❌ Día ${asign.fecha} no encontrado en calendario`);
+        (`âŒ DÃ­a ${asign.fecha} no encontrado en calendario`);
       }
     }
     
-    // Forzar actualización de la vista
+    // Forzar actualizaciÃ³n de la vista
     this.diasCalendario = [...this.diasCalendario];
   }
 
@@ -220,6 +220,7 @@ export class CalendarioTurnosComponent implements OnInit {
   }
 
   mesSiguiente() {
+    if (this.esUltimoMesPermitido) return;
     this.mesActual++;
     if (this.mesActual > 11) {
       this.mesActual = 0;
@@ -251,7 +252,7 @@ export class CalendarioTurnosComponent implements OnInit {
     });
 
     asignaciones.forEach(asignacion => {
-      // 🔹 Usar fecha_inicio para mapear en calendario
+      // ðŸ”¹ Usar fecha_inicio para mapear en calendario
       const dia = this.diasCalendario.find(d => d.fecha === asignacion.fecha_inicio);
       if (dia) {
         dia.asignaciones.push({
@@ -305,11 +306,11 @@ export class CalendarioTurnosComponent implements OnInit {
       esReemplazo: this.modoReemplazoActivo
     };
 
-    // Agregar la asignación al día seleccionado
+    // Agregar la asignaciÃ³n al dÃ­a seleccionado
     const dia = this.diasCalendario.find(d => d.fecha === this.fechaSeleccionada);
     if (dia) {
       dia.asignaciones.push(asignacion);
-      // forzar actualización si es necesario
+      // forzar actualizaciÃ³n si es necesario
       this.diasCalendario = [...this.diasCalendario];
     }
 
@@ -355,7 +356,7 @@ export class CalendarioTurnosComponent implements OnInit {
       if (res.success) {
         alert('Asignaciones guardadas correctamente');
 
-        // ✅ Emitir ANTES de limpiar
+        // âœ… Emitir ANTES de limpiar
         this.asignacionesGuardadas.emit([...this.asignacionesPendientes]);
 
         // Luego limpiar
@@ -367,9 +368,9 @@ export class CalendarioTurnosComponent implements OnInit {
     error: (err) => {
       console.error('Error guardando asignaciones en servidor:', err);
       if (err.status === 400) {
-        alert(`Error de validación: ${err.error.message}. Turnos inválidos: ${err.error.turnosInvalidos}`);
+        alert(`Error de validaciÃ³n: ${err.error.message}. Turnos invÃ¡lidos: ${err.error.turnosInvalidos}`);
       } else if (err.status === 401) {
-        alert('Error de autenticación. Por favor, inicie sesión nuevamente.');
+        alert('Error de autenticaciÃ³n. Por favor, inicie sesiÃ³n nuevamente.');
       } else {
         alert('Error inesperado. Revise la consola.');
       }
@@ -384,4 +385,12 @@ export class CalendarioTurnosComponent implements OnInit {
     this.turnoSeleccionado = undefined;
     this.empleadoSeleccionado = undefined;
   }
+
+  get esUltimoMesPermitido(): boolean {
+    if (!this.fechaFin) return false;
+    const fechaFinDate = new Date(this.fechaFin);
+    const siguienteMes = new Date(this.anioActual, this.mesActual + 1, 1);
+    return siguienteMes > fechaFinDate;
+  }
 }
+

@@ -1,21 +1,21 @@
-<div class="renovacion-container" *ngIf="puedeRenovar()">
+<!--div class="renovacion-container" *ngIf="puedeRenovar()">
   <div class="info">
     <h4>Renovar Turno del Área</h4>
     <p><strong>{{ areaNombre }}</strong> — Jefe: {{ jefeNombre }}</p>
     <p>{{ empleadosCount }} empleados asignados</p>
   </div>
 
-  <button class="btn" [disabled]="cargando" (click)="renovarTurno($event)">
-    {{ cargando ? 'Procesando...' : 'Seguir para el próximo mes' }}
-  </button>
+<button class="btn" [disabled]="cargando" (click)="renovarTurno($event)">
+  {{ cargando ? 'Procesando...' : 'Seguir para el próximo mes' }}
+</button>
 
-  <div *ngIf="mensaje" class="alert success">{{ mensaje }}</div>
-  <div *ngIf="error" class="alert error">{{ error }}</div>
+<div *ngIf="mensaje" class="alert success">{{ mensaje }}</div>
+<div *ngIf="error" class="alert error">{{ error }}</div>
 
-  <p class="id-area">Área ID: {{ areaId }}</p>
+<p class="id-area">Área ID: {{ areaId }}</p>
 </div>
 
-<!-- En otros días del mes -->
+En otros días del mes>
 <div *ngIf="!puedeRenovar()" class="no-renovacion-msg">
   <p> La renovación estará disponible los dos últimos días del mes.</p>
-</div>
+</div-->
