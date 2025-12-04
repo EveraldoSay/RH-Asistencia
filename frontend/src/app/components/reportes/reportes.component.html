@@ -1,5 +1,5 @@
-<div class="reportes-container">
-  <h2>Reportes de Asistencia por Áreas</h2>
+﻿<div class="reportes-container">
+  <h2>Reportes de Asistencia por Área</h2>
 
   <div class="filtros">
     <div class="filtros-superiores">
@@ -32,13 +32,28 @@
         </select>
       </div>
 
-      <div class="filtro-group" *ngIf="tipoReporte !== 'todo'">
+      <div class="filtro-group" *ngIf="tipoReporte !== 'todo' && tipoReporte !== 'horarios'">
         <label>Mes:</label>
         <input type="month" [(ngModel)]="mesSeleccionado" (change)="generarSemanas()" />
       </div>
+      <div class="filtro-group" *ngIf="tipoReporte === 'horarios'">
+        <label>Desde:</label>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaDesde" />
+          <i class="fa fa-calendar"></i>
+        </div>
+      </div>
+
+      <div class="filtro-group" *ngIf="tipoReporte === 'horarios'">
+        <label>Hasta:</label>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaHasta" />
+          <i class="fa fa-calendar"></i>
+        </div>
+      </div>
 
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'dia'">
-        <label>Día específico:</label>
+        <label>DÃ­a especÃ­fico:</label>
         <div class="input-icon">
           <input type="date" [(ngModel)]="diaEspecifico" />
           <i class="fa fa-calendar"></i>
@@ -61,7 +76,7 @@
         </div>
       </div>
 
-      <!-- Nueva sección para Marcajes Anteriores -->
+      <!-- Nueva secciÃ³n para Marcajes Anteriores -->
       <div class="filtro-group"
         *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
         <label>Desde:</label>
@@ -85,18 +100,18 @@
         <div class="busqueda-empleado-container">
           <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()"
             (focus)="mostrandoResultados = empleadosEncontrados.length > 0"
-            placeholder="Nombre o renglón del empleado..." class="busqueda-input" />
+            placeholder="Nombre o renglÃ³n del empleado..." class="busqueda-input" />
 
-          <!-- Botón para limpiar búsqueda -->
+          <!-- BotÃ³n para limpiar bÃºsqueda -->
           <button *ngIf="empleadoSeleccionado" (click)="limpiarBusquedaEmpleado()" class="btn-limpiar" type="button">
-            ×
+            Ã—
           </button>
 
           <!-- Lista de resultados -->
           <div *ngIf="mostrandoResultados && empleadosEncontrados.length > 0" class="resultados-busqueda">
             <div *ngFor="let emp of empleadosEncontrados" class="resultado-item" (click)="seleccionarEmpleado(emp)">
               <strong>{{ emp.nombre_completo }}</strong>
-              <span *ngIf="emp.renglon">(Renglón: {{ emp.renglon }})</span>
+              <span *ngIf="emp.renglon">(RenglÃ³n: {{ emp.renglon }})</span>
             </div>
           </div>
 
@@ -117,18 +132,19 @@
       </div>
     </div>
 
-    <!-- En la sección de botones, después del botón Generar -->
+    <!-- En la secciÃ³n de botones, despuÃ©s del botÃ³n Generar -->
     <div class="botones-container">
       <button (click)="generarReporte()" [disabled]="
           (tipoReporte === 'biometricos' && !mesSeleccionado && !diaEspecifico) ||
           (tipoReporte !== 'biometricos' && !areaSeleccionada) || 
           (tipoReporte === 'semana' && !semanaSeleccionada) || 
-          (tipoReporte !== 'todo' && !mesSeleccionado)
+          (tipoReporte !== 'todo' && tipoReporte !== 'horarios' && !mesSeleccionado) ||
+          (tipoReporte === 'horarios' && (!fechaDesde || !fechaHasta))
         ">
         <span>Generar</span>
       </button>
 
-      <!-- NUEVO BOTÓN ACTUALIZAR BIOMÉTRICO -->
+      <!-- NUEVO BOTÃ“N ACTUALIZAR BIOMÃ‰TRICO -->
       <button (click)="actualizarBiometrico()" class="btn-biometrico" [disabled]="actualizandoBiometrico">
         <span *ngIf="!actualizandoBiometrico">Actualizar Biométrico</span>
         <span *ngIf="actualizandoBiometrico">Actualizando...</span>
@@ -162,7 +178,7 @@
     <p class="resumen">
       Resumen:
       Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> |
-      Total días: <strong>{{ obtenerResumen().total }}</strong> |
+      Total Días: <strong>{{ obtenerResumen().total }}</strong> |
       Presentes: <strong>{{ obtenerResumen().presentes }}</strong> |
       Ausentes: <strong>{{ obtenerResumen().ausentes }}</strong>
     </p>
@@ -215,7 +231,7 @@
     </div>
   </div>
 
-  <!-- TABLA PARA EVENTOS BIOMÉTRICOS -->
+  <!-- TABLA PARA EVENTOS BIOMÃ‰TRICOS -->
   <div *ngIf="!cargando && eventosBiometricos.length > 0 && tipoReporte === 'biometricos'" class="resultados">
     <p class="resumen">
       Resumen Eventos Biométricos:
@@ -225,7 +241,7 @@
       Salidas: <strong>{{ obtenerResumen().salidas }}</strong>
       <span *ngIf="empleadoSeleccionado">
         | Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
-        <span *ngIf="empleadoSeleccionado.renglon">(Renglón: {{ empleadoSeleccionado.renglon }})</span>
+        <span *ngIf="empleadoSeleccionado.renglon">(RenglÃ³n: {{ empleadoSeleccionado.renglon }})</span>
       </span>
     </p>
 
@@ -239,7 +255,7 @@
             <th>Fecha</th>
             <th>Hora</th>
             <th>Dispositivo IP</th>
-            <th>Código Evento</th>
+            <th>CÃ³digo Evento</th>
             <th>Origen</th>
             <th>Procesado</th>
             <th>Registrado En</th>
@@ -261,7 +277,7 @@
             <td>{{ evento.origen }}</td>
             <td>
               <span [class]="evento.procesado ? 'estado-presente' : 'estado-ausente'">
-                {{ evento.procesado ? 'Sí' : 'No' }}
+                {{ evento.procesado ? 'SÃ­' : 'No' }}
               </span>
             </td>
             <td>{{ formatearFecha(evento.creado_en) }} {{ formatearHora(evento.creado_en) }}</td>
@@ -283,7 +299,7 @@
       <table class="tabla-reporte">
         <thead>
           <tr>
-            <th>#</th>
+            <th>Número</th>
             <th>Nombre del Trabajador</th>
             <th>Puesto</th>
             <th>Tipo Turno</th>
@@ -322,7 +338,7 @@
     <p>No se encontraron registros para los filtros seleccionados.</p>
     <p *ngIf="tipoReporte === 'biometricos' && empleadoSeleccionado" class="filtro-empleado-info">
       Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
-      <span *ngIf="empleadoSeleccionado.renglon">(Renglón: {{ empleadoSeleccionado.renglon }})</span>
+      <span *ngIf="empleadoSeleccionado.renglon">(RenglÃ³n: {{ empleadoSeleccionado.renglon }})</span>
     </p>
   </div>
 </div>
