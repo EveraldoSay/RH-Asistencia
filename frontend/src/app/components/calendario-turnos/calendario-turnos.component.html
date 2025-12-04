@@ -4,19 +4,18 @@
     <div class="navegacion-mes">
       <button class="btn-nav" (click)="mesAnterior()">‹</button>
       <h3>{{ nombreMes }} {{ anioActual }}</h3>
-      <button class="btn-nav" (click)="mesSiguiente()">›</button>
+      <button class="btn-nav" (click)="mesSiguiente()" [disabled]="esUltimoMesPermitido">›</button>
     </div>
-    
+
     <!-- Botón para guardar asignaciones -->
-      <div class="acciones-calendario">
-        <button class="btn-guardar-moderno" 
-                [disabled]="asignacionesPendientes.length === 0"
-                (click)="guardarAsignaciones()">
-          <span class="btn-icon">💾</span>
-          Guardar asignaciones 
-          <span class="btn-badge">{{ asignacionesPendientes.length }}</span>
-        </button>
-      </div>
+    <div class="acciones-calendario">
+      <button class="btn-guardar-moderno" [disabled]="asignacionesPendientes.length === 0"
+        (click)="guardarAsignaciones()">
+        <span class="btn-icon">💾</span>
+        Guardar asignaciones
+        <span class="btn-badge">{{ asignacionesPendientes.length }}</span>
+      </button>
+    </div>
   </div>
 
   <!-- Días de la semana -->
@@ -26,17 +25,12 @@
 
   <!-- Grid del calendario -->
   <div class="grid-calendario">
-    <div *ngFor="let dia of diasCalendario" 
-         class="dia-calendario"
-         [class.hoy]="dia.esHoy"
-         [class.pasado]="dia.esPasado"
-         [class.disponible]="dia.disponible"
-         [class.asignado]="dia.asignaciones.length > 0"
-         [class.seleccionado]="dia.fecha === fechaSeleccionada"
-         (click)="seleccionarDia(dia)">
-      
+    <div *ngFor="let dia of diasCalendario" class="dia-calendario" [class.hoy]="dia.esHoy" [class.pasado]="dia.esPasado"
+      [class.disponible]="dia.disponible" [class.asignado]="dia.asignaciones.length > 0"
+      [class.seleccionado]="dia.fecha === fechaSeleccionada" (click)="seleccionarDia(dia)">
+
       <div class="numero-dia">{{ dia.numero }}</div>
-      
+
       <!-- Asignaciones del día -->
       <div class="asignaciones-dia" *ngIf="dia.asignaciones.length > 0">
         <div *ngFor="let asignacion of dia.asignaciones" class="asignacion">
@@ -49,7 +43,7 @@
       <div *ngIf="dia.disponible && dia.asignaciones.length === 0" class="disponible-indicator">
         ✓ Disponible
       </div>
-      
+
       <!-- Indicador de día no disponible -->
       <div *ngIf="!dia.disponible" class="no-disponible-indicator">
         ✗
@@ -60,7 +54,7 @@
   <!-- Panel de información del día seleccionado -->
   <div *ngIf="fechaSeleccionada && diaSeleccionado" class="panel-dia">
     <h4>{{ fechaSeleccionada | date:'fullDate' }}</h4>
-    
+
     <!-- Lista de asignaciones -->
     <div *ngIf="diaSeleccionado.asignaciones.length > 0" class="asignaciones-list">
       <h5>Turnos asignados:</h5>
@@ -78,7 +72,7 @@
         Asignar Turno
       </button>
     </div>
-    
+
     <!-- Día no disponible -->
     <div *ngIf="!diaSeleccionado.disponible" class="no-disponible">
       <p>Este día no está disponible para asignación</p>
@@ -90,7 +84,7 @@
 <div *ngIf="mostrarModalAsignacion" class="modal-overlay">
   <div class="modal-content">
     <h3>Asignar turno para {{ fechaSeleccionada | date:'fullDate' }}</h3>
-    
+
     <div class="form-group">
       <label>Empleado:</label>
       <select [(ngModel)]="empleadoSeleccionado" [disabled]="true">
@@ -123,9 +117,7 @@
 
     <div class="modal-actions">
       <button class="btn-secundario" (click)="cerrarModal()">Cancelar</button>
-      <button class="btn-primario" 
-              [disabled]="!turnoSeleccionado"
-              (click)="confirmarAsignacion()">
+      <button class="btn-primario" [disabled]="!turnoSeleccionado" (click)="confirmarAsignacion()">
         Asignar Turno
       </button>
     </div>
