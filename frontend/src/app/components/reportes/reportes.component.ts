@@ -90,7 +90,7 @@ export class ReportesComponent implements OnInit {
       const fin = Math.min(diaActual + 6, diasMes);
       const desde = new Date(year, month - 1, inicio).toISOString().split('T')[0];
       const hasta = new Date(year, month - 1, fin).toISOString().split('T')[0];
-      const texto = `Semana ${numeroSemana}: ${inicio}â€“${fin} ${fechaInicioMes.toLocaleString('es', { month: 'short' })}`;
+      const texto = `Semana ${numeroSemana}: ${inicio} al ${fin} ${fechaInicioMes.toLocaleString('es', { month: 'short' })}`;
       this.semanas.push({ numero: numeroSemana, desde, hasta, texto });
       diaActual += 7;
       numeroSemana++;
