@@ -80,10 +80,6 @@
         </div>
       </div>
 
-
-
-
-      <!-- En reportes.component.html - actualizar la sección de búsqueda -->
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
         <label>Buscar empleado:</label>
         <div class="busqueda-empleado-container">
@@ -290,8 +286,11 @@
             <th>#</th>
             <th>Nombre del Trabajador</th>
             <th>Puesto</th>
+            <th>Tipo Turno</th>
             <th>Detalle del Horario</th>
             <th>Días de Descanso</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
           </tr>
         </thead>
         <tbody>
@@ -299,8 +298,15 @@
             <td>{{ i + 1 }}</td>
             <td>{{ h.nombre_completo }}</td>
             <td>{{ h.rol_nombre || 'No especificado' }}</td>
+            <td>
+              <span [class]="h.tipo === 'FIJO' ? 'badge-fijo' : 'badge-rotativo'">
+                {{ h.tipo || 'N/A' }}
+              </span>
+            </td>
             <td>{{ h.detalle_horario || 'N/A' }}</td>
             <td>{{ h.dias_descanso || 'N/A' }}</td>
+            <td>{{ h.fecha_inicio || 'N/A' }}</td>
+            <td>{{ h.fecha_fin || 'N/A' }}</td>
           </tr>
         </tbody>
       </table>
