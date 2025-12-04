@@ -9,6 +9,7 @@
           <option value="semana">Por Semana</option>
           <option value="mes">Mes Completo</option>
           <option value="biometricos">Eventos Biométricos</option>
+          <option value="horarios">Planificación de Horarios</option>
           <!-- <option value="todo">Todo el Historial</option> -->
         </select>
       </div>
@@ -27,7 +28,7 @@
           <option value="mes">Mes Completo</option>
           <option value="dia">Día Específico</option>
           <option value="rango">Rango de Fechas</option>
-           <option value="marcajes_anteriores">Marcajes Anteriores</option>
+          <option value="marcajes_anteriores">Marcajes Anteriores</option>
         </select>
       </div>
 
@@ -61,7 +62,8 @@
       </div>
 
       <!-- Nueva sección para Marcajes Anteriores -->
-      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
+      <div class="filtro-group"
+        *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
         <label>Desde:</label>
         <div class="input-icon">
           <input type="date" [(ngModel)]="fechaDesde" />
@@ -69,7 +71,8 @@
         </div>
       </div>
 
-      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
+      <div class="filtro-group"
+        *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
         <label>Hasta:</label>
         <div class="input-icon">
           <input type="date" [(ngModel)]="fechaHasta" />
@@ -84,40 +87,26 @@
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
         <label>Buscar empleado:</label>
         <div class="busqueda-empleado-container">
-          <input 
-            type="text" 
-            [(ngModel)]="empleadoBusqueda" 
-            (input)="buscarEmpleados()"
+          <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()"
             (focus)="mostrandoResultados = empleadosEncontrados.length > 0"
-            placeholder="Nombre o renglón del empleado..."
-            class="busqueda-input"
-          />
-          
+            placeholder="Nombre o renglón del empleado..." class="busqueda-input" />
+
           <!-- Botón para limpiar búsqueda -->
-          <button 
-            *ngIf="empleadoSeleccionado" 
-            (click)="limpiarBusquedaEmpleado()" 
-            class="btn-limpiar"
-            type="button"
-          >
+          <button *ngIf="empleadoSeleccionado" (click)="limpiarBusquedaEmpleado()" class="btn-limpiar" type="button">
             ×
           </button>
 
           <!-- Lista de resultados -->
           <div *ngIf="mostrandoResultados && empleadosEncontrados.length > 0" class="resultados-busqueda">
-            <div 
-              *ngFor="let emp of empleadosEncontrados" 
-              class="resultado-item"
-              (click)="seleccionarEmpleado(emp)"
-            >
+            <div *ngFor="let emp of empleadosEncontrados" class="resultado-item" (click)="seleccionarEmpleado(emp)">
               <strong>{{ emp.nombre_completo }}</strong>
               <span *ngIf="emp.renglon">(Renglón: {{ emp.renglon }})</span>
             </div>
           </div>
-          
+
           <!-- Mensaje cuando no hay resultados -->
-          <div *ngIf="mostrandoResultados && empleadosEncontrados.length === 0 && empleadoBusqueda.length >= 2" 
-              class="sin-resultados-busqueda">
+          <div *ngIf="mostrandoResultados && empleadosEncontrados.length === 0 && empleadoBusqueda.length >= 2"
+            class="sin-resultados-busqueda">
             No se encontraron empleados
           </div>
         </div>
@@ -134,8 +123,7 @@
 
     <!-- En la sección de botones, después del botón Generar -->
     <div class="botones-container">
-      <button (click)="generarReporte()" 
-        [disabled]="
+      <button (click)="generarReporte()" [disabled]="
           (tipoReporte === 'biometricos' && !mesSeleccionado && !diaEspecifico) ||
           (tipoReporte !== 'biometricos' && !areaSeleccionada) || 
           (tipoReporte === 'semana' && !semanaSeleccionada) || 
@@ -145,31 +133,27 @@
       </button>
 
       <!-- NUEVO BOTÓN ACTUALIZAR BIOMÉTRICO -->
-      <button (click)="actualizarBiometrico()" 
-              class="btn-biometrico"
-              [disabled]="actualizandoBiometrico">
+      <button (click)="actualizarBiometrico()" class="btn-biometrico" [disabled]="actualizandoBiometrico">
         <span *ngIf="!actualizandoBiometrico">Actualizar Biométrico</span>
         <span *ngIf="actualizandoBiometrico">Actualizando...</span>
       </button>
 
-      <button (click)="descargarExcel()" 
-              [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
-              class="btn-excel">
+      <button (click)="descargarExcel()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
+        class="btn-excel">
         <span>Descargar Excel</span>
       </button>
-      
-      <button (click)="descargarPDF()" 
-              [disabled]="registros.length === 0 && eventosBiometricos.length === 0">
+
+      <button (click)="descargarPDF()"
+        [disabled]="(tipoReporte !== 'horarios' && registros.length === 0 && eventosBiometricos.length === 0) || (tipoReporte === 'horarios' && horarios.length === 0)">
         <span>Descargar PDF</span>
       </button>
 
-        <button (click)="sincronizarMarcajesAnteriores()" 
-                *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
-                class="btn-marcajes-anteriores"
-                [disabled]="sincronizandoMarcajes || !fechaDesde || !fechaHasta">
-          <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
-          <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
-        </button>
+      <button (click)="sincronizarMarcajesAnteriores()"
+        *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
+        class="btn-marcajes-anteriores" [disabled]="sincronizandoMarcajes || !fechaDesde || !fechaHasta">
+        <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
+        <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
+      </button>
     </div>
   </div>
 
@@ -180,10 +164,10 @@
   <!-- TABLA PARA REPORTES DE ASISTENCIA NORMAL -->
   <div *ngIf="!cargando && registros.length > 0 && tipoReporte !== 'biometricos'" class="resultados">
     <p class="resumen">
-      Resumen: 
-      Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> | 
-      Total días: <strong>{{ obtenerResumen().total }}</strong> | 
-      Presentes: <strong>{{ obtenerResumen().presentes }}</strong> | 
+      Resumen:
+      Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> |
+      Total días: <strong>{{ obtenerResumen().total }}</strong> |
+      Presentes: <strong>{{ obtenerResumen().presentes }}</strong> |
       Ausentes: <strong>{{ obtenerResumen().ausentes }}</strong>
     </p>
 
@@ -213,7 +197,7 @@
             <td>{{ r.empleado }}</td>
             <td>{{ r.cargo }}</td>
             <td>{{ r.fecha | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ r.turno_asignado || 'N/A' }}</td> 
+            <td>{{ r.turno_asignado || 'N/A' }}</td>
             <td>
               <span [class]="r.tipo_turno === 'FIJO' ? 'badge-fijo' : 'badge-rotativo'">
                 {{ r.tipo_turno || 'N/A' }}
@@ -238,10 +222,10 @@
   <!-- TABLA PARA EVENTOS BIOMÉTRICOS -->
   <div *ngIf="!cargando && eventosBiometricos.length > 0 && tipoReporte === 'biometricos'" class="resultados">
     <p class="resumen">
-      Resumen Eventos Biométricos: 
-      {{ obtenerRangoSeleccionado() }} | 
-      Total eventos: <strong>{{ obtenerResumen().total }}</strong> | 
-      Entradas: <strong>{{ obtenerResumen().entradas }}</strong> | 
+      Resumen Eventos Biométricos:
+      {{ obtenerRangoSeleccionado() }} |
+      Total eventos: <strong>{{ obtenerResumen().total }}</strong> |
+      Entradas: <strong>{{ obtenerResumen().entradas }}</strong> |
       Salidas: <strong>{{ obtenerResumen().salidas }}</strong>
       <span *ngIf="empleadoSeleccionado">
         | Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
@@ -291,12 +275,44 @@
     </div>
   </div>
 
-  <div *ngIf="!cargando && registros.length === 0 && eventosBiometricos.length === 0 && 
+  <!-- TABLA PARA HORARIOS -->
+  <div *ngIf="!cargando && horarios.length > 0 && tipoReporte === 'horarios'" class="resultados">
+    <p class="resumen">
+      Resumen Planificación:
+      Área: <strong>{{ obtenerNombreArea() }}</strong> |
+      Total empleados: <strong>{{ horarios.length }}</strong>
+    </p>
+
+    <div class="tabla-container">
+      <table class="tabla-reporte">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre del Trabajador</th>
+            <th>Puesto</th>
+            <th>Detalle del Horario</th>
+            <th>Días de Descanso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let h of horarios; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ h.nombre_completo }}</td>
+            <td>{{ h.rol_nombre || 'No especificado' }}</td>
+            <td>{{ h.detalle_horario || 'N/A' }}</td>
+            <td>{{ h.dias_descanso || 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="!cargando && registros.length === 0 && eventosBiometricos.length === 0 && horarios.length === 0 &&
               ((tipoReporte === 'semana' && semanaSeleccionada) || 
               (tipoReporte === 'mes' && mesSeleccionado && areaSeleccionada) || 
               (tipoReporte === 'biometricos' && (mesSeleccionado || diaEspecifico)) || 
-              tipoReporte === 'todo')" 
-      class="sin-resultados">
+              (tipoReporte === 'horarios' && areaSeleccionada && fechaDesde && fechaHasta) ||
+              tipoReporte === 'todo')" class="sin-resultados">
     <p>No se encontraron registros para los filtros seleccionados.</p>
     <p *ngIf="tipoReporte === 'biometricos' && empleadoSeleccionado" class="filtro-empleado-info">
       Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>

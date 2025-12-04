@@ -7,7 +7,7 @@ const API = environment.apiBase + '/reportes';
 
 @Injectable({ providedIn: 'root' })
 export class ReportesService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAreas() {
     return this.http.get<any>(`${API}/areas`);
@@ -28,9 +28,9 @@ export class ReportesService {
   }
 
   // Modificar para incluir filtro por empleado
-getEventosBiometricos(fecha: string, tipo: string = 'mes', empleadoId?: number, desde?: string, hasta?: string) {
+  getEventosBiometricos(fecha: string, tipo: string = 'mes', empleadoId?: number, desde?: string, hasta?: string) {
     let params = new HttpParams();
-    
+
     if (tipo === 'rango') {
       // Filtro por rango de fechas
       params = params.set('desde', desde || '');
@@ -60,11 +60,19 @@ getEventosBiometricos(fecha: string, tipo: string = 'mes', empleadoId?: number, 
   }
 
   // En reportes.service.ts - agregar este método
-sincronizarMarcajesAnteriores(fechaDesde: string, fechaHasta: string) {
-  const params = new HttpParams()
-    .set('desde', fechaDesde)
-    .set('hasta', fechaHasta);
-    
-  return this.http.post<any>(`${API}/sincronizar-marcajes-anteriores`, {}, { params });
-}
+  sincronizarMarcajesAnteriores(fechaDesde: string, fechaHasta: string) {
+    const params = new HttpParams()
+      .set('desde', fechaDesde)
+      .set('hasta', fechaHasta);
+
+    return this.http.post<any>(`${API}/sincronizar-marcajes-anteriores`, {}, { params });
+  }
+
+  getReporteHorarios(areaId: number, desde: string, hasta: string) {
+    const params = new HttpParams()
+      .set('area_id', areaId.toString())
+      .set('desde', desde)
+      .set('hasta', hasta);
+    return this.http.get<any>(`${API}/horarios`, { params });
+  }
 }
