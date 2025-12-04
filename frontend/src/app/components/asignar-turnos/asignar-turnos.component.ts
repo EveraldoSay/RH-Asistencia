@@ -1030,6 +1030,7 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
   trackByAsignacionId(index: number, asignacion: any): number {
     return asignacion.id || index;
   }
+
   getDiasDescansoLabels(dias: any[]): string {
     if (!dias || dias.length === 0) return '';
 

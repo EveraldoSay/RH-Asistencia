@@ -476,4 +476,124 @@ router.post('/sincronizar-marcajes-anteriores', requireAuth, async (req, res) =>
 });
 
 
+// Endpoint para reporte de horarios (Planificación)
+router.get('/horarios', requireAuth, async (req, res) => {
+  try {
+    const { area_id, desde, hasta } = req.query;
+
+    if (!area_id || !desde || !hasta) {
+      return res.status(400).json({ success: false, message: 'Faltan parámetros' });
+    }
+
+    // 1. Obtener turnos rotativos asignados en el rango
+    const [rotativos] = await db.query(`
+      SELECT 
+        e.nombre_completo,
+        r.nombre_rol,
+        t.nombre_turno,
+        DATE_FORMAT(t.hora_inicio, '%H:%i') as hora_inicio,
+        DATE_FORMAT(t.hora_fin, '%H:%i') as hora_fin,
+        at.fecha_inicio,
+        'ROTATIVO' as tipo
+      FROM asignacion_turnos at
+      JOIN empleados e ON at.empleado_id = e.id
+      LEFT JOIN roles_empleado r ON e.rol_id = r.id
+      JOIN turnos t ON at.turno_id = t.id
+      WHERE e.area_id = ? 
+      AND at.fecha_inicio BETWEEN ? AND ?
+      AND at.eliminado_en IS NULL
+      ORDER BY e.nombre_completo, at.fecha_inicio
+    `, [area_id, desde, hasta]);
+
+    // 2. Obtener turnos fijos activos
+    // Nota: Los fijos se asignan una vez, hay que proyectarlos en el rango
+    const [fijos] = await db.query(`
+      SELECT 
+        e.id as empleado_id,
+        e.nombre_completo,
+        r.nombre_rol,
+        t.nombre_turno,
+        DATE_FORMAT(t.hora_inicio, '%H:%i') as hora_inicio,
+        DATE_FORMAT(t.hora_fin, '%H:%i') as hora_fin,
+        c.configuracion
+      FROM asignacion_turnos at
+      JOIN empleados e ON at.empleado_id = e.id
+      LEFT JOIN roles_empleado r ON e.rol_id = r.id
+      JOIN turnos t ON at.turno_id = t.id
+      LEFT JOIN configuraciones_turnos c ON c.turno_id = t.id AND c.area_id = e.area_id
+      WHERE e.area_id = ?
+      AND t.tipo_turno = 'FIJO'
+      AND at.eliminado_en IS NULL
+    `, [area_id]);
+
+    // Procesar datos para el reporte
+    // Queremos una lista de empleados con sus horarios detallados
+    const empleadosMap = new Map();
+
+    // Procesar rotativos
+    rotativos.forEach(r => {
+      if (!empleadosMap.has(r.nombre_completo)) {
+        empleadosMap.set(r.nombre_completo, {
+          nombre_completo: r.nombre_completo,
+          rol_nombre: r.nombre_rol,
+          horarios: [],
+          dias_descanso: [] // Rotativos no tienen "dias descanso" fijos en config, se infiere por ausencia de turno
+        });
+      }
+      const emp = empleadosMap.get(r.nombre_completo);
+      emp.horarios.push(`${r.fecha_inicio.toISOString().split('T')[0]}: ${r.hora_inicio}-${r.hora_fin}`);
+    });
+
+    // Procesar fijos (proyectar si es necesario, o mostrar resumen)
+    // Para el reporte impreso, suele bastar con "Lunes a Viernes 07:00-15:00"
+    fijos.forEach(f => {
+      if (!empleadosMap.has(f.nombre_completo)) {
+        let descanso = '';
+        if (f.configuracion) {
+          try {
+            const conf = typeof f.configuracion === 'string' ? JSON.parse(f.configuracion) : f.configuracion;
+            if (conf.dias_descanso) {
+              const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+              descanso = conf.dias_descanso.map(d => dias[d]).join(', ');
+            }
+          } catch (e) { }
+        }
+
+        empleadosMap.set(f.nombre_completo, {
+          nombre_completo: f.nombre_completo,
+          rol_nombre: f.nombre_rol,
+          detalle_horario: `${f.nombre_turno} (${f.hora_inicio} - ${f.hora_fin})`,
+          dias_descanso: descanso,
+          tipo: 'FIJO'
+        });
+      }
+    });
+
+    // Convertir a array
+    const data = Array.from(empleadosMap.values()).map(e => {
+      if (e.horarios) {
+        // Formatear horarios rotativos para que no sea una lista gigante si no es necesario
+        // O simplemente devolver la lista. Para el PDF, tal vez queramos un resumen.
+        // Por ahora, unimos los primeros o mostramos "Ver detalle"
+        e.detalle_horario = e.horarios.map(h => h.split(': ')[1]).join(', '); // Simplificado
+        // Mejor: Agrupar por horas si son iguales
+        const horasUnicas = [...new Set(e.horarios.map(h => h.split(': ')[1]))];
+        if (horasUnicas.length === 1) {
+          e.detalle_horario = `Todos los días: ${horasUnicas[0]}`;
+        } else {
+          e.detalle_horario = horasUnicas.join(' / ');
+        }
+      }
+      return e;
+    });
+
+    res.json({ success: true, data });
+
+  } catch (err) {
+    console.error('Error en reporte horarios:', err);
+    res.status(500).json({ success: false, message: 'Error interno' });
+  }
+});
+
+
 module.exports = router;
