@@ -70,275 +70,235 @@
 
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'rango'">
         <label>Hasta:</label>
-        <div class="input-icon">
-          <input type="date" [(ngModel)]="fechaHasta" />
-          <i class="fa fa-calendar"></i>
-        </div>
-      </div>
-
-      <!-- Nueva secciÃ³n para Marcajes Anteriores -->
-      <div class="filtro-group"
-        *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
-        <label>Desde:</label>
-        <div class="input-icon">
-          <input type="date" [(ngModel)]="fechaDesde" />
-          <i class="fa fa-calendar"></i>
-        </div>
-      </div>
-
-      <div class="filtro-group"
-        *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'">
-        <label>Hasta:</label>
-        <div class="input-icon">
-          <input type="date" [(ngModel)]="fechaHasta" />
-          <i class="fa fa-calendar"></i>
-        </div>
-      </div>
-
-      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
-        <label>Buscar empleado:</label>
-        <div class="busqueda-empleado-container">
-          <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()"
-            (focus)="mostrandoResultados = empleadosEncontrados.length > 0"
-            placeholder="Nombre o renglón del empleado..." class="busqueda-input" />
-
-          <!-- BotÃ³n para limpiar bÃºsqueda -->
-          <button *ngIf="empleadoSeleccionado" (click)="limpiarBusquedaEmpleado()" class="btn-limpiar" type="button">
-            Ã—
-          </button>
-
-          <!-- Lista de resultados -->
-          <div *ngIf="mostrandoResultados && empleadosEncontrados.length > 0" class="resultados-busqueda">
-            <div *ngFor="let emp of empleadosEncontrados" class="resultado-item" (click)="seleccionarEmpleado(emp)">
-              <strong>{{ emp.nombre_completo }}</strong>
-              <span *ngIf="emp.renglon">(RenglÃ³n: {{ emp.renglon }})</span>
-            </div>
-          </div>
-
-          <!-- Mensaje cuando no hay resultados -->
-          <div *ngIf="mostrandoResultados && empleadosEncontrados.length === 0 && empleadoBusqueda.length >= 2"
-            class="sin-resultados-busqueda">
-            No se encontraron empleados
-          </div>
-        </div>
-      </div>
-
-      <div class="filtro-group" *ngIf="tipoReporte === 'semana'">
-        <label>Semana:</label>
-        <select [(ngModel)]="semanaSeleccionada">
-          <option [ngValue]="null">-- Seleccione semana --</option>
-          <option *ngFor="let s of semanas" [ngValue]="s">{{ s.texto }}</option>
-        </select>
+        <strong>{{ emp.nombre_completo }}</strong>
+        <span *ngIf="emp.renglon">(Renglón: {{ emp.renglon }})</span>
       </div>
     </div>
 
-    <!-- En la secciÃ³n de botones, despuÃ©s del botÃ³n Generar -->
-    <div class="botones-container">
-      <button (click)="generarReporte()" [disabled]="
+    <!-- Mensaje cuando no hay resultados -->
+    <div *ngIf="mostrandoResultados && empleadosEncontrados.length === 0 && empleadoBusqueda.length >= 2"
+      class="sin-resultados-busqueda">
+      No se encontraron empleados
+    </div>
+  </div>
+</div>
+
+<div class="filtro-group" *ngIf="tipoReporte === 'semana'">
+  <label>Semana:</label>
+  <select [(ngModel)]="semanaSeleccionada">
+    <option [ngValue]="null">-- Seleccione semana --</option>
+    <option *ngFor="let s of semanas" [ngValue]="s">{{ s.texto }}</option>
+  </select>
+</div>
+</div>
+
+<!-- En la sección de botones, después del botón Generar -->
+<div class="botones-container">
+  <button (click)="generarReporte()" [disabled]="
           (tipoReporte === 'biometricos' && !mesSeleccionado && !diaEspecifico) ||
           (tipoReporte !== 'biometricos' && !areaSeleccionada) || 
           (tipoReporte === 'semana' && !semanaSeleccionada) || 
           (tipoReporte !== 'todo' && tipoReporte !== 'horarios' && !mesSeleccionado) ||
           (tipoReporte === 'horarios' && (!fechaDesde || !fechaHasta))
         ">
-        <span>Generar</span>
-      </button>
+    <span>Generar</span>
+  </button>
 
-      <!-- NUEVO BOTÃ“N ACTUALIZAR BIOMÃ‰TRICO -->
-      <button (click)="actualizarBiometrico()" class="btn-biometrico" [disabled]="actualizandoBiometrico">
-        <span *ngIf="!actualizandoBiometrico">Actualizar Biométrico</span>
-        <span *ngIf="actualizandoBiometrico">Actualizando...</span>
-      </button>
+  <!-- NUEVO BOTÓN ACTUALIZAR BIOMÉTRICO -->
+  <button (click)="actualizarBiometrico()" class="btn-biometrico" [disabled]="actualizandoBiometrico">
+    <span *ngIf="!actualizandoBiometrico">Actualizar Biométrico</span>
+    <span *ngIf="actualizandoBiometrico">Actualizando...</span>
+  </button>
 
-      <button (click)="descargarExcel()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
-        class="btn-excel">
-        <span>Descargar Excel</span>
-      </button>
+  <button (click)="descargarExcel()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
+    class="btn-excel">
+    <span>Descargar Excel</span>
+  </button>
 
-      <button (click)="descargarPDF()"
-        [disabled]="(tipoReporte !== 'horarios' && registros.length === 0 && eventosBiometricos.length === 0) || (tipoReporte === 'horarios' && horarios.length === 0)">
-        <span>Descargar PDF</span>
-      </button>
+  <button (click)="descargarPDF()"
+    [disabled]="(tipoReporte !== 'horarios' && registros.length === 0 && eventosBiometricos.length === 0) || (tipoReporte === 'horarios' && horarios.length === 0)">
+    <span>Descargar PDF</span>
+  </button>
 
-      <button (click)="sincronizarMarcajesAnteriores()"
-        *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
-        class="btn-marcajes-anteriores" [disabled]="sincronizandoMarcajes || !fechaDesde || !fechaHasta">
-        <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
-        <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
-      </button>
-    </div>
+  <button (click)="sincronizarMarcajesAnteriores()"
+    *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
+    class="btn-marcajes-anteriores" [disabled]="sincronizandoMarcajes || !fechaDesde || !fechaHasta">
+    <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
+    <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
+  </button>
+</div>
+</div>
+
+<div *ngIf="cargando" class="cargando">
+  Generando reporte, por favor espere...
+</div>
+
+<!-- TABLA PARA REPORTES DE ASISTENCIA NORMAL -->
+<div *ngIf="!cargando && registros.length > 0 && tipoReporte !== 'biometricos'" class="resultados">
+  <p class="resumen">
+    Resumen:
+    Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> |
+    Total Días: <strong>{{ obtenerResumen().total }}</strong> |
+    Presentes: <strong>{{ obtenerResumen().presentes }}</strong> |
+    Ausentes: <strong>{{ obtenerResumen().ausentes }}</strong>
+  </p>
+
+  <div class="tabla-container">
+    <table class="tabla-reporte">
+      <thead>
+        <tr>
+          <th>Área</th>
+          <th>Jefe de Área</th>
+          <th>Empleado</th>
+          <th>Cargo</th>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Tipo Turno</th>
+          <th>Entrada Prog.</th>
+          <th>Salida Prog.</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th>Cumplimiento</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of registros; let i = index">
+          <td>{{ r.area }}</td>
+          <td>{{ r.jefe_area || 'No asignado' }}</td>
+          <td>{{ r.empleado }}</td>
+          <td>{{ r.cargo }}</td>
+          <td>{{ r.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ r.turno_asignado || 'N/A' }}</td>
+          <td>
+            <span [class]="r.tipo_turno === 'FIJO' ? 'badge-fijo' : 'badge-rotativo'">
+              {{ r.tipo_turno || 'N/A' }}
+            </span>
+          </td>
+          <td>{{ r.hora_entrada_programada || 'N/A' }}</td>
+          <td>{{ r.hora_salida_programada || 'N/A' }}</td>
+          <td [class.estado-presente]="r.entrada_real" [class.estado-ausente]="!r.entrada_real">
+            {{ r.entrada_real ? formatearHora(r.entrada_real) : '--:--' }}
+          </td>
+          <td [class.estado-presente]="r.salida_real" [class.estado-ausente]="!r.salida_real">
+            {{ r.salida_real ? formatearHora(r.salida_real) : '--:--' }}
+          </td>
+          <td [ngClass]="getCumplimientoClass(r.cumplimiento)">{{ r.cumplimiento || 'N/A' }}</td>
+          <td [class]="getEstadoClass(r.estado_dia)">{{ r.estado_dia || 'N/A' }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+</div>
 
-  <div *ngIf="cargando" class="cargando">
-    Generando reporte, por favor espere...
+<!-- TABLA PARA EVENTOS BIOMÉTRICOS -->
+<div *ngIf="!cargando && eventosBiometricos.length > 0 && tipoReporte === 'biometricos'" class="resultados">
+  <p class="resumen">
+    Resumen Eventos Biométricos:
+    {{ obtenerRangoSeleccionado() }} |
+    Total eventos: <strong>{{ obtenerResumen().total }}</strong> |
+    Entradas: <strong>{{ obtenerResumen().entradas }}</strong> |
+    Salidas: <strong>{{ obtenerResumen().salidas }}</strong>
+    <span *ngIf="empleadoSeleccionado">
+      | Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
+      <span *ngIf="empleadoSeleccionado.renglon">(Renglón: {{ empleadoSeleccionado.renglon }})</span>
+    </span>
+  </p>
+
+  <div class="tabla-container">
+    <table class="tabla-reporte">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Empleado</th>
+          <th>Tipo Evento</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Dispositivo IP</th>
+          <th>Renglón Evento</th>
+          <th>Origen</th>
+          <th>Procesado</th>
+          <th>Registrado En</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let evento of eventosBiometricos; let i = index">
+          <td>{{ evento.id }}</td>
+          <td>{{ evento.empleado || 'No identificado' }}</td>
+          <td>
+            <span [class]="evento.tipo_evento === 'ENTRADA' ? 'badge-fijo' : 'badge-rotativo'">
+              {{ evento.tipo_evento }}
+            </span>
+          </td>
+          <td>{{ evento.fecha }}</td>
+          <td>{{ evento.hora }}</td>
+          <td>{{ evento.dispositivo_ip || 'N/A' }}</td>
+          <td>{{ evento.codigo_evento || 'N/A' }}</td>
+          <td>{{ evento.origen }}</td>
+          <td>
+            <span [class]="evento.procesado ? 'estado-presente' : 'estado-ausente'">
+              {{ evento.procesado ? 'Sí' : 'No' }}
+            </span>
+          </td>
+          <td>{{ formatearFecha(evento.creado_en) }} {{ formatearHora(evento.creado_en) }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+</div>
 
-  <!-- TABLA PARA REPORTES DE ASISTENCIA NORMAL -->
-  <div *ngIf="!cargando && registros.length > 0 && tipoReporte !== 'biometricos'" class="resultados">
-    <p class="resumen">
-      Resumen:
-      Tipo: <strong>{{ obtenerTipoReporteTexto() }}</strong> |
-      Total Días: <strong>{{ obtenerResumen().total }}</strong> |
-      Presentes: <strong>{{ obtenerResumen().presentes }}</strong> |
-      Ausentes: <strong>{{ obtenerResumen().ausentes }}</strong>
-    </p>
+<!-- TABLA PARA HORARIOS -->
+<div *ngIf="!cargando && horarios.length > 0 && tipoReporte === 'horarios'" class="resultados">
+  <p class="resumen">
+    Resumen Planificación:
+    Área: <strong>{{ obtenerNombreArea() }}</strong> |
+    Total empleados: <strong>{{ horarios.length }}</strong>
+  </p>
 
-    <div class="tabla-container">
-      <table class="tabla-reporte">
-        <thead>
-          <tr>
-            <th>Área</th>
-            <th>Jefe de Área</th>
-            <th>Empleado</th>
-            <th>Cargo</th>
-            <th>Fecha</th>
-            <th>Turno</th>
-            <th>Tipo Turno</th>
-            <th>Entrada Prog.</th>
-            <th>Salida Prog.</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Cumplimiento</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of registros; let i = index">
-            <td>{{ r.area }}</td>
-            <td>{{ r.jefe_area || 'No asignado' }}</td>
-            <td>{{ r.empleado }}</td>
-            <td>{{ r.cargo }}</td>
-            <td>{{ r.fecha | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ r.turno_asignado || 'N/A' }}</td>
-            <td>
-              <span [class]="r.tipo_turno === 'FIJO' ? 'badge-fijo' : 'badge-rotativo'">
-                {{ r.tipo_turno || 'N/A' }}
-              </span>
-            </td>
-            <td>{{ r.hora_entrada_programada || 'N/A' }}</td>
-            <td>{{ r.hora_salida_programada || 'N/A' }}</td>
-            <td [class.estado-presente]="r.entrada_real" [class.estado-ausente]="!r.entrada_real">
-              {{ r.entrada_real ? formatearHora(r.entrada_real) : '--:--' }}
-            </td>
-            <td [class.estado-presente]="r.salida_real" [class.estado-ausente]="!r.salida_real">
-              {{ r.salida_real ? formatearHora(r.salida_real) : '--:--' }}
-            </td>
-            <td [ngClass]="getCumplimientoClass(r.cumplimiento)">{{ r.cumplimiento || 'N/A' }}</td>
-            <td [class]="getEstadoClass(r.estado_dia)">{{ r.estado_dia || 'N/A' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="tabla-container">
+    <table class="tabla-reporte">
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Nombre del Trabajador</th>
+          <th>Puesto</th>
+          <th>Tipo Turno</th>
+          <th>Detalle del Horario</th>
+          <th>Días de Descanso</th>
+          <th>Fecha Inicio</th>
+          <th>Fecha Fin</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of horarios; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ h.nombre_completo }}</td>
+          <td>{{ h.rol_nombre || 'No especificado' }}</td>
+          <td>
+            <span [class]="h.tipo === 'FIJO' ? 'badge-fijo' : 'badge-rotativo'">
+              {{ h.tipo || 'N/A' }}
+            </span>
+          </td>
+          <td>{{ h.detalle_horario || 'N/A' }}</td>
+          <td>{{ h.dias_descanso || 'N/A' }}</td>
+          <td>{{ h.fecha_inicio || 'N/A' }}</td>
+          <td>{{ h.fecha_fin || 'N/A' }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+</div>
 
-  <!-- TABLA PARA EVENTOS BIOMÃ‰TRICOS -->
-  <div *ngIf="!cargando && eventosBiometricos.length > 0 && tipoReporte === 'biometricos'" class="resultados">
-    <p class="resumen">
-      Resumen Eventos Biométricos:
-      {{ obtenerRangoSeleccionado() }} |
-      Total eventos: <strong>{{ obtenerResumen().total }}</strong> |
-      Entradas: <strong>{{ obtenerResumen().entradas }}</strong> |
-      Salidas: <strong>{{ obtenerResumen().salidas }}</strong>
-      <span *ngIf="empleadoSeleccionado">
-        | Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
-        <span *ngIf="empleadoSeleccionado.renglon">(RenglÃ³n: {{ empleadoSeleccionado.renglon }})</span>
-      </span>
-    </p>
-
-    <div class="tabla-container">
-      <table class="tabla-reporte">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Empleado</th>
-            <th>Tipo Evento</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Dispositivo IP</th>
-            <th>CÃ³digo Evento</th>
-            <th>Origen</th>
-            <th>Procesado</th>
-            <th>Registrado En</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let evento of eventosBiometricos; let i = index">
-            <td>{{ evento.id }}</td>
-            <td>{{ evento.empleado || 'No identificado' }}</td>
-            <td>
-              <span [class]="evento.tipo_evento === 'ENTRADA' ? 'badge-fijo' : 'badge-rotativo'">
-                {{ evento.tipo_evento }}
-              </span>
-            </td>
-            <td>{{ evento.fecha }}</td>
-            <td>{{ evento.hora }}</td>
-            <td>{{ evento.dispositivo_ip || 'N/A' }}</td>
-            <td>{{ evento.codigo_evento || 'N/A' }}</td>
-            <td>{{ evento.origen }}</td>
-            <td>
-              <span [class]="evento.procesado ? 'estado-presente' : 'estado-ausente'">
-                {{ evento.procesado ? 'SÃ­' : 'No' }}
-              </span>
-            </td>
-            <td>{{ formatearFecha(evento.creado_en) }} {{ formatearHora(evento.creado_en) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- TABLA PARA HORARIOS -->
-  <div *ngIf="!cargando && horarios.length > 0 && tipoReporte === 'horarios'" class="resultados">
-    <p class="resumen">
-      Resumen Planificación:
-      Área: <strong>{{ obtenerNombreArea() }}</strong> |
-      Total empleados: <strong>{{ horarios.length }}</strong>
-    </p>
-
-    <div class="tabla-container">
-      <table class="tabla-reporte">
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Nombre del Trabajador</th>
-            <th>Puesto</th>
-            <th>Tipo Turno</th>
-            <th>Detalle del Horario</th>
-            <th>Días de Descanso</th>
-            <th>Fecha Inicio</th>
-            <th>Fecha Fin</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let h of horarios; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ h.nombre_completo }}</td>
-            <td>{{ h.rol_nombre || 'No especificado' }}</td>
-            <td>
-              <span [class]="h.tipo === 'FIJO' ? 'badge-fijo' : 'badge-rotativo'">
-                {{ h.tipo || 'N/A' }}
-              </span>
-            </td>
-            <td>{{ h.detalle_horario || 'N/A' }}</td>
-            <td>{{ h.dias_descanso || 'N/A' }}</td>
-            <td>{{ h.fecha_inicio || 'N/A' }}</td>
-            <td>{{ h.fecha_fin || 'N/A' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div *ngIf="!cargando && registros.length === 0 && eventosBiometricos.length === 0 && horarios.length === 0 &&
+<div *ngIf="!cargando && registros.length === 0 && eventosBiometricos.length === 0 && horarios.length === 0 &&
               ((tipoReporte === 'semana' && semanaSeleccionada) || 
               (tipoReporte === 'mes' && mesSeleccionado && areaSeleccionada) || 
               (tipoReporte === 'biometricos' && (mesSeleccionado || diaEspecifico)) || 
               (tipoReporte === 'horarios' && areaSeleccionada && fechaDesde && fechaHasta) ||
               tipoReporte === 'todo')" class="sin-resultados">
-    <p>No se encontraron registros para los filtros seleccionados.</p>
-    <p *ngIf="tipoReporte === 'biometricos' && empleadoSeleccionado" class="filtro-empleado-info">
-      Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
-      <span *ngIf="empleadoSeleccionado.renglon">(RenglÃ³n: {{ empleadoSeleccionado.renglon }})</span>
-    </p>
-  </div>
+  <p>No se encontraron registros para los filtros seleccionados.</p>
+  <p *ngIf="tipoReporte === 'biometricos' && empleadoSeleccionado" class="filtro-empleado-info">
+    Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
+    <span *ngIf="empleadoSeleccionado.renglon">(Renglón: {{ empleadoSeleccionado.renglon }})</span>
+  </p>
+</div>
 </div>
