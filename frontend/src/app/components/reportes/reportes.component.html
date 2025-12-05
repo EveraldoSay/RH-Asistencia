@@ -70,8 +70,10 @@
 
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'rango'">
         <label>Hasta:</label>
-        <strong>{{ emp.nombre_completo }}</strong>
-        <span *ngIf="emp.renglon">(Renglón: {{ emp.renglon }})</span>
+        <div class="input-icon">
+          <input type="date" [(ngModel)]="fechaHasta" />
+          <i class="fa fa-calendar"></i>
+        </div>
       </div>
     </div>
 
@@ -89,7 +91,6 @@
     <option [ngValue]="null">-- Seleccione semana --</option>
     <option *ngFor="let s of semanas" [ngValue]="s">{{ s.texto }}</option>
   </select>
-</div>
 </div>
 
 <!-- En la sección de botones, después del botón Generar -->
@@ -126,7 +127,6 @@
     <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
     <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
   </button>
-</div>
 </div>
 
 <div *ngIf="cargando" class="cargando">
@@ -300,5 +300,4 @@
     Empleado filtrado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong>
     <span *ngIf="empleadoSeleccionado.renglon">(Renglón: {{ empleadoSeleccionado.renglon }})</span>
   </p>
-</div>
 </div>
