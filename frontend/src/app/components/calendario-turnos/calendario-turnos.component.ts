@@ -43,7 +43,7 @@ export class CalendarioTurnosComponent implements OnInit {
   mesActual: number;
   anioActual: number;
   diasCalendario: DiaCalendario[] = [];
-  diasSemana = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
+  diasSemana = ['Dom', 'Lun', 'Mar', 'Mi', 'Jue', 'Vie', 'SÃ¡b'];
   meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -90,7 +90,7 @@ export class CalendarioTurnosComponent implements OnInit {
   ngOnInit() {
     this.generarCalendario();
     this.cargarAsignaciones();
-    
+
     // ðŸ”¥ NUEVO: Si hay asignaciones previas, marcarlas inmediatamente
     if (this.asignacionesPrevias.length > 0) {
       setTimeout(() => {
@@ -107,7 +107,7 @@ export class CalendarioTurnosComponent implements OnInit {
         dia.turno_id = asign.turno_id;
         dia.hora_entrada = asign.hora_entrada || asign.hora_inicio;
         dia.hora_salida = asign.hora_salida || asign.hora_fin;
-        
+
         // ðŸ”¥ NUEVO: Agregar a las asignaciones visuales
         if (!dia.asignaciones.some(a => a.fecha === asign.fecha && a.turno_id === asign.turno_id)) {
           dia.asignaciones.push({
@@ -122,33 +122,33 @@ export class CalendarioTurnosComponent implements OnInit {
             fecha_inicio: ''
           });
         }
-        
+
         (`âœ… DÃ­a ${asign.fecha} marcado como asignado`);
       } else {
         (`âŒ DÃ­a ${asign.fecha} no encontrado en calendario`);
       }
     }
-    
+
     // Forzar actualizaciÃ³n de la vista
     this.diasCalendario = [...this.diasCalendario];
   }
 
   onDiaClick(dia: any) {
-  if (this.modoReemplazoActivo) {
-    dia.seleccionadoParaReemplazo = !dia.seleccionadoParaReemplazo;
-  } else {
-    // comportamiento normal
+    if (this.modoReemplazoActivo) {
+      dia.seleccionadoParaReemplazo = !dia.seleccionadoParaReemplazo;
+    } else {
+      // comportamiento normal
+    }
   }
-}
 
 
-   limpiarAsignacionesPrevias() {
+  limpiarAsignacionesPrevias() {
     this.diasCalendario.forEach(dia => {
       dia.asignado = false;
       dia.turno_id = undefined;
       dia.hora_entrada = undefined;
       dia.hora_salida = undefined;
-      dia.asignaciones = dia.asignaciones.filter(a => 
+      dia.asignaciones = dia.asignaciones.filter(a =>
         !this.asignacionesPrevias.some(ap => ap.fecha === a.fecha)
       );
     });
@@ -165,10 +165,10 @@ export class CalendarioTurnosComponent implements OnInit {
 
   generarCalendario() {
     this.diasCalendario = [];
-    
+
     const primerDia = new Date(this.anioActual, this.mesActual, 1);
     const ultimoDia = new Date(this.anioActual, this.mesActual + 1, 0);
-    
+
     const diaInicio = primerDia.getDay();
     for (let i = diaInicio - 1; i >= 0; i--) {
       const fecha = new Date(this.anioActual, this.mesActual, -i);
@@ -187,7 +187,7 @@ export class CalendarioTurnosComponent implements OnInit {
     }
   }
 
-  
+
 
   private agregarDiaCalendario(fecha: Date, esExterno: boolean) {
     const hoy = new Date();
@@ -243,7 +243,7 @@ export class CalendarioTurnosComponent implements OnInit {
             console.error('Error cargando asignaciones:', error);
           }
         });
-    } 
+    }
   }
 
   private procesarAsignaciones(asignaciones: DiaTrabajo[]) {
@@ -265,10 +265,10 @@ export class CalendarioTurnosComponent implements OnInit {
 
   seleccionarDia(dia: DiaCalendario) {
     if (!dia.disponible) return;
-    
+
     this.fechaSeleccionada = dia.fecha;
     this.diaSeleccionado = dia;
-    
+
     if (dia.disponible) {
       this.abrirModalAsignacion(dia.fecha);
     }
@@ -336,47 +336,47 @@ export class CalendarioTurnosComponent implements OnInit {
   }
 
   guardarAsignaciones() {
-  if (this.asignacionesPendientes.length === 0) {
-    alert('No hay asignaciones pendientes para guardar');
-    return;
-  }
-
-
-  const payload = {
-    asignaciones: this.asignacionesPendientes.map(a => ({
-      empleado_id: a.empleado_id,
-      turno_id: a.turno_id,
-      fecha_inicio: a.fecha_inicio,
-      fecha_fin: a.fecha_fin
-    }))
-  };
-
-  this.turnosService.guardarAsignaciones(payload).subscribe({
-    next: (res) => {
-      if (res.success) {
-        alert('Asignaciones guardadas correctamente');
-
-        // âœ… Emitir ANTES de limpiar
-        this.asignacionesGuardadas.emit([...this.asignacionesPendientes]);
-
-        // Luego limpiar
-        this.asignacionesPendientes = [];
-      } else {
-        alert(`Error del servidor: ${res.message}`);
-      }
-    },
-    error: (err) => {
-      console.error('Error guardando asignaciones en servidor:', err);
-      if (err.status === 400) {
-        alert(`Error de validaciÃ³n: ${err.error.message}. Turnos invÃ¡lidos: ${err.error.turnosInvalidos}`);
-      } else if (err.status === 401) {
-        alert('Error de autenticaciÃ³n. Por favor, inicie sesiÃ³n nuevamente.');
-      } else {
-        alert('Error inesperado. Revise la consola.');
-      }
+    if (this.asignacionesPendientes.length === 0) {
+      alert('No hay asignaciones pendientes para guardar');
+      return;
     }
-  });
-}
+
+
+    const payload = {
+      asignaciones: this.asignacionesPendientes.map(a => ({
+        empleado_id: a.empleado_id,
+        turno_id: a.turno_id,
+        fecha_inicio: a.fecha_inicio,
+        fecha_fin: a.fecha_fin
+      }))
+    };
+
+    this.turnosService.guardarAsignaciones(payload).subscribe({
+      next: (res) => {
+        if (res.success) {
+          alert('Asignaciones guardadas correctamente');
+
+          // âœ… Emitir ANTES de limpiar
+          this.asignacionesGuardadas.emit([...this.asignacionesPendientes]);
+
+          // Luego limpiar
+          this.asignacionesPendientes = [];
+        } else {
+          alert(`Error del servidor: ${res.message}`);
+        }
+      },
+      error: (err) => {
+        console.error('Error guardando asignaciones en servidor:', err);
+        if (err.status === 400) {
+          alert(`Error de validaciÃ³n: ${err.error.message}. Turnos invÃ¡lidos: ${err.error.turnosInvalidos}`);
+        } else if (err.status === 401) {
+          alert('Error de autenticaciÃ³n. Por favor, inicie sesiÃ³n nuevamente.');
+        } else {
+          alert('Error inesperado. Revise la consola.');
+        }
+      }
+    });
+  }
 
 
   cerrarModal() {

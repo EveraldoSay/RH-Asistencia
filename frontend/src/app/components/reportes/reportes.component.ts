@@ -297,14 +297,14 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  // MÃ©todo para seleccionar un empleado
+  // Metodo para seleccionar un empleado
   seleccionarEmpleado(empleado: any) {
     this.empleadoSeleccionado = empleado;
     this.empleadoBusqueda = empleado.nombre_completo;
     this.mostrandoResultados = false;
   }
 
-  // MÃ©todo para limpiar la selecciÃ³n
+  // Metodo para limpiar la seleccion
   limpiarBusquedaEmpleado() {
     this.empleadoSeleccionado = null;
     this.empleadoBusqueda = '';
@@ -329,7 +329,7 @@ export class ReportesComponent implements OnInit {
       return;
     }
 
-    // NUEVA VALIDACIÃ“N: Rango de fechas vÃ¡lido
+    // NUEVA VALIDACION: Rango de fechas valido
     if (this.tipoFiltroBiometricos === 'rango') {
       const desde = new Date(this.fechaDesde);
       const hasta = new Date(this.fechaHasta);
@@ -354,7 +354,7 @@ export class ReportesComponent implements OnInit {
 
     const parametro = this.tipoFiltroBiometricos === 'dia' ? this.diaEspecifico :
       this.tipoFiltroBiometricos === 'mes' ? this.mesSeleccionado :
-        this.fechaDesde; // Para rango, podemos enviar cualquier fecha como parÃ¡metro base
+        this.fechaDesde; // Para rango, podemos enviar cualquier fecha como parametro base
 
     const empleadoId = this.empleadoSeleccionado ? this.empleadoSeleccionado.id : undefined;
 
@@ -378,7 +378,7 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  // NUEVO MÃ‰TODO PARA ACTUALIZAR BIOMÃ‰TRICO
+  // NUEVO METODO PARA ACTUALIZAR BIOMETRICO
   actualizarBiometrico() {
     this.actualizandoBiometrico = true;
 
@@ -404,7 +404,7 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  // MÃ©todo para sincronizar marcajes anteriores
+  // Metodo para sincronizar marcajes anteriores
   sincronizarMarcajesAnteriores() {
     if (!this.fechaDesde || !this.fechaHasta) {
       alert('Seleccione las fechas desde y hasta para sincronizar.');
