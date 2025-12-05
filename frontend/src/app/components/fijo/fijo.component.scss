@@ -23,6 +23,32 @@ $border-radius: 12px;
 $shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 $shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.15);
 
+// Mixin para inputs y selects consistentes
+@mixin input-style {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 2px solid $gray-200;
+  background: white;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  width: 100%; // Por defecto ocupar el ancho disponible
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.1);
+  }
+
+  &:hover {
+    border-color: $gray-400;
+  }
+
+  &:disabled {
+    background-color: $gray-100;
+    cursor: not-allowed;
+  }
+}
+
 // Animaciones
 @keyframes fadeIn {
   from {
@@ -148,23 +174,9 @@ $shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.15);
 
     select,
     input {
-      padding: 0.6rem 0.8rem;
-      border-radius: 8px;
-      border: 2px solid $gray-200;
-      background: white;
-      font-size: 0.9rem;
-      transition: all 0.3s ease;
+      @include input-style;
       min-width: 180px;
-
-      &:focus {
-        outline: none;
-        border-color: $primary;
-        box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.1);
-      }
-
-      &:hover {
-        border-color: $gray-400;
-      }
+      width: auto; // En filtros, dejar que el contenido defina el ancho o min-width
     }
   }
 }
@@ -336,6 +348,31 @@ $shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.15);
     color: $gray-600;
     margin-bottom: 1.5rem;
   }
+
+  // Aplicar estilos a inputs y selects dentro de secciones de formulario
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: $gray-700;
+    font-size: 0.9rem;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="time"],
+  select {
+    @include input-style;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-text {
+    color: $danger;
+    font-size: 0.8rem;
+    margin-top: -0.25rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
 }
 
 .grid {
@@ -457,6 +494,35 @@ $shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.15);
     &.active {
       background: $primary;
       color: white;
+    }
+  }
+}
+
+// Nuevo Turno Card (dentro de form-section, pero especificamos por si acaso)
+.nuevo-turno-card {
+  background: $gray-100;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid $gray-200;
+
+  h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: $dark;
+  }
+
+  .grid {
+    align-items: flex-end; // Alinear botón con inputs
+  }
+
+  .tolerancias {
+    display: flex;
+    gap: 1rem;
+    
+    label {
+      font-weight: normal;
+      font-size: 0.85rem;
     }
   }
 }
