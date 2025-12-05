@@ -293,24 +293,30 @@ export class FijoComponent implements OnInit {
       return;
     }
 
-    // Convertir todo a número para evitar errores de tipo string
-    this.jefesFiltrados = this.jefesCandidatos.filter(j => {
-      const jefeArea = Number(j.area_id);
-      const activo = j.activo !== false; // null o undefined se considera activo
-      return jefeArea === areaId && activo;
+    // Cargar candidatos a jefe desde el backend (prioriza titulares)
+    this.http.get<any>(`${API}/areas/${areaId}/candidatos-jefe`).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.jefesFiltrados = res.data || [];
+
+          if (this.jefesFiltrados.length > 0) {
+            // El backend ya los devuelve ordenados por prioridad (Titular > Específico > Regla)
+            const mejorCandidato = this.jefesFiltrados[0];
+            this.areaJefeForm.controls.jefe_id.setValue(mejorCandidato.id);
+            this.areaJefeForm.controls.jefe_id.enable();
+          } else {
+            this.areaJefeForm.controls.jefe_id.setValue(null);
+            this.areaJefeForm.controls.jefe_id.enable();
+          }
+        }
+        this.filtrarEmpleados();
+      },
+      error: (err) => {
+        console.error('Error cargando candidatos a jefe', err);
+        this.jefesFiltrados = [];
+        this.filtrarEmpleados();
+      }
     });
-
-    if (this.jefesFiltrados.length > 0) {
-      const primerJefe = this.jefesFiltrados[0];
-      this.areaJefeForm.controls.jefe_id.setValue(primerJefe.id);
-      this.areaJefeForm.controls.jefe_id.disable(); // Auto-select and disable
-    } else {
-      this.areaJefeForm.controls.jefe_id.setValue(null);
-      this.areaJefeForm.controls.jefe_id.enable();
-      console.warn(' No se encontraron jefes activos para esta área');
-    }
-
-    this.filtrarEmpleados();
   }
 
   cargarJefesCandidatos(): void {
