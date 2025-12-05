@@ -46,7 +46,7 @@ export class ReportesComponent implements OnInit {
         this.areas = res.areas;
       },
       error: (err) => {
-        console.error('Error cargando Ã¡reas:', err);
+        console.error('Error cargando áreas:', err);
       }
     });
   }
@@ -74,7 +74,7 @@ export class ReportesComponent implements OnInit {
 
     this.semanas = [];
 
-    // Agregar opciÃ³n "Mes Completo"
+    // Agregar opción "Mes Completo"
     this.semanas.push({
       numero: 0,
       desde: `${year}-${month.toString().padStart(2, '0')}-01`,
@@ -98,7 +98,7 @@ export class ReportesComponent implements OnInit {
 
     this.semanaSeleccionada = null;
 
-    // Si es reporte de horarios, actualizar automÃ¡ticamente el rango de fechas
+    // Si es reporte de horarios, actualizar automáticamente el rango de fechas
     if (this.tipoReporte === 'horarios') {
       this.fechaDesde = `${year}-${month.toString().padStart(2, '0')}-01`;
       this.fechaHasta = `${year}-${month.toString().padStart(2, '0')}-${diasMes}`;
@@ -107,7 +107,7 @@ export class ReportesComponent implements OnInit {
 
   generarReporteHorarios() {
     if (!this.areaSeleccionada) {
-      alert('Seleccione un Ã¡rea.');
+      alert('Seleccione un área.');
       return;
     }
     if (!this.fechaDesde || !this.fechaHasta) {
@@ -234,7 +234,7 @@ export class ReportesComponent implements OnInit {
 
   generarReporteAsistencia() {
     if (!this.areaSeleccionada) {
-      alert('Seleccione un Ã¡rea.');
+      alert('Seleccione un área.');
       return;
     }
 
@@ -320,7 +320,7 @@ export class ReportesComponent implements OnInit {
     }
 
     if (this.tipoFiltroBiometricos === 'dia' && !this.diaEspecifico) {
-      alert('Seleccione un dÃ­a especÃ­fico para generar el reporte de eventos Biométricos.');
+      alert('Seleccione un día específico para generar el reporte de eventos Biométricos.');
       return;
     }
 
@@ -344,7 +344,7 @@ export class ReportesComponent implements OnInit {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays > 31) {
-        if (!confirm(`EstÃ¡ solicitando un reporte de ${diffDays} Días. Esto puede generar un archivo muy grande. Â¿Desea continuar?`)) {
+        if (!confirm(`Está solicitando un reporte de ${diffDays} Días. Esto puede generar un archivo muy grande. ¿Desea continuar?`)) {
           return;
         }
       }
@@ -425,7 +425,7 @@ export class ReportesComponent implements OnInit {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays > 31) {
-      if (!confirm(`EstÃ¡ solicitando sincronizar ${diffDays} Días. Esto puede tomar mucho tiempo. Â¿Desea continuar?`)) {
+      if (!confirm(`Está solicitando sincronizar ${diffDays} Días. Esto puede tomar mucho tiempo. ¿Desea continuar?`)) {
         return;
       }
     }
@@ -436,12 +436,12 @@ export class ReportesComponent implements OnInit {
       next: (res) => {
         this.sincronizandoMarcajes = false;
         if (res.success) {
-          alert(`SincronizaciÃ³n completada:\n
+          alert(`Sincronización completada:\n
             Eventos insertados: ${res.eventos}\n
             Duplicados omitidos: ${res.duplicados}\n
             Asistencias procesadas: ${res.asistencias}`);
 
-          // Opcional: generar reporte automÃ¡ticamente despuÃ©s de sincronizar
+          // Opcional: generar reporte automático después de sincronizar
           this.generarReporteBiometricos();
         } else {
           alert('Error al sincronizar marcajes: ' + res.message);
@@ -455,7 +455,7 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  // Modificar onTipoFiltroBiometricosChange para incluir la nueva opciÃ³n
+  // Modificar onTipoFiltroBiometricosChange para incluir la nueva opción
   onTipoFiltroBiometricosChange() {
     if (this.tipoFiltroBiometricos === 'mes') {
       this.diaEspecifico = '';
@@ -468,7 +468,7 @@ export class ReportesComponent implements OnInit {
     } else if (this.tipoFiltroBiometricos === 'rango' || this.tipoFiltroBiometricos === 'marcajes_anteriores') {
       this.mesSeleccionado = '';
       this.diaEspecifico = '';
-      // Inicializar rango si estÃ¡ vacÃ­o
+      // Inicializar rango si está vacío
       if (!this.fechaDesde || !this.fechaHasta) {
         this.inicializarFechasPorDefecto();
       }
@@ -502,7 +502,7 @@ export class ReportesComponent implements OnInit {
   }
 
 
-  // MÃ‰TODOS PARA LAS CLASES DINÃMICAS
+  // MÉTODOS PARA LAS CLASES DINÁMICAS
   getCumplimientoClass(valor: string): string {
     if (!valor) return '';
     const v = valor.toLowerCase();
@@ -570,16 +570,16 @@ export class ReportesComponent implements OnInit {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(datos);
 
-    // Agregar encabezado con informaciÃ³n del reporte
+    // Agregar encabezado con información del reporte
     const encabezado = [
       ['Hospital Regional de Occidente'],
       ['Reporte de Asistencia por Área'],
       [`Área: ${nombreArea}`],
-      [`PerÃ­odo: ${rango}`],
+      [`Periodo: ${rango}`],
       [`Tipo: ${this.obtenerTipoReporteTexto()}`],
       [`Generado: ${fechaGen}`],
       [`Total registros: ${this.registros.length}`],
-      [] // LÃ­nea en blanco
+      [] // Línea en blanco
     ];
 
     XLSX.utils.sheet_add_aoa(ws, encabezado, { origin: 'A1' });
@@ -636,9 +636,9 @@ export class ReportesComponent implements OnInit {
       'Fecha': evento.fecha,
       'Hora': evento.hora,
       'Dispositivo IP': evento.dispositivo_ip || 'N/A',
-      'CÃ³digo Evento': evento.codigo_evento || 'N/A',
+      'Renglón Evento': evento.codigo_evento || 'N/A',
       'Origen': evento.origen,
-      'Procesado': evento.procesado ? 'SÃ­' : 'No',
+      'Procesado': evento.procesado ? 'Sí' : 'No',
       'Registrado En': evento.creado_en ?
         `${this.formatearFecha(evento.creado_en)} ${this.formatearHora(evento.creado_en)}` : 'N/A'
     }));
@@ -647,9 +647,9 @@ export class ReportesComponent implements OnInit {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(datos);
 
-    // Agregar encabezado con informaciÃ³n del reporte
+    // Agregar encabezado con información del reporte
     const periodoInfo = this.diaEspecifico ?
-      `DÃ­a: ${this.formatearFecha(this.diaEspecifico)}` :
+      `Día: ${this.formatearFecha(this.diaEspecifico)}` :
       `Mes: ${this.mesSeleccionado}`;
 
     const encabezado = [
@@ -658,7 +658,7 @@ export class ReportesComponent implements OnInit {
       [periodoInfo],
       [`Total eventos: ${resumen.total} | Entradas: ${resumen.entradas} | Salidas: ${resumen.salidas}`],
       [`Generado: ${fechaGen}`],
-      [] // LÃ­nea en blanco
+      [] // Línea en blanco
     ];
 
     XLSX.utils.sheet_add_aoa(ws, encabezado, { origin: 'A1' });
@@ -679,7 +679,7 @@ export class ReportesComponent implements OnInit {
       { wch: 12 },  // Fecha
       { wch: 10 },  // Hora
       { wch: 15 },  // Dispositivo IP
-      { wch: 15 },  // CÃ³digo Evento
+      { wch: 15 },  // Renglón Evento
       { wch: 10 },  // Origen
       { wch: 10 },  // Procesado
       { wch: 20 }   // Registrado En
@@ -878,7 +878,7 @@ export class ReportesComponent implements OnInit {
           const pageHeight = pageSize.height || pageSize.getHeight();
           doc.setFontSize(8);
           doc.text(
-            `PÃ¡gina ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
+            `Página ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
             14,
             pageHeight - 5
           );
@@ -940,9 +940,9 @@ export class ReportesComponent implements OnInit {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
 
-      // Mostrar mes o dÃ­a especÃ­fico segÃºn corresponda
+      // Mostrar mes o día específico según corresponda
       if (this.diaEspecifico) {
-        doc.text(`DÃ­a: ${this.formatearFecha(this.diaEspecifico)}`, 14, 38);
+        doc.text(`Día: ${this.formatearFecha(this.diaEspecifico)}`, 14, 38);
       } else {
         doc.text(`Mes: ${this.mesSeleccionado}`, 14, 38);
       }
@@ -958,7 +958,7 @@ export class ReportesComponent implements OnInit {
         { header: 'Fecha', dataKey: 'fecha' },
         { header: 'Hora', dataKey: 'hora' },
         { header: 'Dispositivo IP', dataKey: 'dispositivo_ip' },
-        { header: 'CÃ³digo Evento', dataKey: 'codigo_evento' },
+        { header: 'Renglón Evento', dataKey: 'codigo_evento' },
         { header: 'Origen', dataKey: 'origen' },
         { header: 'Procesado', dataKey: 'procesado' }
       ];
@@ -971,7 +971,7 @@ export class ReportesComponent implements OnInit {
         dispositivo_ip: e.dispositivo_ip || 'N/A',
         codigo_evento: e.codigo_evento || 'N/A',
         origen: e.origen,
-        procesado: e.procesado ? 'SÃ­' : 'No'
+        procesado: e.procesado ? 'Sí' : 'No'
       }));
 
       autoTable(doc, {
@@ -1013,7 +1013,7 @@ export class ReportesComponent implements OnInit {
 
           // Colorear estado de procesado
           if (data.column.dataKey === 'procesado' && data.cell.raw) {
-            if (data.cell.raw === 'SÃ­') {
+            if (data.cell.raw === 'Sí') {
               data.cell.styles.textColor = [25, 135, 84]; // Verde
               data.cell.styles.fontStyle = 'bold';
             } else {
@@ -1027,7 +1027,7 @@ export class ReportesComponent implements OnInit {
           const pageHeight = pageSize.height || pageSize.getHeight();
           doc.setFontSize(8);
           doc.text(
-            `PÃ¡gina ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
+            `Página ${doc.getNumberOfPages()} | Generado: ${fechaGen}`,
             14,
             pageHeight - 5
           );
@@ -1071,7 +1071,7 @@ export class ReportesComponent implements OnInit {
 
     // Check if the created date is valid
     if (isNaN(fecha.getTime())) {
-      return 'Fecha invÃ¡lida';
+      return 'Fecha inválida';
     }
 
     return fecha.toLocaleDateString('es-GT', { timeZone: 'UTC' });
@@ -1096,7 +1096,7 @@ export class ReportesComponent implements OnInit {
   obtenerRangoSeleccionado() {
     if (this.tipoReporte === 'biometricos') {
       if (this.tipoFiltroBiometricos === 'dia') {
-        return `DÃ­a especÃ­fico: ${this.formatearFecha(this.diaEspecifico)}`;
+        return `Día específico: ${this.formatearFecha(this.diaEspecifico)}`;
       } else if (this.tipoFiltroBiometricos === 'rango') {
         return `Rango: ${this.formatearFecha(this.fechaDesde)} a ${this.formatearFecha(this.fechaHasta)}`;
       } else if (this.tipoFiltroBiometricos === 'mes') {
