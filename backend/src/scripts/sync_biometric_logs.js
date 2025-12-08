@@ -60,14 +60,20 @@ async function fetchEvents(device) {
       }
     };
 
-    const res = await client.fetch(
-      `http://${device.ip}/ISAPI/AccessControl/AcsEvent?format=json`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }
-    );
+    let res;
+    try {
+      res = await client.fetch(
+        `http://${device.ip}/ISAPI/AccessControl/AcsEvent?format=json`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }
+      );
+    } catch (err) {
+      console.error(`Error de conexión con ${device.ip}:`, err.message);
+      break;
+    }
 
     if (!res.ok) {
       console.error(`Error en ${device.ip}: HTTP ${res.status}`);
