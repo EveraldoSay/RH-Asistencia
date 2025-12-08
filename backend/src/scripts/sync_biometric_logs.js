@@ -1,11 +1,22 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const db = require('../db');
 
 // === Dispositivos ===
-const devices = [
-  { ip: '192.168.0.45', user: 'admin', pass: '[REDACTED]' },
-  { ip: '192.168.0.46', user: 'admin', pass: '[REDACTED]' }
-];
+const biometricUser = process.env.BIOMETRIC_USER;
+const biometricPass = process.env.BIOMETRIC_PASS;
+const biometricIps = (process.env.BIOMETRIC_IPS || '').split(',').filter(Boolean);
+
+if (!biometricUser || !biometricPass || biometricIps.length === 0) {
+  console.error('Error: Faltan credenciales de biométricos en .env');
+  process.exit(1);
+}
+
+const devices = biometricIps.map(ip => ({
+  ip: ip.trim(),
+  user: biometricUser,
+  pass: biometricPass
+}));
 
 // === Ajuste horario Guatemala UTC-6 ===
 function getTimeRange() {

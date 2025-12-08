@@ -1,16 +1,28 @@
-require('dotenv').config();
-const DigestFetch = require('digest-fetch').default || require('digest-fetch');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+// const DigestFetch = require('digest-fetch').default || require('digest-fetch'); // REMOVED
 const xml2js = require('xml2js');
 const db = require('../db');
 
 
-const devices = [
-  { ip: '192.168.0.45', user: 'admin', pass: '[REDACTED]' },
-  { ip: '192.168.0.46', user: 'admin', pass: '[REDACTED]' }
-];
+const biometricUser = process.env.BIOMETRIC_USER;
+const biometricPass = process.env.BIOMETRIC_PASS;
+const biometricIps = (process.env.BIOMETRIC_IPS || '').split(',').filter(Boolean);
+
+if (!biometricUser || !biometricPass || biometricIps.length === 0) {
+  console.error('Error: Faltan credenciales de biométricos en .env');
+  process.exit(1);
+}
+
+const devices = biometricIps.map(ip => ({
+  ip: ip.trim(),
+  user: biometricUser,
+  pass: biometricPass
+}));
 
 // Función para traer todos los usuarios de un biométrico
 async function fetchAllFromDevice(device) {
+  const { default: DigestFetch } = await import('digest-fetch');
   const client = new DigestFetch(device.user, device.pass);
   const maxResults = 30;
   let position = 0;
@@ -41,8 +53,8 @@ async function fetchAllFromDevice(device) {
       const list = Array.isArray(data?.UserInfoSearch?.UserInfo)
         ? data.UserInfoSearch.UserInfo
         : data?.UserInfoSearch?.UserInfo
-        ? [data.UserInfoSearch.UserInfo]
-        : [];
+          ? [data.UserInfoSearch.UserInfo]
+          : [];
 
       allUsers.push(...list);
       const status = data?.UserInfoSearch?.responseStatusStrg;
