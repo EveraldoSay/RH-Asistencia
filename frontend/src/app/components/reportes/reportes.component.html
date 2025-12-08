@@ -22,6 +22,8 @@
         </select>
       </div>
 
+
+
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
         <label>Tipo Filtro:</label>
         <select [(ngModel)]="tipoFiltroBiometricos" (change)="onTipoFiltroBiometricosChange()">
@@ -35,6 +37,24 @@
       <div class="filtro-group" *ngIf="tipoReporte !== 'todo' && tipoReporte !== 'horarios'">
         <label>Mes:</label>
         <input type="month" [(ngModel)]="mesSeleccionado" (change)="generarSemanas()" />
+      </div>
+
+      <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
+        <label>Buscar Empleado:</label>
+        <div class="busqueda-empleado-container">
+          <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()" placeholder="Nombre o DPI..."
+            class="busqueda-input">
+
+          <div *ngIf="mostrandoResultados && empleadosEncontrados.length > 0" class="resultados-busqueda">
+            <div *ngFor="let emp of empleadosEncontrados" (click)="seleccionarEmpleado(emp)" class="resultado-item">
+              {{ emp.nombre_completo }}
+            </div>
+          </div>
+
+          <button *ngIf="empleadoSeleccionado" (click)="limpiarBusquedaEmpleado()" class="btn-limpiar">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
       </div>
       <div class="filtro-group" *ngIf="tipoReporte === 'horarios'">
         <label>Desde:</label>
