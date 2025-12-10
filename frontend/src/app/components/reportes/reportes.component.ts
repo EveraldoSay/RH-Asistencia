@@ -2,6 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportesService } from '../../services/reportes.service';
+import { AuthService } from '../../services/auth.service';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
@@ -15,6 +16,8 @@ import autoTable from 'jspdf-autotable';
 })
 export class ReportesComponent implements OnInit {
   private repService = inject(ReportesService);
+  private authService = inject(AuthService);
+  isSuperAdmin: boolean = false;
   empleadoBusqueda: string = '';
   empleadosEncontrados: any[] = [];
   empleadoSeleccionado: any = null;
@@ -39,7 +42,8 @@ export class ReportesComponent implements OnInit {
 
   cargando = false;
 
-  ngOnInit() {
+  async ngOnInit() {
+    this.isSuperAdmin = await this.authService.hasRole('superadministrador');
     this.inicializarFechasPorDefecto();
     this.repService.getAreas().subscribe({
       next: (res) => {

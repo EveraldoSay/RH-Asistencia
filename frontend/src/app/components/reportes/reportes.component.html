@@ -117,7 +117,8 @@
         </button>
 
         <!-- NUEVO BOTÓN ACTUALIZAR BIOMÉTRICO -->
-        <button (click)="actualizarBiometrico()" class="btn-biometrico" [disabled]="actualizandoBiometrico">
+        <button *ngIf="isSuperAdmin" (click)="actualizarBiometrico()" class="btn-biometrico"
+          [disabled]="actualizandoBiometrico">
           <span *ngIf="!actualizandoBiometrico">Actualizar Biométrico</span>
           <span *ngIf="actualizandoBiometrico">Actualizando...</span>
         </button>
@@ -133,7 +134,7 @@
         </button>
 
         <button (click)="sincronizarMarcajesAnteriores()"
-          *ngIf="tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
+          *ngIf="isSuperAdmin && tipoReporte === 'biometricos' && tipoFiltroBiometricos === 'marcajes_anteriores'"
           class="btn-marcajes-anteriores" [disabled]="sincronizandoMarcajes || !fechaDesde || !fechaHasta">
           <span *ngIf="!sincronizandoMarcajes">Sincronizar Marcajes</span>
           <span *ngIf="sincronizandoMarcajes">Sincronizando...</span>
