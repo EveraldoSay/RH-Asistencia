@@ -3,10 +3,10 @@ const db = require('../db.js');
 async function audit({ evento, entidad, entidad_id = null, antes = null, despues = null, req }) {
   try {
     const actor_id = req.actorId ?? null;
-    const actor_username = req.actorUsername ?? null;
+    const actor_username = req.actorUsername || req.user?.username || req.user?.preferred_username || null;
     const ip = (req.headers['x-forwarded-for'] || '').split(',')[0] || req.ip || null;
     const ua = req.headers['user-agent'] || null;
-    const request_id = req.id || null; 
+    const request_id = req.id || null;
     await db.query(
       `INSERT INTO audit_log (evento, entidad, entidad_id, antes, despues, actor_id, actor_username, ip, user_agent, request_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -25,7 +25,7 @@ async function audit({ evento, entidad, entidad_id = null, antes = null, despues
     );
   } catch (e) {
     console.error('audit() error:', e.message);
-   
+
   }
 }
 

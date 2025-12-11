@@ -445,7 +445,7 @@ router.post('/fijos', requireAuth, async (req, res) => {
     await conn.beginTransaction();
 
     const creadorId = req.user?.id ?? null;
-    const creadorUsuario = req.user?.preferred_username || 'keycloak_user';
+    const creadorUsuario = req.user?.username || req.user?.preferred_username || 'keycloak_user';
 
     // ========================= Definir fechas de vigencia =========================
     const fechaInicio = new Date(); // Hoy
