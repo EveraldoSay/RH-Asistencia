@@ -90,7 +90,7 @@
       <div class="filtro-group" *ngIf="tipoReporte === 'biometricos'">
         <label>Buscar Empleado:</label>
         <div class="busqueda-empleado-container">
-          <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()" placeholder="Nombre o DPI..."
+          <input type="text" [(ngModel)]="empleadoBusqueda" (input)="buscarEmpleados()" placeholder="Escriba nombre..."
             class="busqueda-input">
 
           <div *ngIf="mostrandoResultados && empleadosEncontrados.length > 0" class="resultados-busqueda">

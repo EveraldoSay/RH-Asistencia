@@ -99,7 +99,7 @@
     <form #f="ngForm" (ngSubmit)="saveEmpleado(f)">
       <!-- Número -->
       <div class="form-group">
-        <label>Número de Telefono </label>
+        <label>Identificación </label>
         <input type="text" name="numero_empleado" [(ngModel)]="empleadofrorm.numero_empleado" required minlength="1"
           maxlength="32" inputmode="numeric" pattern="^[0-9]+$" placeholder="Ej: 50234567"
           (input)="onNumeroInput($event)" (blur)="clearServerError('numero')" />
