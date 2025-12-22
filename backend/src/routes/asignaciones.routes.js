@@ -1053,6 +1053,19 @@ router.delete('/configuraciones/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Configuración no encontrada' });
     }
 
+    // Registrar en bitácora
+    await db.query(
+      `INSERT INTO audit_log (evento, entidad, entidad_id, actor_id, actor_username, ip, user_agent)
+       VALUES ('DELETE', 'configuraciones_turnos', ?, ?, ?, ?, ?)`,
+      [
+        id,
+        req.user?.id || null,
+        req.user?.username || req.user?.preferred_username || 'unknown',
+        req.ip || null,
+        req.headers['user-agent'] || null
+      ]
+    );
+
     res.json({ success: true, message: 'Configuración eliminada correctamente' });
   } catch (err) {
     console.error('Error eliminando configuración:', err);
