@@ -403,15 +403,48 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
     }, 3000);
   }
 
-  eliminarConfiguracion(conf: any, vista: string) {
-    if (vista === 'LISTA_ROTATIVOS') {
-      this.configuracionesRotativas = this.configuracionesRotativas.filter(c => c.id !== conf.id);
-    } else {
-      this.configuracionesFijas = this.configuracionesFijas.filter(c => c.id !== conf.id);
-    }
+  // ===== Modal de Confirmación de Eliminación =====
+  showDeleteConfirm = false;
+  configToDelete: any = null;
+  vistaDelete: string = '';
 
-    this.info = 'Configuración eliminada correctamente';
-    setTimeout(() => this.info = null, 3000);
+  eliminarConfiguracion(conf: any, vista: string) {
+    this.configToDelete = conf;
+    this.vistaDelete = vista;
+    this.showDeleteConfirm = true;
+  }
+
+  confirmarEliminacion() {
+    if (!this.configToDelete) return;
+
+    this.turnosService.eliminarConfiguracion(this.configToDelete.id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          if (this.vistaDelete === 'LISTA_ROTATIVOS') {
+            this.configuracionesRotativas = this.configuracionesRotativas.filter(c => c.id !== this.configToDelete.id);
+          } else {
+            this.configuracionesFijas = this.configuracionesFijas.filter(c => c.id !== this.configToDelete.id);
+          }
+
+          this.info = 'Configuración eliminada correctamente';
+          setTimeout(() => this.info = null, 3000);
+        } else {
+          this.error = 'No se pudo eliminar la configuración';
+        }
+        this.cerrarModalEliminacion();
+      },
+      error: (err) => {
+        console.error('Error eliminando configuración:', err);
+        this.error = 'Error al eliminar la configuración';
+        this.cerrarModalEliminacion();
+      }
+    });
+  }
+
+  cerrarModalEliminacion() {
+    this.showDeleteConfirm = false;
+    this.configToDelete = null;
+    this.vistaDelete = '';
   }
 
   // ===== Métodos de carga de datos =====

@@ -1043,6 +1043,27 @@ router.get('/configuraciones', requireAuth, async (req, res) => {
   }
 });
 
+// ========================= ELIMINAR CONFIGURACIÓN DE TURNOS =========================
+router.delete('/configuraciones/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await db.query('UPDATE configuraciones_turnos SET activo=0 WHERE id=?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Configuración no encontrada' });
+    }
+
+    res.json({ success: true, message: 'Configuración eliminada correctamente' });
+  } catch (err) {
+    console.error('Error eliminando configuración:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar configuración',
+      error: err.message
+    });
+  }
+});
+
 
 // ========================= OBTENER EMPLEADOS POR IDS =========================
 router.post('/empleados/por-ids', async (req, res) => {

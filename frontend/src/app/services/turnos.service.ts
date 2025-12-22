@@ -294,6 +294,14 @@ export class TurnosService {
     });
   }
 
+  eliminarConfiguracion(id: number) {
+    return this.http.delete<ApiResponse>(`${this.base}/asignaciones/configuraciones/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+  }
+
 
 
 }
