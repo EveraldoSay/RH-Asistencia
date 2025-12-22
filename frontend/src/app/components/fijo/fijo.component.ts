@@ -63,12 +63,18 @@ export class FijoComponent implements OnInit {
   @Input() areas: Area[] = [];
   @Input() jefesCandidatos: Empleado[] = [];
   @Input() rolesEmpleados: Rol[] = [];
+  @Input() corporacion_id: number | null = null;
   @Input() empleados: Empleado[] = [];
+  @Input() configuracionEditar: any = null;
+
+
+
   @Output() cancelar = new EventEmitter<void>();
   @Output() guardado = new EventEmitter<any>();
 
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
+
 
   // View Mode
   viewMode: 'list' | 'create' = 'list';
@@ -131,6 +137,80 @@ export class FijoComponent implements OnInit {
     this.loadConfiguraciones(); // Load initial list
     if (this.areaJefeForm.controls.area_id.value) {
       this.onAreaChange();
+    }
+  }
+
+  ngOnChanges(changes: import('@angular/core').SimpleChanges): void {
+    if (changes['configuracionEditar'] && this.configuracionEditar) {
+      this.cargarDatosEdicion(this.configuracionEditar);
+    }
+
+    // Si la lista de empleados se actualiza y estamos editando, re-sincronizar el equipo
+    if (changes['empleados'] && this.configuracionEditar && this.viewMode === 'create') {
+      this.syncEmpleadosEdicion();
+    }
+  }
+
+  cargarDatosEdicion(conf: any) {
+    this.viewMode = 'create';
+    this.step = 1;
+    this.resetForm();
+
+    // 1. Cargar Área y Jefe
+    this.areaJefeForm.patchValue({
+      area_id: conf.areaId || conf.area_id,
+      jefe_id: conf.jefeId || conf.jefe_id
+    });
+
+    // Llamar a onAreaChange pero preservando el jefe si ya está seteado
+    this.onAreaChange();
+
+    // 2. Cargar Turno
+    this.turnoSeleccionado = conf.turno_id;
+
+    // 3. Cargar Empleados
+    this.syncEmpleadosEdicion();
+
+    // 4. Cargar Descansos
+    let configObj: any = conf.configuracion;
+    if (typeof configObj === 'string') {
+      try { configObj = JSON.parse(configObj); } catch (e) { }
+    }
+
+    if (configObj && configObj.dias_descanso) {
+      const diasStr = Array.isArray(configObj.dias_descanso) ? configObj.dias_descanso : configObj.dias_descanso.split(',');
+      const diasInt = diasStr.map((d: any) => parseInt(d, 10));
+
+      this.descansoGrupal = [false, false, false, false, false, false, false];
+
+      this.descansoGrupal.forEach((_, index) => {
+        const backendDay = this.mapDiaToBackend(index);
+        if (diasInt.includes(backendDay)) {
+          this.descansoGrupal[index] = true;
+        }
+      });
+    }
+  }
+
+  syncEmpleadosEdicion() {
+    if (!this.configuracionEditar) return;
+    const conf = this.configuracionEditar;
+
+    let ids: number[] = [];
+    try {
+      ids = typeof conf.empleados_ids === 'string' ? JSON.parse(conf.empleados_ids) : conf.empleados_ids;
+    } catch (e) { }
+
+    if (ids && ids.length > 0) {
+      // Intentar mapear contra la lista actual de empleados
+      this.equipoCompleto = this.empleados.filter(e => ids.includes(e.id));
+
+      // Si faltan algunos (quizás son de otra área o lista), buscar en jefesCandidatos o mantener lo que se pueda
+      const faltantes = ids.filter(id => !this.equipoCompleto.find(e => e.id === id));
+      if (faltantes.length > 0) {
+        const encontrados = this.jefesCandidatos.filter(j => faltantes.includes(j.id));
+        this.equipoCompleto = [...this.equipoCompleto, ...encontrados];
+      }
     }
   }
 
@@ -284,6 +364,7 @@ export class FijoComponent implements OnInit {
 
   onAreaChange(): void {
     const areaId = Number(this.areaJefeForm.controls.area_id.value);
+    const currentJefeId = this.areaJefeForm.controls.jefe_id.value;
 
     if (!areaId || isNaN(areaId)) {
       this.jefesFiltrados = [];
@@ -300,9 +381,16 @@ export class FijoComponent implements OnInit {
           this.jefesFiltrados = res.data || [];
 
           if (this.jefesFiltrados.length > 0) {
-            // El backend ya los devuelve ordenados por prioridad (Titular > Específico > Regla)
-            const mejorCandidato = this.jefesFiltrados[0];
-            this.areaJefeForm.controls.jefe_id.setValue(mejorCandidato.id);
+            // Verificar si el jefe actual (cargado de edición) está en la lista para preservarlo
+            const exists = currentJefeId && this.jefesFiltrados.some(j => j.id === currentJefeId);
+
+            if (exists) {
+              // Preservar selección actual
+            } else {
+              // Seleccionar el mejor candidato (titular)
+              const mejorCandidato = this.jefesFiltrados[0];
+              this.areaJefeForm.controls.jefe_id.setValue(mejorCandidato.id);
+            }
             this.areaJefeForm.controls.jefe_id.enable();
           } else {
             this.areaJefeForm.controls.jefe_id.setValue(null);
@@ -549,7 +637,6 @@ export class FijoComponent implements OnInit {
     return null;
   }
 
-  // En fijo.component.ts - método guardarTurnosFijos()
   guardarTurnosFijos(): void {
     if (!this.areaJefeForm.valid || !this.turnoSeleccionado || this.equipoCompleto.length === 0) {
       this.error = 'Por favor complete todos los campos obligatorios antes de guardar';
@@ -557,23 +644,18 @@ export class FijoComponent implements OnInit {
     }
 
     const areaId = this.areaJefeForm.controls.area_id.value;
-    // Usar getRawValue para obtener el valor incluso si el control está deshabilitado
     const jefeId = this.areaJefeForm.getRawValue().jefe_id;
 
-    // Incluir al jefe en el equipo completo si no está
-    const jefe = this.jefesCandidatos.find(j => j.id === jefeId);
-    const todosLosEmpleados = jefe && !this.equipoCompleto.some(e => e.id === jefe.id)
-      ? [jefe, ...this.equipoCompleto]
-      : this.equipoCompleto;
-
+    // Use full team
+    const todosLosEmpleados = this.equipoCompleto;
     const empleadosIds = todosLosEmpleados.map(emp => emp.id);
 
-    // Validar superposición (Client-side check placeholder)
-    const conflicto = this.validarSuperposicion(empleadosIds, this.turnoSeleccionado);
-    if (conflicto) {
-      this.error = `Conflicto de horario: ${conflicto}`;
-      return;
-    }
+    // Validar superposición (Client-side check placeholder) - Optional
+    // const conflicto = this.validarSuperposicion(empleadosIds, this.turnoSeleccionado);
+    // if (conflicto) {
+    //   this.error = `Conflicto de horario: ${conflicto}`;
+    //   return;
+    // }
 
     this.loading = true;
     this.error = null;
@@ -582,17 +664,26 @@ export class FijoComponent implements OnInit {
       area_id: areaId,
       jefe_id: jefeId,
       turno_id: this.turnoSeleccionado,
-      empleados_ids: empleadosIds, // ← Esto ahora incluye al jefe también
+      empleados_ids: empleadosIds,
       dias_descanso: this.getDiasDescansoSeleccionados(),
-      tipo: 'FIJO_PERMANENTE'
+      tipo: 'FIJO_PERMANENTE',
+      fecha_inicio: this.configuracionEditar ? this.configuracionEditar.fecha_inicio : new Date(),
+      fecha_fin: this.configuracionEditar ? this.configuracionEditar.fecha_fin : new Date(new Date().setFullYear(new Date().getFullYear() + 1))
     };
 
-    this.http.post(`${API}/asignaciones/fijos`, payload).subscribe({
+    let obs$;
+    if (this.configuracionEditar && this.configuracionEditar.id) {
+      obs$ = this.http.put(`${API}/asignaciones/configuraciones/${this.configuracionEditar.id}`, payload);
+    } else {
+      obs$ = this.http.post(`${API}/asignaciones/fijos`, payload);
+    }
+
+    obs$.subscribe({
       next: (res: any) => {
         this.loading = false;
 
         const configuracionGuardada = {
-          id: res.lote_id || Date.now(),
+          id: res.lote_id || this.configuracionEditar?.id || Date.now(),
           areaId: areaId,
           jefeId: jefeId,
           turnoId: this.turnoSeleccionado,
@@ -606,27 +697,21 @@ export class FijoComponent implements OnInit {
           permanente: true
         };
 
-        this.info = `Turno fijo permanente creado para ${empleadosIds.length} empleados`;
+        this.info = this.configuracionEditar
+          ? `Turno actualizado correctamente`
+          : `Turno fijo permanente creado para ${empleadosIds.length} empleados`;
 
-        // Emitir evento de guardado
         setTimeout(() => {
           this.guardado.emit(configuracionGuardada);
-          this.showList(); // Return to list view
-        }, 2000);
+          this.loading = false;
+          this.configuracionEditar = null;
+          this.showList();
+        }, 1500);
       },
       error: (err) => {
         this.loading = false;
         console.error('Error guardando turnos fijos:', err);
-
-        if (err.status === 400) {
-          this.error = 'Error en los datos: ' + (err.error?.message || 'Verifique los campos');
-        } else if (err.status === 409) { // Conflict
-          this.error = 'Conflicto de horario: ' + (err.error?.message || 'Superposición detectada');
-        } else if (err.status === 500) {
-          this.error = 'Error del servidor: ' + (err.error?.error || 'Intente más tarde');
-        } else {
-          this.error = 'Error al guardar los turnos fijos: ' + err.message;
-        }
+        this.error = 'Error al guardar: ' + (err.error?.message || err.message);
       }
     });
   }

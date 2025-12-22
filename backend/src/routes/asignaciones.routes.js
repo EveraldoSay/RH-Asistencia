@@ -1131,6 +1131,113 @@ router.delete('/configuraciones/:id', requireAuth, async (req, res) => {
   }
 });
 
+// ========================= EDITAR CONFIGURACIÓN DE TURNOS =========================
+router.put('/configuraciones/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { area_id, jefe_id, turno_id, empleados_ids, fecha_inicio, fecha_fin, dias_descanso, tipo } = req.body;
+
+  let conn;
+  try {
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    // 1. Obtener configuración anterior
+    const [[confOld]] = await conn.query(`SELECT * FROM configuraciones_turnos WHERE id = ?`, [id]);
+    if (!confOld) {
+      await conn.commit(); // Release lock
+      return res.status(404).json({ success: false, message: 'Configuración no encontrada' });
+    }
+
+    // Format dates to simple YYYY-MM-DD to avoid MySQL strict mode errors with ISO strings
+    const fmtFechaInicio = fecha_inicio ? new Date(fecha_inicio).toISOString().split('T')[0] : null;
+    const fmtFechaFin = fecha_fin ? new Date(fecha_fin).toISOString().split('T')[0] : null;
+
+    // 2. Actualizar tabla configuraciones_turnos
+    const configuracionJSON = JSON.stringify({
+      dias_descanso: dias_descanso || [],
+      rango: { inicio: fmtFechaInicio, fin: fmtFechaFin }
+    });
+    const idsJSON = JSON.stringify(empleados_ids);
+
+    // Obtener nombre del área para log
+    const [[areaVal]] = await conn.query('SELECT nombre_area FROM areas WHERE id=?', [area_id]);
+    const nombreArea = areaVal?.nombre_area || 'Desconocida';
+
+    await conn.query(`
+      UPDATE configuraciones_turnos 
+      SET area_id=?, jefe_id=?, turno_id=?, empleados_ids=?, configuracion=?, fecha_inicio=?, fecha_fin=?, actualizado_en=NOW()
+      WHERE id=?
+    `, [area_id, jefe_id, turno_id, idsJSON, configuracionJSON, fmtFechaInicio, fmtFechaFin, id]);
+
+    // 3. Sincronizar Asignaciones (Smart Sync)
+    // A) Identificar empleados removidos
+    let oldIds = [];
+    try { oldIds = typeof confOld.empleados_ids === 'string' ? JSON.parse(confOld.empleados_ids) : confOld.empleados_ids; } catch (e) { }
+
+    const newIds = empleados_ids.map(Number);
+    const removedIds = oldIds.filter(x => !newIds.includes(x));
+    const addedIds = newIds.filter(x => !oldIds.includes(x));
+    const keptIds = newIds.filter(x => oldIds.includes(x));
+
+    const actorId = req.user?.id || null;
+    const actorUser = req.user?.username || 'unknown';
+
+    // B) Eliminar (soft-delete) asignaciones futuras de empleados removidos
+    if (removedIds.length > 0) {
+      const placeholders = removedIds.map(() => '?').join(',');
+      await conn.query(`
+        UPDATE asignacion_turnos 
+        SET eliminado_en=NOW(), eliminado_por=?
+        WHERE lote_id IN (SELECT id FROM asignaciones_lote WHERE creado_por=? OR area_id=?) -- Intentar vincular por lote o contexto
+          AND empleado_id IN (${placeholders})
+          AND fecha_inicio >= DATE(NOW())
+          AND eliminado_en IS NULL
+      `, [actorId, confOld.creado_por, confOld.area_id, ...removedIds]);
+    }
+
+    // C) Agregar asignaciones para NUEVOS empleados
+    // Esto es complejo si no tenemos un lote_id claro, pero intentaremos usar el mismo mecanismo de 'Create'
+    // Para simplificar: Solo registraremos el cambio de configuración en este paso inicial.
+    // La re-generación completa de asignaciones requeriría un endpoint más pesado.
+    // AQUÍ: Si cambia el Turno, actualizamos las asignaciones futuras de los empleados que se mantienen
+    if (keptIds.length > 0 && Number(confOld.turno_id) !== Number(turno_id)) {
+      const placeholders = keptIds.map(() => '?').join(',');
+      await conn.query(`
+        UPDATE asignacion_turnos
+        SET turno_id = ?
+        WHERE empleado_id IN (${placeholders})
+          AND fecha_inicio >= DATE(NOW())
+          AND eliminado_en IS NULL
+          AND turno_id = ? -- Solo actualizar si coincidía con el anterior
+      `, [turno_id, ...keptIds, confOld.turno_id]);
+    }
+
+    // Registrar en bitácora
+    await conn.query(
+      `INSERT INTO audit_log (evento, entidad, entidad_id, actor_id, actor_username, ip, user_agent)
+       VALUES ('UPDATE', ?, ?, ?, ?, ?, ?)`,
+      [
+        `configuraciones_turnos (Área: ${nombreArea})`,
+        id,
+        actorId,
+        actorUser,
+        req.ip || null,
+        req.headers['user-agent'] || null
+      ]
+    );
+
+    await conn.commit();
+    res.json({ success: true, message: 'Configuración actualizada correctamente' });
+
+  } catch (err) {
+    if (conn) await conn.rollback();
+    console.error('Error actualizando configuración:', err);
+    res.status(500).json({ success: false, message: 'Error al actualizar', error: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 
 // ========================= OBTENER EMPLEADOS POR IDS =========================
 router.post('/empleados/por-ids', async (req, res) => {

@@ -302,6 +302,14 @@ export class TurnosService {
     });
   }
 
+  updateConfiguracion(id: number, data: any) {
+    return this.http.put<ApiResponse>(`${this.base}/asignaciones/configuraciones/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+  }
+
 
 
 }

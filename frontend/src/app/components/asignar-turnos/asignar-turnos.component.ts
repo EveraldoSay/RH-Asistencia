@@ -128,6 +128,7 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
   areaSeleccionada: any = null;
   conf: any = { area_id: null };
   mostrarModalRemplazo: boolean = false;
+  configuracionSeleccionada: any = null;
 
   // ===== Inyecciones =====
   // private turnosService = inject(TurnosService);
@@ -225,7 +226,14 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
       : this.configuracionesFijas.find(c => c.id === id);
 
     if (conf) {
-      // Cargar datos básicos
+      this.configuracionSeleccionada = conf;
+
+      // Si es FIJO, detenemos aquí la carga manual porque el componente app-fijo se encargará (si le pasamos el input)
+      if (this.modo === 'FIJO') {
+        return;
+      }
+
+      // Cargar datos básicos (SOLO PARA ROTATIVOS)
       this.areaJefeForm.patchValue({
         area_id: conf.areaId || conf.area_id,
         jefe_id: conf.jefeId || conf.jefe_id
@@ -968,6 +976,7 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
     this.filtroBusqueda = '';
     this.filtroRol = null;
     this.asignacionesCalendario = [];
+    this.configuracionSeleccionada = null;
   }
 
   // ===== Getters =====

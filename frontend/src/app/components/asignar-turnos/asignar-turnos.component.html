@@ -320,7 +320,8 @@
 
     <ng-container *ngIf="modo==='FIJO'">
       <app-fijo [areas]="areas" [jefesCandidatos]="jefesCandidatos" [rolesEmpleados]="roles" [empleados]="empleados"
-        (cancelar)="cancelarFormulario()" (guardado)="onFijoGuardado($event)">
+        [configuracionEditar]="configuracionSeleccionada" (cancelar)="cancelarFormulario()"
+        (guardado)="onFijoGuardado($event)">
       </app-fijo>
     </ng-container>
   </section>
@@ -330,20 +331,23 @@
     <div class="modal__body">
       <h3>¿Eliminar configuración?</h3>
       <div class="alert error" style="margin-bottom: 1rem;">
-         Esta acción es irreversible.
+        Esta acción es irreversible.
       </div>
       <p>
         Estás a punto de eliminar la configuración de turno:
         <br>
-        <strong>{{ configToDelete?.nombreTurno }}</strong> para el área <strong>{{ configToDelete?.areaNombre }}</strong>.
+        <strong>{{ configToDelete?.nombreTurno }}</strong> para el área <strong>{{ configToDelete?.areaNombre
+          }}</strong>.
       </p>
       <p class="muted">
-        Nota: Esto no eliminará los turnos individuales ya asignados en el calendario de los empleados, pero desactivará esta configuración para futuras gestiones.
+        Nota: Esto no eliminará los turnos individuales ya asignados en el calendario de los empleados, pero desactivará
+        esta configuración para futuras gestiones.
       </p>
 
       <div class="modal__actions">
         <button class="btn outline" (click)="cerrarModalEliminacion()">Cancelar</button>
-        <button class="btn danger" style="background-color: #ef4444; color: white; border: none;" (click)="confirmarEliminacion()">
+        <button class="btn danger" style="background-color: #ef4444; color: white; border: none;"
+          (click)="confirmarEliminacion()">
           Sí, eliminar
         </button>
       </div>
