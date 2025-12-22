@@ -261,12 +261,12 @@ export class FijoComponent implements OnInit {
       }
 
       // Incluir automáticamente al jefe en el equipo si no está
-      const jefeId = this.areaJefeForm.controls.jefe_id.value;
-      const jefeSeleccionado = this.jefesCandidatos.find(j => j.id === jefeId);
-
-      if (jefeSeleccionado && !this.equipoCompleto.some(e => e.id === jefeSeleccionado.id)) {
-        this.equipoCompleto = [jefeSeleccionado, ...this.equipoCompleto];
-      }
+      // ⚠️ FIX: No agregar al jefe automáticamente. Debe seleccionarse manualmente.
+      // const jefeId = this.areaJefeForm.controls.jefe_id.value;
+      // const jefeSeleccionado = this.jefesCandidatos.find(j => j.id === jefeId);
+      // if (jefeSeleccionado && !this.equipoCompleto.some(e => e.id === jefeSeleccionado.id)) {
+      //   this.equipoCompleto = [jefeSeleccionado, ...this.equipoCompleto];
+      // }
     }
 
     if (this.step === 3) {
@@ -358,8 +358,8 @@ export class FijoComponent implements OnInit {
     let empleadosDisponibles = this.empleados.filter(emp =>
       emp.activo &&
       emp.rol_id !== null && // ← SOLO EMPLEADOS CON ROL ASIGNADO
-      (emp.area_id === null || emp.area_id === areaId) &&
-      emp.id !== jefeId
+      (emp.area_id === null || emp.area_id === areaId)
+      // && emp.id !== jefeId  <-- Permitir que el jefe aparezca en la lista para selección manual
     );
 
     // Aplicar filtro de búsqueda

@@ -362,12 +362,12 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
         return;
       }
 
-      const jefeId = this.areaJefeForm.controls.jefe_id.value;
-      const jefeSeleccionado = this.jefesCandidatos.find(j => j.id === jefeId);
-
-      if (jefeSeleccionado && !this.equipoCompleto.some(e => e.id === jefeSeleccionado.id)) {
-        this.equipoCompleto = [jefeSeleccionado, ...this.equipoCompleto];
-      }
+      // ⚠️ FIX: No agregar al jefe automáticamente. Debe seleccionarse manualmente.
+      // const jefeId = this.areaJefeForm.controls.jefe_id.value;
+      // const jefeSeleccionado = this.jefesCandidatos.find(j => j.id === jefeId);
+      // if (jefeSeleccionado && !this.equipoCompleto.some(e => e.id === jefeSeleccionado.id)) {
+      //   this.equipoCompleto = [jefeSeleccionado, ...this.equipoCompleto];
+      // }
     }
 
     if (this.step === 3) {
