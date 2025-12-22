@@ -41,32 +41,108 @@
   <!-- Vista LISTA (rotativos/fijos) - Donde se muestran las configuraciones guardadas -->
   <section *ngIf="vista==='LISTA_ROTATIVOS' || vista==='LISTA_FIJOS'" class="card">
     <h2 *ngIf="vista==='LISTA_ROTATIVOS'">Turnos Rotativos ({{ configuracionesRotativas.length }})</h2>
-    <h2 *ngIf="vista==='LISTA_FIJOS'">Turnos Fijos ({{ configuracionesFijas.length }})</h2>
+    <h2 *ngIf="vista==='LISTA_FIJOS'">Turnos Fijos</h2>
 
-    <div class="selection-options">
+    <!-- VISTA TABLA PARA FIJOS -->
+    <div *ngIf="vista==='LISTA_FIJOS'">
+      <!-- Filtros de búsqueda para tabla -->
+      <div class="search-filters"
+        style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="filter-group">
+          <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Mes:</label>
+          <select [(ngModel)]="searchMonth" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc;">
+            <option [ngValue]="1">Enero</option>
+            <option [ngValue]="2">Febrero</option>
+            <option [ngValue]="3">Marzo</option>
+            <option [ngValue]="4">Abril</option>
+            <option [ngValue]="5">Mayo</option>
+            <option [ngValue]="6">Junio</option>
+            <option [ngValue]="7">Julio</option>
+            <option [ngValue]="8">Agosto</option>
+            <option [ngValue]="9">Septiembre</option>
+            <option [ngValue]="10">Octubre</option>
+            <option [ngValue]="11">Noviembre</option>
+            <option [ngValue]="12">Diciembre</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Año:</label>
+          <input type="number" [(ngModel)]="searchYear" min="2020" max="2030"
+            style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc;">
+        </div>
+
+        <div class="filter-group">
+          <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Departamento:</label>
+          <select [(ngModel)]="searchAreaId" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc;">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.nombre }}</option>
+          </select>
+        </div>
+
+        <button class="btn primary" (click)="onSearchFilter()">Buscar</button>
+
+        <button class="btn primary" (click)="abrirFormulario('NUEVO')" style="margin-left: auto;">
+          + Nuevo Turno Fijo
+        </button>
+      </div>
+
+      <!-- Tabla de resultados -->
+      <div class="table-container" style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f1f5f9; text-align: left;">
+              <th style="padding: 1rem;">Área</th>
+              <th style="padding: 1rem;">Jefe</th>
+              <th style="padding: 1rem;">Turno</th>
+              <th style="padding: 1rem;">Equipo</th>
+              <th style="padding: 1rem;">Descanso</th>
+              <th style="padding: 1rem;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let config of filteredFijos" style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 1rem;">{{ config.areaNombre }}</td>
+              <td style="padding: 1rem;">{{ config.jefeNombre }}</td>
+              <td style="padding: 1rem;">
+                <strong>{{ config.nombreTurno }}</strong>
+              </td>
+              <td style="padding: 1rem;">{{ config.empleadosCount }} empleados</td>
+              <td style="padding: 1rem;">{{ config.diasDescansoLabel }}</td>
+              <td style="padding: 1rem;">
+                <button class="btn small outline" (click)="abrirFormulario(config.id)"
+                  style="margin-right: 0.5rem;">Editar</button>
+                <button class="btn small danger" (click)="eliminarConfiguracion(config, vista)">Eliminar</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredFijos.length === 0">
+              <td colspan="6" style="padding: 2rem; text-align: center; color: #64748b;">
+                No se encontraron turnos fijos con los filtros seleccionados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="selection-options" *ngIf="vista==='LISTA_ROTATIVOS'">
       <!-- Boton de crear -->
       <div class="option-card" (click)="abrirFormulario('NUEVO')">
         <div class="option-icon"></div>
-        <h3>Crear nuevo {{ vista==='LISTA_ROTATIVOS' ? 'Rotativo' : 'Fijo' }}</h3>
+        <h3>Crear nuevo Rotativo</h3>
         <p>Configurar un nuevo grupo de turnos desde cero</p>
       </div>
 
       <!-- Configuraciones guardadas - AQUÍ SÍ aplicas el cambio -->
-      <div class="option-card"
-        *ngFor="let conf of (vista==='LISTA_ROTATIVOS' ? configuracionesRotativas : configuracionesFijas); trackBy: trackByConfigId"
+      <!-- Configuraciones guardadas ROTATIVAS -->
+      <div class="option-card" *ngFor="let conf of configuracionesRotativas; trackBy: trackByConfigId"
         (click)="abrirFormulario(conf.id)">
         <button class="delete-conf-btn"
           (click)="eliminarConfiguracion(conf, vista); $event.stopPropagation()">×</button>
-        <div class="option-icon">{{ vista==='LISTA_ROTATIVOS' ? '' : '' }}</div>
+        <div class="option-icon"></div>
         <h3>{{ conf.areaNombre }}</h3>
         <p>{{ conf.jefeNombre }} | {{ conf.empleadosCount }} empleados</p>
-        <p *ngIf="conf.tipo === 'FIJO'" style="color: #059669; font-size: 0.9rem;">
-          Turno Fijo
-          <br>
-          <small *ngIf="conf.configuracion?.dias_descanso?.length" style="color: #64748b;">
-            Descanso: {{ getDiasDescansoLabels(conf.configuracion.dias_descanso) }}
-          </small>
-        </p>
+
         <small>Creado: {{ conf.fechaCreacion | date:'medium' }}</small>
         <app-renovacion [loteId]="conf.id" [fechaFin]="conf.fecha_fin" [areaNombre]="conf.areaNombre"
           [jefeNombre]="conf.jefeNombre" [empleadosCount]="conf.empleadosCount" [areaId]="conf.areaId">
@@ -74,6 +150,7 @@
 
       </div>
     </div>
+
 
     <div class="actions">
       <button class="btn outline" (click)="vista='HOME'"> Volver al inicio</button>

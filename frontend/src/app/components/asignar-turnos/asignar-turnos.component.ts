@@ -178,6 +178,14 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
   // ===== Asignaciones individuales (desde calendario-turnos) =====
   asignaciones: Record<number, any[]> = {};
 
+  // ===== Filtros Tablas =====
+  searchMonth: number = new Date().getMonth() + 1;
+  searchYear: number = new Date().getFullYear();
+  searchAreaId: number | null = null;
+  filteredFijos: any[] = [];
+  filtroAplicado = false;
+  diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
   // ===== Ciclo de vida =====
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -304,14 +312,67 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
     this.turnosService.getConfiguraciones().subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO').map((c: any) => ({ ...c, configuracion: typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion }));
-          this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO').map((c: any) => ({ ...c, configuracion: typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion }));
+          const mapConfig = (c: any) => {
+            let conf: any = {};
+            try { conf = typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion } catch (e) { }
+            return {
+              ...c,
+              configuracion: conf,
+              diasDescansoLabel: this.getDiasDescansoLabels(conf?.dias_descanso)
+            };
+          };
+
+          this.configuracionesFijas = res.data.filter((c: any) => c.tipo === 'FIJO').map(mapConfig);
+          this.configuracionesRotativas = res.data.filter((c: any) => c.tipo === 'ROTATIVO').map(mapConfig);
+
+          this.aplicarFiltrosTabla();
         }
       },
       error: (err) => {
         console.error('Error cargando configuraciones:', err);
       }
     });
+  }
+
+  aplicarFiltrosTabla() {
+    // Filtrado básico por Mes/Anio para Fijos (si aplica) o solo mostrar todos por ahora
+    // Replicando lógica de FijoComponent:
+    const startSearch = new Date(this.searchYear, this.searchMonth - 1, 1);
+    const endSearch = new Date(this.searchYear, this.searchMonth, 0);
+
+    this.filteredFijos = this.configuracionesFijas.filter(c => {
+      // Si no tiene fechas, asumir activo
+      if (!c.fecha_inicio) return true;
+
+      const startDate = new Date(c.fecha_inicio);
+      const endDate = new Date(c.fecha_fin); // Fijos suelen ser largos, 1 año
+
+      // Superposición 
+      const overlaps = startDate <= endSearch && endDate >= startSearch;
+
+      const matchArea = this.searchAreaId ? Number(c.area_id) === Number(this.searchAreaId) : true;
+
+      return overlaps && matchArea;
+    });
+    this.filtroAplicado = true;
+  }
+
+  onSearchFilter() {
+    this.aplicarFiltrosTabla();
+  }
+
+  getDiasDescansoLabels(dias: any): string {
+    if (!dias) return '';
+    const diasArray = Array.isArray(dias) ? dias : (typeof dias === 'string' ? dias.split(',') : []);
+    if (diasArray.length === 0) return '';
+
+    // Mapeo ID Backend -> Nombre UI
+    // Backend 0=Domingo, 1=Lunes... 
+    const map: Record<string, string> = {
+      '0': 'Domingo', '1': 'Lunes', '2': 'Martes', '3': 'Miércoles',
+      '4': 'Jueves', '5': 'Viernes', '6': 'Sábado'
+    };
+    return diasArray.map((d: any) => map[d.toString().trim()] || d).join(', ');
   }
 
   // Cuando cambia la vista
@@ -1073,19 +1134,5 @@ export class AsignarTurnosComponent implements OnInit, OnDestroy {
     return asignacion.id || index;
   }
 
-  getDiasDescansoLabels(dias: any[]): string {
-    if (!dias || dias.length === 0) return '';
 
-    const map: Record<string, string> = {
-      '0': 'Domingo',
-      '1': 'Lunes',
-      '2': 'Martes',
-      '3': 'Miércoles',
-      '4': 'Jueves',
-      '5': 'Viernes',
-      '6': 'Sábado'
-    };
-
-    return dias.map(d => map[d.toString()] || d).join(', ');
-  }
 }
