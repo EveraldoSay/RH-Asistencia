@@ -484,7 +484,7 @@ router.post('/fijos', requireAuth, async (req, res) => {
     ]);
 
     await conn.query(
-      `INSERT INTO asignacion_turnos 
+      `INSERT IGNORE INTO asignacion_turnos 
             (empleado_id, turno_id, fecha_inicio, fecha_fin, creado_por, lote_id)
           VALUES ${placeholders}`,
       values
@@ -1047,17 +1047,57 @@ router.get('/configuraciones', requireAuth, async (req, res) => {
 router.delete('/configuraciones/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   try {
-    const [result] = await db.query('UPDATE configuraciones_turnos SET activo=0 WHERE id=?', [id]);
+    // 1. Obtener información de la configuración antes de eliminar
+    const [[conf]] = await db.query(`
+      SELECT c.id, c.nombre_configuracion, a.nombre_area, c.empleados_ids, c.turno_id, c.fecha_inicio, c.fecha_fin
+      FROM configuraciones_turnos c
+      LEFT JOIN areas a ON c.area_id = a.id
+      WHERE c.id = ?
+    `, [id]);
 
-    if (result.affectedRows === 0) {
+    if (!conf) {
       return res.status(404).json({ success: false, message: 'Configuración no encontrada' });
     }
 
-    // Registrar en bitácora
+    const nombreArea = conf.nombre_area || 'Desconocida';
+
+    // 2. Soft-delete de la configuración
+    await db.query('UPDATE configuraciones_turnos SET activo=0 WHERE id=?', [id]);
+
+    // 3. Soft-delete de las asignaciones asociadas en asignacion_turnos
+    // Parsear empleados_ids
+    let empleadosIds = [];
+    try {
+      if (typeof conf.empleados_ids === 'string') {
+        empleadosIds = JSON.parse(conf.empleados_ids);
+      } else if (Array.isArray(conf.empleados_ids)) {
+        empleadosIds = conf.empleados_ids;
+      }
+    } catch (e) {
+      console.warn('Error parseando empleados_ids al eliminar:', e);
+    }
+
+    if (empleadosIds.length > 0 && conf.turno_id && conf.fecha_inicio && conf.fecha_fin) {
+      const placeholders = empleadosIds.map(() => '?').join(',');
+      const params = [req.user?.id || null, conf.turno_id, conf.fecha_inicio, conf.fecha_fin, ...empleadosIds];
+
+      await db.query(`
+        UPDATE asignacion_turnos 
+        SET eliminado_en = NOW(), eliminado_por = ?
+        WHERE turno_id = ? 
+          AND fecha_inicio = ? 
+          AND fecha_fin = ?
+          AND eliminado_en IS NULL
+          AND empleado_id IN (${placeholders})
+      `, params);
+    }
+
+    // 4. Registrar en bitácora
     await db.query(
       `INSERT INTO audit_log (evento, entidad, entidad_id, actor_id, actor_username, ip, user_agent)
-       VALUES ('DELETE', 'configuraciones_turnos', ?, ?, ?, ?, ?)`,
+       VALUES ('DELETE', ?, ?, ?, ?, ?, ?)`,
       [
+        `configuraciones_turnos (Área: ${nombreArea})`,
         id,
         req.user?.id || null,
         req.user?.username || req.user?.preferred_username || 'unknown',
