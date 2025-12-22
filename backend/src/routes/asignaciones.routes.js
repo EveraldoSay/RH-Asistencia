@@ -396,6 +396,20 @@ router.post('/bulk', requireAuth, async (req, res) => {
       ]);
     }
 
+    // Registrar en bitácora (lote rotativo)
+    await conn.query(
+      `INSERT INTO audit_log (evento, entidad, entidad_id, actor_id, actor_username, ip, user_agent)
+       VALUES ('CREATE', ?, ?, ?, ?, ?, ?)`,
+      [
+        `configuraciones_turnos (Área: ${nombreArea})`,
+        lote_id,
+        req.user?.id || actor_id,
+        req.user?.username || req.user?.preferred_username || 'unknown',
+        req.ip || null,
+        req.headers['user-agent'] || null
+      ]
+    );
+
     await conn.commit();
 
     res.json({
@@ -532,8 +546,8 @@ router.post('/fijos', requireAuth, async (req, res) => {
     // ========================= Registrar en bitácora =========================
     await db.query(
       `INSERT INTO audit_log (evento, entidad, entidad_id, actor_id, actor_username, ip, user_agent)
-          VALUES ('CREATE', 'asignaciones_lote', ?, ?, ?, ?, ?)`,
-      [loteId, creadorId, creadorUsuario, req.ip || null, req.headers['user-agent'] || null]
+          VALUES ('CREATE', ?, ?, ?, ?, ?, ?)`,
+      [`asignaciones_lote (Área: ${nombreArea})`, loteId, creadorId, creadorUsuario, req.ip || null, req.headers['user-agent'] || null]
     );
 
     res.json({
