@@ -13,6 +13,10 @@
   <div *ngIf="viewMode === 'list'" class="list-view">
 
     <!-- Filtros de búsqueda -->
+    <div class="alert error" *ngIf="error">
+      {{ error }}
+    </div>
+
     <div class="search-filters">
       <div class="filter-group">
         <label>Mes:</label>

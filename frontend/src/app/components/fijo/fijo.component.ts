@@ -224,7 +224,11 @@ export class FijoComponent implements OnInit {
           this.configuraciones = res.data
             .filter((c: any) => c.tipo === 'FIJO')
             .map((c: any) => {
-              const config = typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion;
+              let config: any = {};
+              try {
+                config = typeof c.configuracion === 'string' ? JSON.parse(c.configuracion) : c.configuracion;
+              } catch (e) { console.warn('Invalid JSON in configuracion', c.id); }
+
               return {
                 ...c,
                 diasDescanso: this.getDiasDescansoLabels(config?.dias_descanso || [])
@@ -784,8 +788,13 @@ export class FijoComponent implements OnInit {
     return this.descansoGrupal.some(d => d);
   }
 
-  getDiasDescansoLabels(dias: any[]): string {
-    if (!dias || dias.length === 0) return '';
+  getDiasDescansoLabels(dias: any): string {
+    if (!dias) return '';
+
+    // Si viene como string '1,2', convertirlo a array
+    const diasArray = Array.isArray(dias) ? dias : (typeof dias === 'string' ? dias.split(',') : []);
+
+    if (diasArray.length === 0) return '';
 
     const map: Record<string, string> = {
       '0': 'Domingo',
@@ -797,6 +806,6 @@ export class FijoComponent implements OnInit {
       '6': 'Sábado'
     };
 
-    return dias.map(d => map[d.toString()] || d).join(', ');
+    return diasArray.map((d: any) => map[d.toString().trim()] || d).join(', ');
   }
 }

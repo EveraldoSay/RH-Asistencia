@@ -1152,9 +1152,15 @@ router.put('/configuraciones/:id', requireAuth, async (req, res) => {
     const fmtFechaInicio = fecha_inicio ? new Date(fecha_inicio).toISOString().split('T')[0] : null;
     const fmtFechaFin = fecha_fin ? new Date(fecha_fin).toISOString().split('T')[0] : null;
 
+    // Normalizar dias_descanso (si viene como string '1,6', convertir a array [1,6])
+    let diasDescansoArray = dias_descanso;
+    if (typeof dias_descanso === 'string') {
+      diasDescansoArray = dias_descanso.split(',').map(d => d.trim());
+    }
+
     // 2. Actualizar tabla configuraciones_turnos
     const configuracionJSON = JSON.stringify({
-      dias_descanso: dias_descanso || [],
+      dias_descanso: diasDescansoArray || [],
       rango: { inicio: fmtFechaInicio, fin: fmtFechaFin }
     });
     const idsJSON = JSON.stringify(empleados_ids);
