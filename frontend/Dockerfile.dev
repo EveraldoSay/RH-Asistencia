@@ -1,0 +1,17 @@
+# Usa la misma imagen de Node.js que el original para la fase de build
+FROM node:20-alpine
+
+# Establece el directorio de trabajo
+WORKDIR /app
+
+# Copia package.json y package-lock.json
+COPY package*.json ./
+
+# Instala TODAS las dependencias (incluyendo devDependencies)
+RUN npm install
+
+# Copia el resto del código. Los cambios se sincronizarán a través de un volumen.
+COPY . .
+
+# El comando para iniciar el servidor de desarrollo (`ng serve`) 
+# se especificará en el archivo docker-compose.override.yml.

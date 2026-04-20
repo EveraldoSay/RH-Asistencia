@@ -1,0 +1,114 @@
+<div class="container main-container">
+  <!-- Encabezado -->
+  <div class="header">
+    <h1>Gestión de Turnos</h1>
+  </div>
+
+  <!-- Botones y Busqueda -->
+  <div class="actions" *ngIf="!showForm">
+    <button class="btn btn-primary" (click)="showCreateForm()" [disabled]="loading">
+      + Nuevo Turno
+    </button>
+  </div>
+
+  <!-- Formulario de creación/edición -->
+  <div class="form-container" *ngIf="showForm">
+    <h3>{{ isEditing ? 'Editar Turno' : 'Nuevo Turno' }}</h3>
+
+    <form [formGroup]="turnoForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label>Nombre del Turno *</label>
+        <input type="text" formControlName="nombre_turno" placeholder="Ej. Matutino">
+      </div>
+
+      <div class="form-group">
+        <label>Tipo de Turno *</label>
+        <select formControlName="tipo">
+          <option value="ROTATIVO">ROTATIVO</option>
+          <option value="FIJO">FIJO</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>Hora Inicio *</label>
+            <input type="time" formControlName="hora_inicio">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>Hora Fin *</label>
+            <input type="time" formControlName="hora_fin">
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>Tolerancia Entrada (min)</label>
+            <input type="number" formControlName="tolerancia_entrada_minutos">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>Tolerancia Salida (min)</label>
+            <input type="number" formControlName="tolerancia_salida_minutos">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading || turnoForm.invalid">
+          {{ isEditing ? 'Actualizar' : 'Guardar' }}
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="cancelForm()" [disabled]="loading">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabla de Turnos -->
+  <div class="table-container" *ngIf="!loading && !showForm">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Horario</th>
+          <th>Tolerancia</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let turno of turnos">
+          <td>{{ turno.nombre_turno }}</td>
+          <td>
+            <span class="badge" [ngClass]="turno.tipo_turno === 'FIJO' ? 'bg-success' : 'bg-info'">
+              {{ turno.tipo_turno || 'ROTATIVO' }}
+            </span>
+          </td>
+          <td>{{ turno.hora_inicio }} - {{ turno.hora_fin }}</td>
+          <td>{{ turno.tolerancia_entrada_minutos }} min</td>
+          <td class="action-buttons">
+            <button class="btn btn-secondary btn-small" (click)="editTurno(turno)">Editar</button>
+            <button class="btn btn-danger btn-small" (click)="deleteTurno(turno.id)">Eliminar</button>
+          </td>
+        </tr>
+
+        <tr *ngIf="turnos.length === 0">
+          <td colspan="5" class="no-data">
+            No hay turnos registrados.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Spinner -->
+  <div class="loading" *ngIf="loading && !showForm">
+    Cargando turnos...
+  </div>
+</div>

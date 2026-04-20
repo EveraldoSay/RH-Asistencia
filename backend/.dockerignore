@@ -1,0 +1,6 @@
+# Excluir dependencias locales
+node_modules
+
+# Excluir logs y archivos de entorno local
+npm-debug.log
+#.env

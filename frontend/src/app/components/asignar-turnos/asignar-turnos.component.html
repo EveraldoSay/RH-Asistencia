@@ -10,13 +10,13 @@
     </div>
   </div>
 
-    <!-- Vista HOME - Pantalla de selección inicial -->
+  <!-- Vista HOME - Pantalla de selección inicial -->
   <section *ngIf="vista === 'HOME'" class="card selection-card">
     <h2>Seleccione el tipo de turno</h2>
     <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 2rem;">
       Elija el sistema de turnos que mejor se adapte a las necesidades de su área
     </p>
-    
+
     <div class="selection-options">
       <div class="option-card" (click)="abrirVistaRotativos()">
         <div class="option-icon"></div>
@@ -26,7 +26,7 @@
           <small>Ideal para áreas con demanda fluctuante</small>
         </div>
       </div>
-      
+
       <div class="option-card" (click)="abrirVistaFijos()">
         <div class="option-icon"></div>
         <h3>Turnos Fijos</h3>
@@ -40,40 +40,117 @@
 
   <!-- Vista LISTA (rotativos/fijos) - Donde se muestran las configuraciones guardadas -->
   <section *ngIf="vista==='LISTA_ROTATIVOS' || vista==='LISTA_FIJOS'" class="card">
-      <h2 *ngIf="vista==='LISTA_ROTATIVOS'">Turnos Rotativos ({{ configuracionesRotativas.length }})</h2>
-      <h2 *ngIf="vista==='LISTA_FIJOS'">Turnos Fijos ({{ configuracionesFijas.length }})</h2>
+    <h2 *ngIf="vista==='LISTA_ROTATIVOS'">Turnos Rotativos ({{ configuracionesRotativas.length }})</h2>
+    <h2 *ngIf="vista==='LISTA_FIJOS'">Turnos Fijos</h2>
 
-    <div class="selection-options">
+    <!-- VISTA TABLA PARA FIJOS -->
+    <div *ngIf="vista==='LISTA_FIJOS'">
+      <!-- Filtros de búsqueda para tabla -->
+      <div class="search-filters"
+        style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="filter-group">
+          <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Mes:</label>
+          <select [(ngModel)]="searchMonth" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc;">
+            <option [ngValue]="1">Enero</option>
+            <option [ngValue]="2">Febrero</option>
+            <option [ngValue]="3">Marzo</option>
+            <option [ngValue]="4">Abril</option>
+            <option [ngValue]="5">Mayo</option>
+            <option [ngValue]="6">Junio</option>
+            <option [ngValue]="7">Julio</option>
+            <option [ngValue]="8">Agosto</option>
+            <option [ngValue]="9">Septiembre</option>
+            <option [ngValue]="10">Octubre</option>
+            <option [ngValue]="11">Noviembre</option>
+            <option [ngValue]="12">Diciembre</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Año:</label>
+          <input type="number" [(ngModel)]="searchYear" min="2020" max="2030"
+            style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc;">
+        </div>
+
+        <div class="filter-group">
+          <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Departamento:</label>
+          <select [(ngModel)]="searchAreaId" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc;">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.nombre }}</option>
+          </select>
+        </div>
+
+        <button class="btn primary" (click)="onSearchFilter()">Buscar</button>
+
+        <button class="btn primary" (click)="abrirFormulario('NUEVO')" style="margin-left: auto;">
+          + Nuevo Turno Fijo
+        </button>
+      </div>
+
+      <!-- Tabla de resultados -->
+      <div class="table-container" style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f1f5f9; text-align: left;">
+              <th style="padding: 1rem;">Área</th>
+              <th style="padding: 1rem;">Jefe</th>
+              <th style="padding: 1rem;">Turno</th>
+              <th style="padding: 1rem;">Equipo</th>
+              <th style="padding: 1rem;">Descanso</th>
+              <th style="padding: 1rem;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let config of filteredFijos" style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 1rem;">{{ config.areaNombre }}</td>
+              <td style="padding: 1rem;">{{ config.jefeNombre }}</td>
+              <td style="padding: 1rem;">
+                <strong>{{ config.nombreTurno }}</strong>
+              </td>
+              <td style="padding: 1rem;">{{ config.empleadosCount }} empleados</td>
+              <td style="padding: 1rem;">{{ config.diasDescansoLabel }}</td>
+              <td style="padding: 1rem;">
+                <button class="btn small outline" (click)="abrirFormulario(config.id)"
+                  style="margin-right: 0.5rem;">Editar</button>
+                <button class="btn small danger" (click)="eliminarConfiguracion(config, vista)">Eliminar</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredFijos.length === 0">
+              <td colspan="6" style="padding: 2rem; text-align: center; color: #64748b;">
+                No se encontraron turnos fijos con los filtros seleccionados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="selection-options" *ngIf="vista==='LISTA_ROTATIVOS'">
       <!-- Boton de crear -->
       <div class="option-card" (click)="abrirFormulario('NUEVO')">
         <div class="option-icon"></div>
-        <h3>Crear nuevo {{ vista==='LISTA_ROTATIVOS' ? 'Rotativo' : 'Fijo' }}</h3>
+        <h3>Crear nuevo Rotativo</h3>
         <p>Configurar un nuevo grupo de turnos desde cero</p>
       </div>
 
       <!-- Configuraciones guardadas - AQUÍ SÍ aplicas el cambio -->
-      <div class="option-card"
-          *ngFor="let conf of (vista==='LISTA_ROTATIVOS' ? configuracionesRotativas : configuracionesFijas); trackBy: trackByConfigId"
-          (click)="abrirFormulario(conf.id)">
-        <button class="delete-conf-btn" (click)="eliminarConfiguracion(conf, vista); $event.stopPropagation()">×</button>
-        <div class="option-icon">{{ vista==='LISTA_ROTATIVOS' ? '' : '' }}</div>
+      <!-- Configuraciones guardadas ROTATIVAS -->
+      <div class="option-card" *ngFor="let conf of configuracionesRotativas; trackBy: trackByConfigId"
+        (click)="abrirFormulario(conf.id)">
+        <button class="delete-conf-btn"
+          (click)="eliminarConfiguracion(conf, vista); $event.stopPropagation()">×</button>
+        <div class="option-icon"></div>
         <h3>{{ conf.areaNombre }}</h3>
-        <p>{{ conf.jefeNombre }} |  {{ conf.empleadosCount }} empleados</p>
-        <p *ngIf="conf.tipo === 'FIJO'" style="color: #059669; font-size: 0.9rem;">
-          Turno Fijo
-        </p>
+        <p>{{ conf.jefeNombre }} | {{ conf.empleadosCount }} empleados</p>
+
         <small>Creado: {{ conf.fechaCreacion | date:'medium' }}</small>
-        <app-renovacion
-          [loteId]="conf.id"
-          [fechaFin]="conf.fecha_fin"
-          [areaNombre]="conf.areaNombre"
-          [jefeNombre]="conf.jefeNombre"
-          [empleadosCount]="conf.empleadosCount"
-          [areaId]="conf.areaId">
+        <app-renovacion [loteId]="conf.id" [fechaFin]="conf.fecha_fin" [areaNombre]="conf.areaNombre"
+          [jefeNombre]="conf.jefeNombre" [empleadosCount]="conf.empleadosCount" [areaId]="conf.areaId">
         </app-renovacion>
 
       </div>
     </div>
+
 
     <div class="actions">
       <button class="btn outline" (click)="vista='HOME'"> Volver al inicio</button>
@@ -82,7 +159,8 @@
 
   <!-- Vista FORMULARIO -->
   <section *ngIf="vista==='FORMULARIO'" class="card">
-    <h2>{{ editandoId ? 'Editar turno ' + (modo === 'ROTATIVO' ? 'Rotativo' : 'Fijo') : 'Crear nuevo turno ' + (modo === 'ROTATIVO' ? 'Rotativo' : 'Fijo') }}</h2>
+    <h2>{{ editandoId ? 'Editar turno ' + (modo === 'ROTATIVO' ? 'Rotativo' : 'Fijo') : 'Crear nuevo turno ' + (modo ===
+      'ROTATIVO' ? 'Rotativo' : 'Fijo') }}</h2>
 
     <!-- Stepper (solo rotativos) -->
     <div class="stepper" *ngIf="modo==='ROTATIVO'">
@@ -96,41 +174,41 @@
     <ng-container *ngIf="modo==='ROTATIVO'">
       <!-- Paso 1: area y jefe -->
       <section *ngIf="step===1" class="form-section">
-          <h3>1) Área y jefe</h3>
-          <div class="grid">
-            <label>Área
-              <select [formControl]="areaJefeForm.controls.area_id"
-                      (change)="onAreaChangeRotativo(areaJefeForm.controls.area_id.value)">
-                <option [ngValue]="null">Seleccionar área...</option>
-                <option *ngFor="let a of areas; trackBy: trackByAreaId" [ngValue]="a.id">{{ a.nombre }}</option>
-              </select>
-            </label>
-                    
-            <label>Jefe de área
-              <select [formControl]="areaJefeForm.controls.jefe_id">
-                <option [ngValue]="null">Seleccionar jefe...</option>
-                <option *ngFor="let j of jefesCandidatos; trackBy: trackByEmpleadoId" [ngValue]="j.id">
-                  {{ j.nombre_completo }} ({{ getRolNombre(j.rol_id) }})
-                </option>
-              </select>
-            </label>
-          </div>
+        <h3>1) Área y jefe</h3>
+        <div class="grid">
+          <label>Área
+            <select [formControl]="areaJefeForm.controls.area_id"
+              (change)="onAreaChangeRotativo(areaJefeForm.controls.area_id.value)">
+              <option [ngValue]="null">Seleccionar área...</option>
+              <option *ngFor="let a of areas; trackBy: trackByAreaId" [ngValue]="a.id">{{ a.nombre }}</option>
+            </select>
+          </label>
 
-          <div class="actions">
-            <button class="btn outline" (click)="cancelarFormulario()">Cancelar</button>
-            <button class="btn" (click)="nextStep()">Siguiente</button>
-          </div>
+          <label>Jefe de área
+            <select [formControl]="areaJefeForm.controls.jefe_id">
+              <option [ngValue]="null">Seleccionar jefe...</option>
+              <option *ngFor="let j of jefesCandidatos; trackBy: trackByEmpleadoId" [ngValue]="j.id">
+                {{ j.nombre_completo }} ({{ getRolNombre(j.rol_id) }})
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button class="btn outline" (click)="cancelarFormulario()">Cancelar</button>
+          <button class="btn" (click)="nextStep()">Siguiente</button>
+        </div>
       </section>
 
       <!-- Paso 2: Equipo -->
       <section *ngIf="step===2" class="form-section">
         <h3>2) Selección del equipo</h3>
-        
+
         <!-- Informacion del area seleccionada -->
         <div *ngIf="areaJefeForm.controls.area_id.value" class="area-info">
           <strong>Área seleccionada:</strong> {{ getAreaNombre(areaJefeForm.controls.area_id.value) }}
         </div>
-        
+
         <!-- Contadores -->
         <div class="contadores">
           <div class="contador" [class.limite]="enfermerosSeleccionados.length >= 5">
@@ -143,68 +221,56 @@
             <span>Aux. Hospital: {{ auxHospitalSeleccionados.length }}/5</span>
           </div>
         </div>
-    
+
         <div class="search-box">
-          <input type="text" placeholder="Buscar empleado..." 
-                 [(ngModel)]="filtroBusqueda"
-                 (input)="filtrarEmpleados()">
+          <input type="text" placeholder="Buscar empleado..." [(ngModel)]="filtroBusqueda" (input)="filtrarEmpleados()">
         </div>
 
         <!-- Filtros por rol -->
-          <div class="filtros-rol">
-            <button class="btn small" 
-                    [class.active]="filtroRol === 'ENFERMERO'" 
-                    (click)="filtroRol = 'ENFERMERO'; filtrarEmpleados()">
-              Enfermeros
-            </button>
-            <button class="btn small" 
-                    [class.active]="filtroRol === 'AUX_ENFERMERIA'" 
-                    (click)="filtroRol = 'AUX_ENFERMERIA'; filtrarEmpleados()">
-              Aux. Enfermería
-            </button>
-            <button class="btn small" 
-                    [class.active]="filtroRol === 'AUX_HOSPITAL'" 
-                    (click)="filtroRol = 'AUX_HOSPITAL'; filtrarEmpleados()">
-              Aux. Hospital
-            </button>
-            <button class="btn small" 
-                    [class.active]="filtroRol === null" 
-                    (click)="filtroRol = null; filtrarEmpleados()">
-              Todos
-            </button>
-          </div>
+        <div class="filtros-rol">
+          <button class="btn small" [class.active]="filtroRol === 'ENFERMERO'"
+            (click)="filtroRol = 'ENFERMERO'; filtrarEmpleados()">
+            Enfermeros
+          </button>
+          <button class="btn small" [class.active]="filtroRol === 'AUX_ENFERMERIA'"
+            (click)="filtroRol = 'AUX_ENFERMERIA'; filtrarEmpleados()">
+            Aux. Enfermería
+          </button>
+          <button class="btn small" [class.active]="filtroRol === 'AUX_HOSPITAL'"
+            (click)="filtroRol = 'AUX_HOSPITAL'; filtrarEmpleados()">
+            Aux. Hospital
+          </button>
+          <button class="btn small" [class.active]="filtroRol === null" (click)="filtroRol = null; filtrarEmpleados()">
+            Todos
+          </button>
+        </div>
 
         <!-- En la lista de empleados disponibles, actualiza esta parte: -->
         <div class="empleados-grid">
           <label *ngFor="let e of empleadosFiltrados; trackBy: trackByEmpleadoId" class="empleado-card"
-                [class.selected]="isEmpleadoSeleccionado(e.id)"
-                [class.not-selectable]="!isEmpleadoSeleccionable(e)">
-            <input type="checkbox"
-                  [checked]="isEmpleadoSeleccionado(e.id)"
-                  [disabled]="!isEmpleadoSeleccionable(e)"
-                  (change)="toggleEmpleadoEquipo(e)" />
+            [class.selected]="isEmpleadoSeleccionado(e.id)" [class.not-selectable]="!isEmpleadoSeleccionable(e)">
+            <input type="checkbox" [checked]="isEmpleadoSeleccionado(e.id)" [disabled]="!isEmpleadoSeleccionable(e)"
+              (change)="toggleEmpleadoEquipo(e)" />
             <div class="info">
               <span class="name">{{ e.nombre_completo }}</span>
               <span class="rol">{{ getRolNombre(e.rol_id) }}</span>
-              
+
               <!-- Estado del área - MEJORADO -->
               <div class="estado-area">
                 <span *ngIf="!e.area_id" class="estado disponible">
                   Disponible
                 </span>
-                <span *ngIf="e.area_id && e.area_id === areaJefeForm.controls.area_id.value" 
-                      class="estado asignado-actual">
+                <span *ngIf="e.area_id && e.area_id === areaJefeForm.controls.area_id.value"
+                  class="estado asignado-actual">
                   En esta área: {{ getAreaNombre(e.area_id) }}
                 </span>
-                <span *ngIf="e.area_id && e.area_id !== areaJefeForm.controls.area_id.value" 
-                      class="estado asignado-otra">
+                <span *ngIf="e.area_id && e.area_id !== areaJefeForm.controls.area_id.value"
+                  class="estado asignado-otra">
                   Ocupado en: {{ getAreaNombre(e.area_id) }}
                 </span>
               </div>
-              
-              <small class="disponibilidad" 
-                    [class.disponible]="!e.area_id"
-                    [class.asignado]="e.area_id">
+
+              <small class="disponibilidad" [class.disponible]="!e.area_id" [class.asignado]="e.area_id">
                 {{ e.area_id ? 'Asignado' : 'Disponible' }}
               </small>
             </div>
@@ -215,17 +281,17 @@
           No hay empleados disponibles que coincidan con los filtros
         </p>
 
-       <div class="actions">
-        <button class="btn outline" (click)="cancelarFormulario(false)">Atrás</button>
-        <button class="btn outline" (click)="cancelarFormulario(true)">Cancelar</button>
-        <button class="btn" (click)="nextStep()">Siguiente</button>
-      </div>
+        <div class="actions">
+          <button class="btn outline" (click)="cancelarFormulario(false)">Atrás</button>
+          <button class="btn outline" (click)="cancelarFormulario(true)">Cancelar</button>
+          <button class="btn" (click)="nextStep()">Siguiente</button>
+        </div>
       </section>
 
       <!-- Paso 3: Horarios y turnos -->
       <section *ngIf="step===3" class="form-section">
         <h3>3) Gestión de horarios y turnos</h3>
-        
+
         <!-- Crear nuevo turno -->
         <div class="nuevo-turno-card">
           <h4>Crear nuevo turno</h4>
@@ -234,10 +300,10 @@
             <input type="time" [(ngModel)]="nuevoTurno.hora_inicio">
             <input type="time" [(ngModel)]="nuevoTurno.hora_fin">
             <div class="tolerancias">
-              <label>Tolerancia entrada (min): 
+              <label>Tolerancia entrada (min):
                 <input type="number" [(ngModel)]="nuevoTurno.tolerancia_entrada_minutos" min="0" value="15">
               </label>
-              <label>Tolerancia salida (min): 
+              <label>Tolerancia salida (min):
                 <input type="number" [(ngModel)]="nuevoTurno.tolerancia_salida_minutos" min="0" value="15">
               </label>
             </div>
@@ -249,8 +315,7 @@
         <h4>Seleccionar turno para todo el grupo</h4>
         <div *ngIf="turnosDisponibles.length > 0" class="turnos-grid">
           <label *ngFor="let turno of turnosDisponibles; trackBy: trackByTurnoId" class="turno-card">
-            <input type="radio" name="turno_global" [value]="turno.id"
-                  [(ngModel)]="turnoSeleccionadoGlobal">
+            <input type="radio" name="turno_global" [value]="turno.id" [(ngModel)]="turnoSeleccionadoGlobal">
             <strong>{{ turno.nombre }}</strong>
             <span>{{ turno.hora_inicio }} - {{ turno.hora_fin }}</span>
           </label>
@@ -278,78 +343,91 @@
         </div>
       </section>
 
-        <section *ngIf="step===4" class="form-section">
-          <h3>4) Asignación individual de turnos por fecha</h3>
+      <section *ngIf="step===4" class="form-section">
+        <h3>4) Asignación individual de turnos por fecha</h3>
 
-          <!-- Fechas obligatorias -->
-          <div class="grid">
-            <label>Fecha inicio
-              <input type="date" [formControl]="fechasForm.controls.fecha_inicio" required>
-            </label>
-            <label>Fecha fin
-              <input type="date" [formControl]="fechasForm.controls.fecha_fin" required>
-            </label>
-          </div>
+        <!-- Fechas obligatorias -->
+        <div class="grid">
+          <label>Fecha inicio
+            <input type="date" [formControl]="fechasForm.controls.fecha_inicio" required>
+          </label>
+          <label>Fecha fin
+            <input type="date" [formControl]="fechasForm.controls.fecha_fin" required>
+          </label>
+        </div>
 
-          <!-- En el paso 4 del formulario rotativo -->
-          <div class="selector-empleado" *ngIf="equipoCompleto.length > 0">
-            <label>Seleccionar empleado:
-              <select [(ngModel)]="empleadoCalendarioSeleccionado" 
-                      (change)="onEmpleadoCalendarioChange()">
-                <option [ngValue]="null">-- Seleccionar empleado --</option>
-               <option *ngFor="let emp of equipoCompleto; trackBy: trackByEmpleadoId" [ngValue]="emp.id">
-                  {{ emp.nombre_completo }} - {{ getRolNombre(emp.rol_id) }}
-                </option>
-              </select>
-            </label>
+        <!-- En el paso 4 del formulario rotativo -->
+        <div class="selector-empleado" *ngIf="equipoCompleto.length > 0">
+          <label>Seleccionar empleado:
+            <select [(ngModel)]="empleadoCalendarioSeleccionado" (change)="onEmpleadoCalendarioChange()">
+              <option [ngValue]="null">-- Seleccionar empleado --</option>
+              <option *ngFor="let emp of equipoCompleto; trackBy: trackByEmpleadoId" [ngValue]="emp.id">
+                {{ emp.nombre_completo }} - {{ getRolNombre(emp.rol_id) }}
+              </option>
+            </select>
+          </label>
 
-            <!-- NUEVO COMPONENTE DE REEMPLAZO -->
-            <app-remplazo
-              *ngIf="empleadoCalendarioSeleccionado"
-              [empleadoOriginalId]="empleadoCalendarioSeleccionado"
-              [empleadoOriginalNombre]="getEmpleadoNombre(empleadoCalendarioSeleccionado)"
-              [fechaInicio]="fechasForm.controls.fecha_inicio.value || ''"
-              [fechaFin]="fechasForm.controls.fecha_fin.value || ''"
-              (reemplazoConfirmado)="onReemplazoConfirmado($event)"
-              >
-            </app-remplazo>
-          </div>
-
-          <!-- Componente hijo del calendario -->
-          <app-calendario-turnos
-            *ngIf="empleadoCalendarioSeleccionado"
-            [empleadoId]="empleadoCalendarioSeleccionado"
-            [asignacionesPrevias]="asignacionesPrevias"
-            [equipo]="equipoCompleto"
-            [turnosDisponibles]="turnosDisponibles"
+          <!-- NUEVO COMPONENTE DE REEMPLAZO -->
+          <app-remplazo *ngIf="empleadoCalendarioSeleccionado" [empleadoOriginalId]="empleadoCalendarioSeleccionado"
+            [empleadoOriginalNombre]="getEmpleadoNombre(empleadoCalendarioSeleccionado)"
             [fechaInicio]="fechasForm.controls.fecha_inicio.value || ''"
             [fechaFin]="fechasForm.controls.fecha_fin.value || ''"
-            [modoReemplazoActivo]="modoReemplazoActivo"
-            (asignacionesGuardadas)="recibirAsignaciones($event)"
-            (turnoAsignado)="recibirAsignaciones($event)">
-          </app-calendario-turnos>
-
-          <app-remplazo 
-             (reemplazoSeleccionado)="onReemplazoSeleccionado($event)">
+            (reemplazoConfirmado)="onReemplazoConfirmado($event)">
           </app-remplazo>
+        </div>
 
-            <div class="actions">
-              <button class="btn outline" (click)="cancelarFormulario(false)">Atrás</button>
-              <button class="btn outline" (click)="cancelarFormulario(true)">Cancelar</button>
-              <button class="btn" (click)="guardarFormulario()">Guardar y Finalizar</button>
-            </div>
-        </section>
+        <!-- Componente hijo del calendario -->
+        <app-calendario-turnos *ngIf="empleadoCalendarioSeleccionado" [empleadoId]="empleadoCalendarioSeleccionado"
+          [asignacionesPrevias]="asignacionesPrevias" [equipo]="equipoCompleto" [turnosDisponibles]="turnosDisponibles"
+          [fechaInicio]="fechasForm.controls.fecha_inicio.value || ''"
+          [fechaFin]="fechasForm.controls.fecha_fin.value || ''" [modoReemplazoActivo]="modoReemplazoActivo"
+          (asignacionesGuardadas)="recibirAsignaciones($event)" (turnoAsignado)="recibirAsignaciones($event)">
+        </app-calendario-turnos>
+
+        <app-remplazo (reemplazoSeleccionado)="onReemplazoSeleccionado($event)">
+        </app-remplazo>
+
+        <div class="actions">
+          <button class="btn outline" (click)="cancelarFormulario(false)">Atrás</button>
+          <button class="btn outline" (click)="cancelarFormulario(true)">Cancelar</button>
+          <button class="btn" (click)="guardarFormulario()">Guardar y Finalizar</button>
+        </div>
+      </section>
     </ng-container>
 
     <ng-container *ngIf="modo==='FIJO'">
-      <app-fijo
-        [areas]="areas"
-        [jefesCandidatos]="jefesCandidatos"
-        [rolesEmpleados]="roles"
-        [empleados]="empleados"
-        (cancelar)="cancelarFormulario()"
+      <app-fijo [areas]="areas" [jefesCandidatos]="jefesCandidatos" [rolesEmpleados]="roles" [empleados]="empleados"
+        [configuracionEditar]="configuracionSeleccionada" (cancelar)="cancelarFormulario()"
         (guardado)="onFijoGuardado($event)">
       </app-fijo>
     </ng-container>
   </section>
+
+  <!-- Modal de Confirmación de Eliminación -->
+  <div class="modal" *ngIf="showDeleteConfirm">
+    <div class="modal__body">
+      <h3>¿Eliminar configuración?</h3>
+      <div class="alert error" style="margin-bottom: 1rem;">
+        Esta acción es irreversible.
+      </div>
+      <p>
+        Estás a punto de eliminar la configuración de turno:
+        <br>
+        <strong>{{ configToDelete?.nombreTurno }}</strong> para el área <strong>{{ configToDelete?.areaNombre
+          }}</strong>.
+      </p>
+      <p class="muted">
+        Nota: Esto no eliminará los turnos individuales ya asignados en el calendario de los empleados, pero desactivará
+        esta configuración para futuras gestiones.
+      </p>
+
+      <div class="modal__actions">
+        <button class="btn outline" (click)="cerrarModalEliminacion()">Cancelar</button>
+        <button class="btn danger" style="background-color: #ef4444; color: white; border: none;"
+          (click)="confirmarEliminacion()">
+          Sí, eliminar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

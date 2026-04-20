@@ -5,6 +5,8 @@ import { AuthGuard } from './guards/auth.guard';
 import { EmpleadosComponent } from './components/empleados/empleados.component';
 import { AsignarTurnosComponent } from './components/asignar-turnos/asignar-turnos.component';
 import { ReportesComponent } from './components/reportes/reportes.component';
+import { DepartamentosComponent } from './components/departamentos/departamentos/departamentos.component';
+import { PuestosComponent } from './components/puestos/puestos/puestos.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -12,32 +14,52 @@ export const routes: Routes = [
 
   {
     path: 'dashboard',
-    component: DashboardComponent, 
+    component: DashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
   {
-    path: 'empleados',             
-    component: EmpleadosComponent,  
+    path: 'empleados',
+    component: EmpleadosComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
   {
-    path: 'asignar-turnos',             
-    component: AsignarTurnosComponent,  
+    path: 'asignar-turnos',
+    component: AsignarTurnosComponent,
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
   {
-    path: 'reportes',             
-    component: ReportesComponent,  
+    path: 'turnos',
+    loadComponent: () => import('./components/gestion-turnos/gestion-turnos.component').then(m => m.GestionTurnosComponent),
     canActivate: [AuthGuard],
     data: { roles: ['rrhh', 'jefe'] }
   },
 
+  {
+    path: 'reportes',
+    component: ReportesComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['rrhh', 'jefe'] }
+  },
+
+  {
+    path: 'departamentos',
+    component: DepartamentosComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['rrhh'] }
+  },
+
+  {
+    path: 'puestos',
+    component: PuestosComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['rrhh'] }
+  },
 
   { path: '**', redirectTo: 'dashboard' }
 ];

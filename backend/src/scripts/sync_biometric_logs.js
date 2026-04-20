@@ -1,12 +1,22 @@
-require('dotenv').config();
-const DigestFetch = require('digest-fetch').default || require('digest-fetch');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const db = require('../db');
 
 // === Dispositivos ===
-const devices = [
-  { ip: '192.168.0.45', user: 'admin', pass: '[REDACTED]' },
-  { ip: '192.168.0.46', user: 'admin', pass: '[REDACTED]' }
-];
+const biometricUser = process.env.BIOMETRIC_USER;
+const biometricPass = process.env.BIOMETRIC_PASS;
+const biometricIps = (process.env.BIOMETRIC_IPS || '').split(',').filter(Boolean);
+
+if (!biometricUser || !biometricPass || biometricIps.length === 0) {
+  console.error('Error: Faltan credenciales de biométricos en .env');
+  process.exit(1);
+}
+
+const devices = biometricIps.map(ip => ({
+  ip: ip.trim(),
+  user: biometricUser,
+  pass: biometricPass
+}));
 
 // === Ajuste horario Guatemala UTC-6 ===
 function getTimeRange() {
@@ -19,6 +29,7 @@ function getTimeRange() {
 }
 
 async function fetchEvents(device) {
+  const { default: DigestFetch } = await import('digest-fetch');
   const client = new DigestFetch(device.user, device.pass);
   const { start, end } = getTimeRange();
 
@@ -49,14 +60,20 @@ async function fetchEvents(device) {
       }
     };
 
-    const res = await client.fetch(
-      `http://${device.ip}/ISAPI/AccessControl/AcsEvent?format=json`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }
-    );
+    let res;
+    try {
+      res = await client.fetch(
+        `http://${device.ip}/ISAPI/AccessControl/AcsEvent?format=json`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }
+      );
+    } catch (err) {
+      console.error(`Error de conexión con ${device.ip}:`, err.message);
+      break;
+    }
 
     if (!res.ok) {
       console.error(`Error en ${device.ip}: HTTP ${res.status}`);
@@ -94,181 +111,135 @@ async function fetchEvents(device) {
 }
 
 // === Guardar eventos en registros_asistencia ===
+// === Guardar eventos en registros_asistencia ===
 async function saveEvents(events) {
   let insertados = 0;
 
+  // 1. Ordenar eventos por fecha
+  events.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+
+  // 2. Filtrar ráfagas (Debounce)
+  const cleanEvents = [];
+  const lastSeen = {}; // Mapa para guardar última hora por empleado
+
   for (const ev of events) {
-    if (!ev.empleado || !ev.fechaHora) continue;
+    if (!ev.empleado) continue;
 
-    try {
-      // Intentar encontrar el empleado en la BD
-      const [rows] = await db.query(
-        'SELECT id FROM empleados WHERE numero_empleado = ? LIMIT 1',
-        [ev.empleado]
-      );
+    const key = `${ev.ip}_${ev.empleado}`;
+    const evTime = new Date(ev.fechaHora).getTime();
 
-      // Si no existe, se guardará como NULL pero con su número biométrico
-      const empleado_id = rows.length ? rows[0].id : null;
-
-      await db.query(
-        `
-      INSERT INTO registros_asistencia
-        (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
-      VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
-      `,
-        [
-          empleado_id,
-          ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
-          new Date(ev.fechaHora),
-          ev.ip,
-          ev.modo
-        ]
-      );
-
-      insertados++;
-    } catch (err) {
-      console.error(`Error insertando evento ${ev.empleado}: ${err.message}`);
+    // Si ya vimos a este empleado en este dispositivo hace menos de 60 segundos (60000ms), ignorar
+    if (lastSeen[key] && (evTime - lastSeen[key] < 60000)) {
+      continue;
     }
+
+    lastSeen[key] = evTime;
+    cleanEvents.push(ev);
   }
 
+  console.log(`Eventos recibidos: ${events.length} | Eventos únicos (filtrados): ${cleanEvents.length}`);
+
+  // 3. Agrupar por empleado para determinar Entrada/Salida (Lógica Toggle)
+  const eventsByEmp = {};
+  for (const ev of cleanEvents) {
+    if (!eventsByEmp[ev.empleado]) eventsByEmp[ev.empleado] = [];
+    eventsByEmp[ev.empleado].push(ev);
+  }
+
+  // 4. Procesar y guardar
+  for (const empNo in eventsByEmp) {
+    const empEvents = eventsByEmp[empNo];
+    // Asegurar orden cronológico
+    empEvents.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+
+    // Obtener ID de empleado una sola vez
+    let empleado_id = null;
+    try {
+      const [rows] = await db.query(
+        'SELECT id FROM empleados WHERE numero_empleado = ? LIMIT 1',
+        [empNo]
+      );
+      if (rows.length) empleado_id = rows[0].id;
+    } catch (err) {
+      console.error(`Error buscando empleado ${empNo}:`, err.message);
+      continue;
+    }
+
+    if (!empleado_id) continue;
+
+    // Determinar tipo de evento alternando (Entrada, Salida, Entrada...)
+    // Asumimos que el primer evento del día es ENTRADA.
+    // TODO: Si se quisiera ser más robusto ante reinicios parciales, se debería consultar el último estado en BD.
+    // Pero dado que este script corre para "todo el día" (getTimeRange), reconstruir la secuencia completa es lo mejor.
+
+    for (let i = 0; i < empEvents.length; i++) {
+      const ev = empEvents[i];
+      // Lógica Toggle: Pares (0, 2, 4...) son ENTRADA, Impares (1, 3...) son SALIDA
+      const tipoEvento = (i % 2 === 0) ? 'ENTRADA' : 'SALIDA';
+
+      try {
+        await db.query(
+          `
+              INSERT INTO registros_asistencia
+                (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
+              VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
+              ON DUPLICATE KEY UPDATE 
+                tipo_evento = VALUES(tipo_evento),
+                procesado = 0
+              `,
+          [
+            empleado_id,
+            tipoEvento,
+            new Date(ev.fechaHora),
+            ev.ip,
+            ev.modo
+          ]
+        );
+        insertados++;
+      } catch (err) {
+        console.error(`Error insertando evento ${ev.empleado}: ${err.message}`);
+      }
+    }
+  }
+  console.log(`Total procesados en DB: ${insertados}`);
 }
 
 
 // === Proceso principal ===
 (async () => {
+  console.log('Iniciando sincronización de logs biométricos...');
   try {
     const allEvents = [];
 
     for (const dev of devices) {
+      console.log(`Obteniendo eventos de ${dev.ip}...`);
       const evs = await fetchEvents(dev);
       allEvents.push(...evs);
+      console.log(`Se obtuvieron ${evs.length} eventos de ${dev.ip}`);
     }
 
     if (!allEvents.length) {
-      console.warn('No se encontraron eventos para procesar.');
+      console.warn('No se encontraron eventos nuevos para procesar.');
       process.exit(0);
     }
+    console.log(`Total de eventos a procesar: ${allEvents.length}`);
 
     await saveEvents(allEvents);
     await processDailyAttendance();
+    console.log('Sincronización de logs biométricos completada.');
     process.exit(0);
   } catch (err) {
-    console.error('Error general:', err.message);
+    console.error('Error general en la sincronización de logs:', err.message);
     process.exit(1);
   }
 })();
 
 // === Consolidación diaria ===
+// === Consolidación diaria ===
+const { procesarAsistenciaDia } = require('../services/asistencia.service');
+
 async function processDailyAttendance() {
-
-  const [empleados] = await db.query(`
-    SELECT DISTINCT empleado_id, DATE(fecha_hora) AS fecha
-    FROM registros_asistencia
-    WHERE DATE(fecha_hora) = CURDATE()
-      AND empleado_id IS NOT NULL
-  `);
-
-  let procesadas = 0;
-
-  for (const emp of empleados) {
-    const { empleado_id, fecha } = emp;
-
-    // Todas las marcas del día
-    const [marcas] = await db.query(`
-      SELECT DISTINCT fecha_hora
-      FROM registros_asistencia
-      WHERE empleado_id = ? AND DATE(fecha_hora) = ?
-      ORDER BY fecha_hora ASC
-    `, [empleado_id, fecha]);
-
-    if (!marcas.length) continue;
-
-    const entrada_real = marcas[0].fecha_hora;
-    const salida_real = marcas.length > 1 ? marcas[marcas.length - 1].fecha_hora : null;
-
-    // Buscar turno asignado y configuración activa
-    const [[turno]] = await db.query(`
-      SELECT 
-        t.id AS turno_id,
-        t.hora_inicio,
-        t.hora_fin,
-        t.tolerancia_entrada_minutos,
-        t.tolerancia_salida_minutos,
-        c.configuracion AS config_json
-      FROM asignacion_turnos a
-      INNER JOIN turnos t ON t.id = a.turno_id
-      LEFT JOIN configuraciones_turnos c 
-        ON c.turno_id = t.id 
-       AND c.area_id = (SELECT e.area_id FROM empleados e WHERE e.id = a.empleado_id)
-      WHERE a.empleado_id = ?
-        AND ? BETWEEN a.fecha_inicio AND a.fecha_fin
-      LIMIT 1;
-    `, [empleado_id, fecha]);
-
-    // Si no tiene turno asignado
-    if (!turno) {
-      continue;
-    }
-
-    // Verificar si es día laborable
-    let esLaboral = true;
-    try {
-      if (turno.config_json) {
-        const conf = JSON.parse(turno.config_json);
-        const diaSemana = new Date(fecha).getDay(); // 0=domingo
-        if (conf.dias_descanso && conf.dias_descanso.includes(String(diaSemana))) {
-          esLaboral = false;
-        }
-      }
-    } catch (e) {
-      console.warn(`Configuración JSON inválida para turno ${turno.turno_id}:`, e.message);
-    }
-
-    if (!esLaboral) {
-      continue;
-    }
-
-    // Evaluar cumplimiento
-    let estado = 'INCOMPLETO';
-    let minutos_retraso = 0;
-
-    const horaInicio = new Date(`${fecha}T${turno.hora_inicio}`);
-    const horaFin = new Date(`${fecha}T${turno.hora_fin}`);
-
-    if (!salida_real) {
-      estado = 'INCOMPLETO';
-    } else if (
-      entrada_real > new Date(horaInicio.getTime() + turno.tolerancia_entrada_minutos * 60000)
-    ) {
-      estado = 'TARDE';
-      minutos_retraso = Math.floor((entrada_real - horaInicio) / 60000);
-    } else if (entrada_real < horaInicio) {
-      estado = 'TEMPRANO';
-    } else {
-      estado = 'COMPLETO';
-    }
-
-    // Insertar o actualizar asistencia
-    await db.query(`
-      INSERT INTO asistencias
-        (empleado_id, fecha, turno_id, entrada_real, salida_real, estado, minutos_retraso)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        entrada_real = VALUES(entrada_real),
-        salida_real  = VALUES(salida_real),
-        estado       = VALUES(estado),
-        minutos_retraso = VALUES(minutos_retraso);
-    `, [
-      empleado_id,
-      fecha,
-      turno.turno_id,
-      entrada_real,
-      salida_real,
-      estado,
-      minutos_retraso
-    ]);
-
-    procesadas++;
-  }
-
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`Procesando asistencia diaria para: ${today}`);
+  await procesarAsistenciaDia(today);
 }

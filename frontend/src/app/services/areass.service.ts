@@ -1,11 +1,26 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs';
+
+export interface Area {
+  id: number;
+  nombre_area: string;
+  descripcion: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AreasService {
   private base = environment.apiBase;
   constructor(private http: HttpClient) {}
+
+  getAreas(): Observable<{ success: boolean, data: Area[] }> {
+    return this.http.get<{ success: boolean, data: Area[] }>(`${this.base}/areas`);
+  }
+
+  createArea(nombre: string, descripcion: string): Observable<{ success: boolean, data: Area }> {
+    return this.http.post<{ success: boolean, data: Area }>(`${this.base}/areas`, { nombre_area: nombre, descripcion });
+  }
 
   addSupervisor(areaId: number, empleadoId: number, esTitular: boolean, desde?: string|null, hasta?: string|null) {
     return this.http.post(`${this.base}/areas/${areaId}/supervisores`, {

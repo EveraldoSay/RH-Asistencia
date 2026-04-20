@@ -4,7 +4,6 @@
     <h1>Gestión de Empleados</h1>
     <div class="user-info">
       <span>{{ userInfo?.preferred_username || userInfo?.email || userInfo?.name || 'Usuario' }}</span>
-      <span class="roles">Rol: {{ displayRoles.length ? displayRoles.join(', ') : 'Sin roles' }}</span>
     </div>
   </div>
 
@@ -14,12 +13,6 @@
       <button class="btn btn-primary" (click)="showCreateForm()" [disabled]="loading">
         + Agregar Empleado
       </button>
-      <button class="btn btn-primary" (click)="showNewRolForm = true" [disabled]="loading">
-        + Agregar Rol
-      </button>
-      <button class="btn btn-primary" (click)="showNewAreaForm = true" [disabled]="loading">
-        + Agregar Área
-      </button>
       <button class="btn btn-secondary" (click)="syncBiometricUsers()" [disabled]="loading">
         Actualizar Empleados
       </button>
@@ -28,13 +21,9 @@
 
     <!-- Caja de búsqueda -->
     <div style="margin-left:auto; display:flex; gap:.5rem; align-items:center;">
-      <input
-        type="text"
-        [(ngModel)]="searchTerm"
-        [disabled]="loading"
+      <input type="text" [(ngModel)]="searchTerm" [disabled]="loading"
         placeholder="Buscar por numero, nombre, rol o area"
-        style="min-width: 320px; padding:.5rem .75rem; border:1px solid #ccc; border-radius:.5rem;"
-      />
+        style="min-width: 320px; padding:.5rem .75rem; border:1px solid #ccc; border-radius:.5rem;" />
       <button *ngIf="searchTerm" class="btn btn-secondary btn-small" (click)="clearSearch()">Limpiar</button>
     </div>
   </div>
@@ -58,21 +47,13 @@
     <form #areaForm="ngForm" (ngSubmit)="saveArea(areaForm)">
       <div class="form-group">
         <label>Nombre del área *</label>
-        <input
-          type="text"
-          name="area_nombre"
-          [(ngModel)]="newArea.nombre_area"
-          required minlength="3" maxlength="50"
-          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,50}$"
-          placeholder="Ej: Laboratorio">
+        <input type="text" name="area_nombre" [(ngModel)]="newArea.nombre_area" required minlength="3" maxlength="50"
+          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,50}$" placeholder="Ej: Laboratorio">
       </div>
 
       <div class="form-group">
         <label>Descripción (opcional)</label>
-        <textarea
-          name="area_descripcion"
-          [(ngModel)]="newArea.descripcion"
-          maxlength="500"
+        <textarea name="area_descripcion" [(ngModel)]="newArea.descripcion" maxlength="500"
           placeholder="Ej: Área encargada de análisis clínicos"></textarea>
       </div>
 
@@ -85,28 +66,20 @@
 
 
 
-    <!-- Mini form Rol -->
+  <!-- Mini form Rol -->
   <div class="form-container" *ngIf="showNewRolForm">
     <h3>Nuevo Rol</h3>
 
     <form #rolForm="ngForm" (ngSubmit)="saveRol(rolForm)">
       <div class="form-group">
         <label>Nombre del rol *</label>
-        <input
-          type="text"
-          name="rol_nombre"
-          [(ngModel)]="newRol.nombre_rol"
-          required minlength="3" maxlength="50"
-          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,50}$"
-          placeholder="Ej: Enfermero">
+        <input type="text" name="rol_nombre" [(ngModel)]="newRol.nombre_rol" required minlength="3" maxlength="50"
+          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,50}$" placeholder="Ej: Enfermero">
       </div>
 
       <div class="form-group">
         <label>Descripción (opcional)</label>
-        <textarea
-          name="rol_descripcion"
-          [(ngModel)]="newRol.descripcion"
-          maxlength="500"
+        <textarea name="rol_descripcion" [(ngModel)]="newRol.descripcion" maxlength="500"
           placeholder="Ej: Responsable de cuidados generales"></textarea>
       </div>
 
@@ -126,20 +99,10 @@
     <form #f="ngForm" (ngSubmit)="saveEmpleado(f)">
       <!-- Número -->
       <div class="form-group">
-        <label>Número de Telefono </label>
-        <input
-          type="text"
-          name="numero_empleado"
-          [(ngModel)]="empleadofrorm.numero_empleado"
-          required
-          minlength="1"
-          maxlength="32"
-          inputmode="numeric"
-          pattern="^[0-9]+$"
-          placeholder="Ej: 50234567"
-          (input)="onNumeroInput($event)"
-          (blur)="clearServerError('numero')"
-        />
+        <label>Identificación </label>
+        <input type="text" name="numero_empleado" [(ngModel)]="empleadofrorm.numero_empleado" required minlength="1"
+          maxlength="32" inputmode="numeric" pattern="^[0-9]+$" placeholder="Ej: 50234567"
+          (input)="onNumeroInput($event)" (blur)="clearServerError('numero')" />
 
         <small class="field-error" *ngIf="f.submitted && f.controls['numero_empleado']?.errors?.['required']">
           El número de empleado es obligatorio.
@@ -159,11 +122,7 @@
       <!-- Renglón -->
       <div class="form-group">
         <label>Renglón marcaje</label>
-        <select
-          name="renglon"
-          [(ngModel)]="empleadofrorm.renglon"
-          required
-        >
+        <select name="renglon" [(ngModel)]="empleadofrorm.renglon" required>
           <option [ngValue]="null">Seleccionar renglón...</option>
 
           <optgroup label="Renglones con marcaje obligatorio">
@@ -190,18 +149,9 @@
       <!-- Nombre -->
       <div class="form-group">
         <label>Nombre Completo</label>
-        <input
-          type="text"
-          name="nombre_completo"
-          [(ngModel)]="empleadofrorm.nombre_completo"
-          required
-          minlength="3"
-          maxlength="150"
-          pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,150}$"
-          placeholder="Ej: María López García"
-          (input)="onNombreInput($event)"
-          (blur)="clearServerError('nombre')"
-        >
+        <input type="text" name="nombre_completo" [(ngModel)]="empleadofrorm.nombre_completo" required minlength="3"
+          maxlength="150" pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{3,150}$" placeholder="Ej: María López García"
+          (input)="onNombreInput($event)" (blur)="clearServerError('nombre')">
         <small class="field-error" *ngIf="f.submitted && f.controls['nombre_completo']?.errors?.['required']">
           El nombre es obligatorio.
         </small>
@@ -219,16 +169,9 @@
       <!-- Correo -->
       <div class="form-group">
         <label>Correo (opcional)</label>
-        <input
-          type="email"
-          name="email"
-          [(ngModel)]="empleadofrorm.email"
-          maxlength="120"
-          placeholder="ejemplo@hospital.com"
-          (input)="onEmailInput($event)"
-          (blur)="clearServerError('email')"
-          pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
-        >
+        <input type="email" name="email" [(ngModel)]="empleadofrorm.email" maxlength="120"
+          placeholder="ejemplo@hospital.com" (input)="onEmailInput($event)" (blur)="clearServerError('email')"
+          pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$">
         <small class="field-error" *ngIf="f.controls['email']?.errors?.['pattern']">
           Correo no válido.
         </small>
@@ -324,7 +267,8 @@
               <button *ngIf="canCreateEdit()" class="btn btn-warning btn-small" (click)="deactivateEmpleado(emp)">
                 {{ emp.activo ? 'Desactivar' : 'Activar' }}
               </button>
-              <button *ngIf="canDelete()" class="btn btn-danger btn-small" (click)="deleteEmpleado(emp)">Eliminar</button>
+              <button *ngIf="canDelete()" class="btn btn-danger btn-small"
+                (click)="deleteEmpleado(emp)">Eliminar</button>
             </div>
           </td>
 

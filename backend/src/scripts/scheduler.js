@@ -11,6 +11,7 @@ const LOGS_SCRIPT = path.join(__dirname, 'sync_biometric_logs.js');
 
 // ==================== FUNCIÓN AUXILIAR ====================
 function runScript(scriptPath, label) {
+  console.log(`[${label}] Iniciando ejecución de ${scriptPath}`);
   const child = exec(`node "${scriptPath}"`, { env: process.env });
 
   child.stdout.on('data', data => {
@@ -22,6 +23,7 @@ function runScript(scriptPath, label) {
   });
 
   child.on('exit', code => {
+    console.log(`[${label}] Finalizó ejecución de ${scriptPath} con código ${code}`);
   });
 }
 

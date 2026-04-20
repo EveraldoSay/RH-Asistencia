@@ -1,12 +1,22 @@
-require('dotenv').config();
-const DigestFetch = require('digest-fetch').default || require('digest-fetch');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const db = require('../db');
 
 // === Dispositivos ===
-const devices = [
-  { ip: '192.168.0.45', user: 'admin', pass: '[REDACTED]' },
-  { ip: '192.168.0.46', user: 'admin', pass: '[REDACTED]' }
-];
+const biometricUser = process.env.BIOMETRIC_USER;
+const biometricPass = process.env.BIOMETRIC_PASS;
+const biometricIps = (process.env.BIOMETRIC_IPS || '').split(',').filter(Boolean);
+
+if (!biometricUser || !biometricPass || biometricIps.length === 0) {
+  console.error('Error: Faltan credenciales de biométricos en .env (BIOMETRIC_USER, BIOMETRIC_PASS, BIOMETRIC_IPS)');
+  process.exit(1);
+}
+
+const devices = biometricIps.map(ip => ({
+  ip: ip.trim(),
+  user: biometricUser,
+  pass: biometricPass
+}));
 
 // === Función para obtener rango de fechas personalizado ===
 function getCustomTimeRange(fechaDesde, fechaHasta) {
@@ -21,6 +31,7 @@ function getCustomTimeRange(fechaDesde, fechaHasta) {
 
 // === Función para buscar eventos por rango de fechas ===
 async function fetchHistoricalEvents(device, fechaDesde, fechaHasta) {
+  const { default: DigestFetch } = await import('digest-fetch');
   const client = new DigestFetch(device.user, device.pass);
   const { start, end } = getCustomTimeRange(fechaDesde, fechaHasta);
 

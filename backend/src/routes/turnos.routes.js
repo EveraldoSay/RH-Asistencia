@@ -4,19 +4,19 @@ const router = express.Router();
 
 // Crear un turno
 router.post('/', async (req, res) => {
-  const { nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
-  if (!nombre || !hora_inicio || !hora_fin) {
+  const { nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
+  if (!nombre_turno || !hora_inicio || !hora_fin) {
     return res.status(400).json({ success: false, message: 'Faltan datos' });
   }
 
   try {
     const [result] = await db.query(
-      `INSERT INTO turnos (nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos)
-       VALUES (?,?,?,?,?)`,
-      [nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15]
+      `INSERT INTO turnos (nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno)
+       VALUES (?,?,?,?,?,?)`,
+      [nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO']
     );
 
-    const [rows] = await db.query(`SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
+    const [rows] = await db.query(`SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
                                    FROM turnos WHERE id=?`, [result.insertId]);
     res.status(201).json({ success: true, data: rows[0] });
   } catch (err) {
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (_req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
+      SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno 
       FROM turnos 
       ORDER BY id ASC`);
     res.json({ success: true, data: rows });
@@ -43,8 +43,8 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await db.query(
-      `SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
-       FROM turnos WHERE id=?`, 
+      `SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos, tipo_turno 
+       FROM turnos WHERE id=?`,
       [id]
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Turno no encontrado' });
@@ -97,20 +97,20 @@ router.get('/activos-hoy', async (_req, res) => {
 // Actualizar un turno
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
+  const { nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos } = req.body;
 
   try {
     const [result] = await db.query(
-      `UPDATE turnos SET nombre_turno=?, hora_inicio=?, hora_fin=?, tolerancia_entrada_minutos=?, tolerancia_salida_minutos=? 
+      `UPDATE turnos SET nombre_turno=?, hora_inicio=?, hora_fin=?, tolerancia_entrada_minutos=?, tolerancia_salida_minutos=?, tipo_turno=? 
        WHERE id=?`,
-      [nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, id]
+      [nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos || 15, tolerancia_salida_minutos || 15, req.body.tipo_turno || 'ROTATIVO', id]
     );
 
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Turno no encontrado' });
 
     const [rows] = await db.query(
-      `SELECT id, nombre_turno AS nombre, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
-       FROM turnos WHERE id=?`, 
+      `SELECT id, nombre_turno, hora_inicio, hora_fin, tolerancia_entrada_minutos, tolerancia_salida_minutos 
+       FROM turnos WHERE id=?`,
       [id]
     );
     res.json({ success: true, data: rows[0] });

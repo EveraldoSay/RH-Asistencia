@@ -1,0 +1,8 @@
+# Excluir dependencias locales
+node_modules
+
+# Excluir logs y archivos de entorno local
+npm-debug.log
+
+# Excluir la carpeta de distribución que se genera en local
+/dist
