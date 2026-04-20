@@ -12,10 +12,10 @@ const devices = [
 function getCustomTimeRange(fechaDesde, fechaHasta) {
   const start = new Date(fechaDesde);
   start.setHours(0, 0, 0, 0);
-  
+
   const end = new Date(fechaHasta);
   end.setHours(23, 59, 59, 999);
-  
+
   return { start, end };
 }
 
@@ -28,7 +28,7 @@ async function fetchHistoricalEvents(device, fechaDesde, fechaHasta) {
     const iso = d.toISOString().split('.')[0];
     return iso + '-06:00';
   };
-  
+
   const allEvents = [];
   let position = 0;
   let more = true;
@@ -308,13 +308,13 @@ async function syncHistoricalBiometricLogs(fechaDesde, fechaHasta) {
 // === Ejecución desde línea de comandos ===
 if (require.main === module) {
   const args = process.argv.slice(2);
-  
+
   if (args.length < 2) {
     process.exit(1);
   }
 
   const [fechaDesde, fechaHasta] = args;
-  
+
   syncHistoricalBiometricLogs(fechaDesde, fechaHasta)
     .then(result => {
       if (result.success) {

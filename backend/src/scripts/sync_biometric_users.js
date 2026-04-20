@@ -41,8 +41,8 @@ async function fetchAllFromDevice(device) {
       const list = Array.isArray(data?.UserInfoSearch?.UserInfo)
         ? data.UserInfoSearch.UserInfo
         : data?.UserInfoSearch?.UserInfo
-        ? [data.UserInfoSearch.UserInfo]
-        : [];
+          ? [data.UserInfoSearch.UserInfo]
+          : [];
 
       allUsers.push(...list);
       const status = data?.UserInfoSearch?.responseStatusStrg;

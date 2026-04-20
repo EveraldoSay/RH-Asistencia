@@ -110,20 +110,20 @@ async function saveEvents(events) {
       // Si no existe, se guardará como NULL pero con su número biométrico
       const empleado_id = rows.length ? rows[0].id : null;
 
-    await db.query(
-      `
+      await db.query(
+        `
       INSERT INTO registros_asistencia
         (empleado_id, tipo_evento, fecha_hora, dispositivo_ip, codigo_evento, origen, procesado)
       VALUES (?, ?, ?, ?, ?, 'BIOMETRICO', 0)
       `,
-      [
-        empleado_id,
-        ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
-        new Date(ev.fechaHora),
-        ev.ip,
-        ev.modo
-      ]
-    );
+        [
+          empleado_id,
+          ev.evento === 'checkOut' ? 'SALIDA' : 'ENTRADA',
+          new Date(ev.fechaHora),
+          ev.ip,
+          ev.modo
+        ]
+      );
 
       insertados++;
     } catch (err) {
