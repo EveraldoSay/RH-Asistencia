@@ -3,11 +3,11 @@ const mysql = require('mysql2/promise');
 
 (async () => {
     const dbConfig = {
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || 'Qwerty123',
-        port: Number(process.env.DB_PORT) || 3307,
-        database: process.env.DB_NAME || 'sigsa_db'
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        port: Number(process.env.DB_PORT),
+        database: process.env.DB_NAME
     };
 
     let conn;

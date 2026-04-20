@@ -3,10 +3,10 @@ const mysql = require('mysql2/promise');
 
 (async () => {
     const dbConfig = {
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || 'Qwerty123',
-        port: Number(process.env.DB_PORT) || 3307,
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        port: Number(process.env.DB_PORT),
     };
 
     let conn;
@@ -17,7 +17,7 @@ const mysql = require('mysql2/promise');
         console.log('Databases found:', dbs.map(d => d.Database).join(', '));
 
         // 2. Find the correct DB
-        let targetDb = process.env.DB_NAME || 'Pg2_Asistencia';
+        let targetDb = process.env.DB_NAME;
         let foundDb = dbs.find(d => d.Database.toLowerCase() === targetDb.toLowerCase());
 
         if (!foundDb) {
