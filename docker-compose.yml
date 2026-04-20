@@ -8,9 +8,9 @@ services:
     environment:
       TZ: America/Guatemala
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD} # Contraseña root desde .env
-      MYSQL_DATABASE: sigsa_db                # <-- CORREGIDO: Nombre de la DB que usa el backend
-      MYSQL_USER: sigsa_user                  # <-- CORREGIDO: Usuario que usa el backend
-      MYSQL_PASSWORD: ${DB_PASSWORD}          # Contraseña leída desde .env
+      MYSQL_DATABASE: sigsa_db # <-- CORREGIDO: Nombre de la DB que usa el backend
+      MYSQL_USER: sigsa_user # <-- CORREGIDO: Usuario que usa el backend
+      MYSQL_PASSWORD: ${DB_PASSWORD} # Contraseña leída desde .env
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./Hospital.sql:/docker-entrypoint-initdb.d/Hospital.sql
@@ -20,8 +20,19 @@ services:
     #  - '3306'
     ports:
       - "3307:3306"
-    healthcheck: # <-- AÑADIDO: Chequeo de salud
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+    healthcheck:
+      # <-- AÑADIDO: Chequeo de salud
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,22 +49,21 @@ services:
       TZ: America/Guatemala
       # --- Variables de Keycloak ---
       KEYCLOAK_AUTH_SERVER_URL: https://sso.hro.gob.gt
-      KEYCLOAK_REALM: 'Hospital-O'
-     # KEYCLOAK_CLIENT_ID: 'tu-client-id-backend'
-     # KEYCLOAK_SECRET: 'tu-client-secret'
+      KEYCLOAK_REALM: "Hospital-O"
+      # KEYCLOAK_CLIENT_ID: 'tu-client-id-backend'
+      # KEYCLOAK_SECRET: 'tu-client-secret'
 
       # --- Variables de Base de Datos ---
-      DB_HOST: db 
+      DB_HOST: db
       DB_USER: sigsa_user
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: sigsa_db
       DB_PORT: 3306
     env_file:
-      - ./backend/.env
+      - ./.env
     expose:
-      - '3000'
+      - "3000"
 
-      
     networks:
       - sigsa-net
 
@@ -69,7 +79,7 @@ services:
     networks:
       - sigsa-net
     depends_on:
-      - backend 
+      - backend
     environment:
       TZ: America/Guatemala
       API_BASE: ${FRONTEND_API_BASE}
