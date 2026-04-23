@@ -82,7 +82,7 @@
         <label>Empleado</label>
         <div class="autocomplete-wrapper">
           <input type="text" [(ngModel)]="empleadoBusqueda" (input)="onEmpleadoBusqueda()"
-            placeholder="Buscar por nombre" autocomplete="off" />
+            placeholder="Buscar por nombre" autocomplete="off" maxlength="100" />
           <div class="autocomplete-list" *ngIf="empleadosFiltrados.length > 0">
             <div class="autocomplete-item" *ngFor="let emp of empleadosFiltrados" (click)="seleccionarEmpleado(emp)">
               {{ emp.numero_empleado }} - {{ emp.nombre_completo }}
@@ -111,11 +111,13 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre del Permiso</label>
-          <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" />
+          <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="100"
+            placeholder="Máx. 100 caracteres" />
         </div>
         <div class="form-group">
           <label>Mensaje para la Carta</label>
-          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()"></textarea>
+          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="250"
+            ></textarea>
         </div>
       </div>
     </ng-container>
@@ -125,11 +127,13 @@
       <div class="form-row">
         <div class="form-group">
           <label>Fecha de Inicio</label>
-          <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required />
+          <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required
+            [max]="solicitudForm.fecha_fin || ''" />
         </div>
         <div class="form-group">
           <label>Fecha de Fin</label>
-          <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required />
+          <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required
+            [min]="solicitudForm.fecha_inicio || ''" />
         </div>
         <div class="form-group form-group-small">
           <label>Días hábiles</label>
@@ -185,11 +189,12 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre del Permiso</label>
-          <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" />
+          <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="100"
+            placeholder="Máx. 100 caracteres" />
         </div>
         <div class="form-group">
           <label>Mensaje para la Carta</label>
-          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()"
+          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="500"
             style="min-height:38px;"></textarea>
         </div>
       </div>
@@ -199,11 +204,13 @@
     <div class="form-row">
       <div class="form-group">
         <label>Fecha de Inicio</label>
-        <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required />
+        <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required
+          [max]="solicitudForm.fecha_fin || ''" />
       </div>
       <div class="form-group">
         <label>Fecha de Fin</label>
-        <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required />
+        <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required
+          [min]="solicitudForm.fecha_inicio || ''" />
       </div>
       <div class="form-group form-group-small">
         <label>Días hábiles</label>
@@ -226,7 +233,8 @@
 
     <div class="form-group">
       <label>Observaciones</label>
-      <textarea [(ngModel)]="solicitudForm.observaciones" placeholder="Comentarios adicionales"></textarea>
+      <textarea [(ngModel)]="solicitudForm.observaciones" placeholder="Comentarios adicionales"
+        maxlength="250"></textarea>
     </div>
 
     <!-- Vista previa carta en edición -->
@@ -253,15 +261,16 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre</label>
-          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" />
+          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" maxlength="80" placeholder="Máx. 80 caracteres" />
         </div>
         <div class="form-group form-group-small">
           <label>Días</label>
-          <input type="number" [(ngModel)]="tipoPermisoForm.dias_permitidos" min="1" />
+          <input type="number" [(ngModel)]="tipoPermisoForm.dias_permitidos" min="1" max="365" />
         </div>
         <div class="form-group">
           <label>Mensaje para la Carta</label>
-          <textarea [(ngModel)]="tipoPermisoForm.mensaje_carta" style="min-height:38px;"></textarea>
+          <textarea [(ngModel)]="tipoPermisoForm.mensaje_carta" maxlength="250" 
+            style="min-height:38px;"></textarea>
         </div>
       </div>
 
