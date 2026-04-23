@@ -134,8 +134,7 @@
         <div class="form-group form-group-small">
           <label>Días hábiles</label>
           <input type="number" [value]="solicitudForm.dias_solicitados" readonly style="background:#e9ecef;"
-            [class.dias-cero]="!solicitudForm.dias_solicitados"
-            [class.dias-excedidos]="diasExcedidos" />
+            [class.dias-cero]="!solicitudForm.dias_solicitados" [class.dias-excedidos]="diasExcedidos" />
           <small *ngIf="solicitudForm.fecha_inicio && solicitudForm.fecha_fin && !solicitudForm.dias_solicitados"
             class="warn-dias">El rango no contiene días hábiles</small>
           <small *ngIf="diasExcedidos" class="warn-dias">
@@ -190,7 +189,8 @@
         </div>
         <div class="form-group">
           <label>Mensaje para la Carta</label>
-          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" style="min-height:38px;"></textarea>
+          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()"
+            style="min-height:38px;"></textarea>
         </div>
       </div>
     </ng-container>
@@ -208,8 +208,7 @@
       <div class="form-group form-group-small">
         <label>Días hábiles</label>
         <input type="number" [value]="solicitudForm.dias_solicitados" readonly style="background:#e9ecef;"
-          [class.dias-cero]="!solicitudForm.dias_solicitados"
-          [class.dias-excedidos]="diasExcedidos" />
+          [class.dias-cero]="!solicitudForm.dias_solicitados" [class.dias-excedidos]="diasExcedidos" />
         <small *ngIf="solicitudForm.fecha_inicio && solicitudForm.fecha_fin && !solicitudForm.dias_solicitados"
           class="warn-dias">El rango no contiene días hábiles</small>
         <small *ngIf="diasExcedidos" class="warn-dias">Excede el límite permitido del tipo de permiso</small>
@@ -254,7 +253,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre</label>
-          <input type="text" [(ngModel)]="tipoPermisoForm.nombre"/>
+          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" />
         </div>
         <div class="form-group form-group-small">
           <label>Días</label>
@@ -374,7 +373,10 @@
     <p class="carta-mensaje">{{ cartaData.mensaje }}</p>
 
     <p *ngIf="cartaData.feriadosIncluidos.length > 0" class="carta-feriados">
-      Incluye: {{ cartaData.feriadosIncluidos.join(', ') }}
+      Incluye feriados: {{ cartaData.feriadosIncluidos.join(', ') }}
+    </p>
+    <p *ngIf="cartaData.finesDeSemanaCont > 0" class="carta-feriados">
+      Incluye {{ cartaData.finesDeSemanaCont }} día(s) de fin de semana
     </p>
 
     <div class="carta-fechas-row">

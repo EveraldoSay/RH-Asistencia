@@ -123,6 +123,18 @@ export function feriadosEnRango(inicio: Date, fin: Date): string[] {
   return lista;
 }
 
+/** Cuenta fines de semana (sábados y domingos) en el rango */
+export function finesDeSemanaEnRango(inicio: Date, fin: Date): number {
+  let count = 0;
+  const cur = new Date(inicio);
+  while (cur <= fin) {
+    const d = cur.getDay();
+    if (d === 0 || d === 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
 // ─── Número a letras (español) ───────────────────────────────────────────────
 const UNIDADES = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE',
   'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'];
@@ -225,7 +237,8 @@ export class PermisosComponent implements OnInit {
       fechaFin: '',
       diasSolicitados: 0,
       diasEnLetras: '',
-      feriadosIncluidos: [] as string[]
+      feriadosIncluidos: [] as string[],
+      finesDeSemanaCont: 0
     };
   }
 
@@ -309,6 +322,7 @@ export class PermisosComponent implements OnInit {
     this.empleadosFiltrados = [];
     this.solicitudForm = this.initSolicitudForm();
     this.cartaData = this.initCartaData();
+    this.diasExcedidos = false;
   }
 
   /** Normaliza fecha ISO con timezone a 'YYYY-MM-DD' para inputs date */
@@ -330,12 +344,15 @@ export class PermisosComponent implements OnInit {
     };
     this.empleadoSeleccionado = this.empleados.find(e => e.id === permiso.empleado_id) || null;
     this.empleadoBusqueda = permiso.nombre_completo || '';
-    // Recalcular días con las fechas normalizadas
+    // Recalcular días con las fechas normalizadas y validar límite
+    this.diasExcedidos = false;
     if (this.solicitudForm.fecha_inicio && this.solicitudForm.fecha_fin) {
       this.solicitudForm.dias_solicitados = calcularDiasHabilesGT(
         parseFechaLocal(this.solicitudForm.fecha_inicio),
         parseFechaLocal(this.solicitudForm.fecha_fin)
       );
+      const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
+      this.diasExcedidos = !!(tipo && this.solicitudForm.dias_solicitados > tipo.dias_permitidos);
     }
     this.actualizarCarta();
   }
@@ -410,6 +427,10 @@ export class PermisosComponent implements OnInit {
       ? feriadosEnRango(parseFechaLocal(this.solicitudForm.fecha_inicio), parseFechaLocal(this.solicitudForm.fecha_fin))
       : [];
 
+    const finesSemana = (this.solicitudForm.fecha_inicio && this.solicitudForm.fecha_fin)
+      ? finesDeSemanaEnRango(parseFechaLocal(this.solicitudForm.fecha_inicio), parseFechaLocal(this.solicitudForm.fecha_fin))
+      : 0;
+
     this.cartaData = {
       nombreEmpleado: emp?.nombre_completo || '',
       renglon: emp?.renglon || '',
@@ -428,7 +449,8 @@ export class PermisosComponent implements OnInit {
       fechaFin: fmtFecha(this.solicitudForm.fecha_fin || ''),
       diasSolicitados: dias,
       diasEnLetras: dias > 0 ? numeroALetras(dias) : '',
-      feriadosIncluidos: feriados
+      feriadosIncluidos: feriados,
+      finesDeSemanaCont: finesSemana
     };
   }
 
