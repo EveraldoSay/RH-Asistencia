@@ -79,7 +79,7 @@
     <!-- Empleado + Tipo de permiso en la misma fila -->
     <div class="form-row">
       <div class="form-group">
-        <label>Empleado *</label>
+        <label>Empleado</label>
         <div class="autocomplete-wrapper">
           <input type="text" [(ngModel)]="empleadoBusqueda" (input)="onEmpleadoBusqueda()"
             placeholder="Buscar por nombre" autocomplete="off" />
@@ -95,7 +95,7 @@
       </div>
 
       <div class="form-group">
-        <label>Tipo de Permiso *</label>
+        <label>Tipo de Permiso</label>
         <select [(ngModel)]="solicitudForm.tipo_permiso_id" (change)="onTipoPermisoChange()">
           <option [ngValue]="undefined">Seleccionar tipo...</option>
           <option *ngFor="let tipo of tiposPermiso" [ngValue]="tipo.id">
@@ -124,11 +124,11 @@
     <ng-container *ngIf="solicitudForm.tipo_permiso_id !== undefined">
       <div class="form-row">
         <div class="form-group">
-          <label>Fecha de Inicio *</label>
+          <label>Fecha de Inicio</label>
           <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required />
         </div>
         <div class="form-group">
-          <label>Fecha de Fin *</label>
+          <label>Fecha de Fin</label>
           <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required />
         </div>
         <div class="form-group form-group-small">
@@ -198,11 +198,11 @@
     <!-- Calendarios para controlar días hábiles -->
     <div class="form-row">
       <div class="form-group">
-        <label>Fecha de Inicio *</label>
+        <label>Fecha de Inicio</label>
         <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required />
       </div>
       <div class="form-group">
-        <label>Fecha de Fin *</label>
+        <label>Fecha de Fin</label>
         <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required />
       </div>
       <div class="form-group form-group-small">
@@ -253,11 +253,11 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label>Nombre *</label>
-          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" placeholder="Ej: Vacaciones" />
+          <label>Nombre</label>
+          <input type="text" [(ngModel)]="tipoPermisoForm.nombre"/>
         </div>
         <div class="form-group form-group-small">
-          <label>Días *</label>
+          <label>Días</label>
           <input type="number" [(ngModel)]="tipoPermisoForm.dias_permitidos" min="1" />
         </div>
         <div class="form-group">
