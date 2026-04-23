@@ -174,6 +174,9 @@ export class PermisosComponent implements OnInit {
   // Permiso en edición
   editingPermiso: Permiso | null = null;
 
+  // Advertencia de días excedidos
+  diasExcedidos = false;
+
   // Carta preview
   cartaData = this.initCartaData();
 
@@ -363,6 +366,7 @@ export class PermisosComponent implements OnInit {
       this.solicitudForm.fecha_fin = '';
       this.solicitudForm.dias_solicitados = 0;
     }
+    this.diasExcedidos = false;
     this.actualizarCarta();
   }
 
@@ -376,6 +380,11 @@ export class PermisosComponent implements OnInit {
     const inicio = parseFechaLocal(this.solicitudForm.fecha_inicio);
     const fin = parseFechaLocal(this.solicitudForm.fecha_fin);
     this.solicitudForm.dias_solicitados = calcularDiasHabilesGT(inicio, fin);
+
+    // Validar límite del tipo de permiso (solo días hábiles, no fines de semana/feriados)
+    const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
+    this.diasExcedidos = !!(tipo && this.solicitudForm.dias_solicitados > tipo.dias_permitidos);
+
     this.actualizarCarta();
   }
 
@@ -433,6 +442,11 @@ export class PermisosComponent implements OnInit {
       this.error = 'El rango de fechas no contiene días hábiles. Verifique las fechas.';
       return;
     }
+    if (this.diasExcedidos) {
+      const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
+      this.error = `Los días hábiles (${this.solicitudForm.dias_solicitados}) exceden el límite del tipo de permiso (${tipo?.dias_permitidos} días).`;
+      return;
+    }
     this.loading = true;
     const data: any = { ...this.solicitudForm };
     // Permiso personalizado: no asociar tipo_permiso_id
@@ -461,6 +475,11 @@ export class PermisosComponent implements OnInit {
     }
     if (!this.solicitudForm.dias_solicitados || this.solicitudForm.dias_solicitados === 0) {
       this.error = 'El rango de fechas no contiene días hábiles. Verifique las fechas.';
+      return;
+    }
+    if (this.diasExcedidos) {
+      const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
+      this.error = `Los días hábiles (${this.solicitudForm.dias_solicitados}) exceden el límite del tipo de permiso (${tipo?.dias_permitidos} días).`;
       return;
     }
     this.loading = true;
@@ -556,7 +575,79 @@ export class PermisosComponent implements OnInit {
   }
 
   // ─── IMPRIMIR ─────────────────────────────────────────────────────
-  imprimirCarta() { window.print(); }
+  imprimirCarta() {
+    const cartaEl = document.querySelector('.carta-hoja');
+    if (!cartaEl) { window.print(); return; }
+
+    const win = window.open('', '_blank', 'width=816,height=1056');
+    if (!win) { window.print(); return; }
+
+    // Recoger todos los estilos de la página actual
+    const estilos = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(el => el.outerHTML).join('\n');
+
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Solicitud de Permiso</title>
+  ${estilos}
+  <style>
+    @page { size: letter portrait; margin: 10mm 15mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; }
+    .carta-hoja {
+      width: 100%; height: calc(100vh - 20mm);
+      display: flex; flex-direction: column;
+      border: none; margin: 0; max-width: 100%;
+      font-size: 10pt; line-height: 1.4; color: #111;
+    }
+    .carta-copia-bloque {
+      flex: 1 1 0; min-height: 0; padding: 5mm 0;
+      display: flex; flex-direction: column;
+      justify-content: space-between; overflow: hidden; box-sizing: border-box;
+    }
+    .carta-separador {
+      flex: 0 0 7mm; border-top: 1.5px dashed #444; border-bottom: 1.5px dashed #444;
+      text-align: center; font-size: 7pt; display: flex;
+      align-items: center; justify-content: center;
+      font-family: 'Segoe UI', sans-serif; color: #666; letter-spacing: 2px;
+    }
+    .carta-hro-header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:5px; margin-bottom:6px; }
+    .carta-hro-logo-left { display:flex; align-items:flex-start; gap:8px; }
+    .logo-escudo { font-size:26pt; line-height:1; }
+    .carta-hro-inst { font-size:7.5pt; line-height:1.3; }
+    .carta-hro-logo-right { text-align:right; }
+    .hro-text { font-size:28pt; font-weight:900; font-style:italic; letter-spacing:-2px; line-height:1; display:block; }
+    .hro-sub { font-size:6pt; letter-spacing:1px; text-align:center; margin-top:2px; }
+    .carta-hro-fecha-line { font-size:8.5pt; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:3px; display:flex; gap:5px; align-items:baseline; flex-wrap:wrap; }
+    .fecha-campo { border-bottom:1px solid #000; min-width:50px; display:inline-block; text-align:center; padding:0 3px; }
+    .fecha-mes { min-width:80px; }
+    .carta-hro-destinatario { margin-bottom:6px; font-size:9pt; line-height:1.4; }
+    .carta-hro-body { margin-bottom:4px; flex:1; }
+    .carta-hro-body p { font-size:9pt; margin:0 0 4px; }
+    .carta-underline { border-bottom:1px solid #000; padding-bottom:1px; }
+    .carta-mensaje { font-size:8.5pt; text-transform:uppercase; }
+    .carta-feriados { font-size:8pt; font-style:italic; text-transform:uppercase; margin:1px 0 3px !important; }
+    .carta-fechas-row { display:flex; gap:20px; margin:4px 0; font-size:9pt; }
+    .carta-sujeto { text-align:center; border-top:1px solid #000; border-bottom:1px solid #000; padding:2px 0; margin:4px 0; font-size:8.5pt; }
+    .carta-atentamente { font-size:9pt; margin-top:4px !important; }
+    .carta-hro-firmas { display:flex; justify-content:space-between; margin-top:8px; gap:10px; }
+    .firma-bloque { flex:1; text-align:center; display:flex; flex-direction:column; align-items:center; gap:1px; font-size:8pt; }
+    .firma-linea { width:100%; border-top:1px solid #000; margin-bottom:2px; }
+    .firma-label { font-weight:600; font-size:7.5pt; text-transform:uppercase; }
+    .firma-sub { font-size:7pt; color:#333; }
+    .dias-autorizacion { font-size:9pt; }
+    .carta-solicitud-line { margin-bottom:3px !important; }
+    .carta-tipo-permiso { margin-bottom:3px !important; }
+  </style>
+</head>
+<body>${cartaEl.outerHTML}</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 500);
+  }
 
   // ─── HELPERS ──────────────────────────────────────────────────────
   getEstadoClass(estado: string): string {
