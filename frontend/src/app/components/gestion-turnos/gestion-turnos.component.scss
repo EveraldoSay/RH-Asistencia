@@ -143,6 +143,32 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+/* Estilos para el selector de hora (reloj visual) */
+.timepicker-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.timepicker-wrapper input {
+  cursor: pointer !important;
+  background-color: #fff !important;
+}
+
+.clock-icon {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  font-style: normal;
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+  user-select: none;
+}
+
+.clock-icon:hover {
+  transform: scale(1.2);
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
