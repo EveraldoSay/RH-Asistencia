@@ -442,8 +442,9 @@ export class PermisosComponent implements OnInit {
       tipoPermiso: this.solicitudForm.tipo_permiso_id === -1
         ? (this.solicitudForm.tipo_permiso_otro || '')
         : (tipo?.nombre || ''),
-      mensaje: this.solicitudForm.mensaje_otro
-        || (this.solicitudForm.tipo_permiso_id !== -1 ? (tipo?.mensaje_carta || '') : ''),
+      mensaje: this.solicitudForm.tipo_permiso_id === -1
+        ? (this.solicitudForm.mensaje_otro || '')
+        : (tipo?.mensaje_carta || ''),
       fechaInicio: fmtFecha(this.solicitudForm.fecha_inicio || ''),
       fechaFin: fmtFecha(this.solicitudForm.fecha_fin || ''),
       diasSolicitados: dias,
@@ -459,9 +460,19 @@ export class PermisosComponent implements OnInit {
       this.error = 'Complete todos los campos requeridos';
       return;
     }
-    if (!this.solicitudForm.mensaje_otro?.trim()) {
-      this.error = 'El motivo del permiso es obligatorio';
+    if (this.solicitudForm.tipo_permiso_id === undefined) {
+      this.error = 'Seleccione un tipo de permiso';
       return;
+    }
+    if (this.solicitudForm.tipo_permiso_id === -1) {
+      if (!this.solicitudForm.tipo_permiso_otro?.trim()) {
+        this.error = 'El nombre del permiso es obligatorio';
+        return;
+      }
+      if (!this.solicitudForm.mensaje_otro?.trim()) {
+        this.error = 'El motivo del permiso es obligatorio';
+        return;
+      }
     }
     if (!this.solicitudForm.dias_solicitados || this.solicitudForm.dias_solicitados === 0) {
       this.error = 'El rango de fechas no contiene días hábiles. Verifique las fechas.';
@@ -498,9 +509,15 @@ export class PermisosComponent implements OnInit {
       this.error = 'Las fechas de inicio y fin son obligatorias';
       return;
     }
-    if (!this.solicitudForm.mensaje_otro?.trim()) {
-      this.error = 'El motivo del permiso es obligatorio';
-      return;
+    if (this.solicitudForm.tipo_permiso_id === -1) {
+      if (!this.solicitudForm.tipo_permiso_otro?.trim()) {
+        this.error = 'El nombre del permiso es obligatorio';
+        return;
+      }
+      if (!this.solicitudForm.mensaje_otro?.trim()) {
+        this.error = 'El motivo del permiso es obligatorio';
+        return;
+      }
     }
     if (!this.solicitudForm.dias_solicitados || this.solicitudForm.dias_solicitados === 0) {
       this.error = 'El rango de fechas no contiene días hábiles. Verifique las fechas.';

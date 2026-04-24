@@ -122,15 +122,6 @@
       </div>
     </ng-container>
 
-    <!-- Motivo para tipo predefinido -->
-    <ng-container *ngIf="solicitudForm.tipo_permiso_id !== undefined && solicitudForm.tipo_permiso_id !== -1">
-      <div class="form-group">
-        <label>Motivo del Permiso *</label>
-        <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="250"
-          placeholder="Describa el motivo del permiso" required></textarea>
-      </div>
-    </ng-container>
-
     <!-- Fechas con calendarios -->
     <ng-container *ngIf="solicitudForm.tipo_permiso_id !== undefined">
       <div class="form-row">
@@ -197,24 +188,15 @@
     <ng-container *ngIf="solicitudForm.tipo_permiso_id === -1">
       <div class="form-row">
         <div class="form-group">
-          <label>Nombre del Permiso *</label>
+          <label>Nombre del Permiso</label>
           <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="100"
             placeholder="Ej: Permiso por trámite personal" required>
         </div>
         <div class="form-group">
-          <label>Motivo del Permiso *</label>
+          <label>Motivo del Permiso</label>
           <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="500"
             placeholder="Describa el motivo del permiso" required style="min-height:38px;"></textarea>
         </div>
-      </div>
-    </ng-container>
-
-    <!-- Motivo para tipo predefinido en edición -->
-    <ng-container *ngIf="solicitudForm.tipo_permiso_id !== undefined && solicitudForm.tipo_permiso_id !== -1">
-      <div class="form-group">
-        <label>Motivo del Permiso *</label>
-        <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="500"
-          placeholder="Describa el motivo del permiso" required></textarea>
       </div>
     </ng-container>
 
