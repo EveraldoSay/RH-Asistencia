@@ -112,12 +112,12 @@
         <div class="form-group">
           <label>Nombre del Permiso *</label>
           <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="100"
-            placeholder="Ej: Permiso por trámite personal" required />
+            required />
         </div>
         <div class="form-group">
-          <label>Motivo del Permiso *</label>
+          <label>Motivo del Permiso</label>
           <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="250"
-            placeholder="Describa el motivo del permiso" required></textarea>
+            required></textarea>
         </div>
       </div>
     </ng-container>
@@ -126,11 +126,11 @@
     <ng-container *ngIf="solicitudForm.tipo_permiso_id !== undefined">
       <div class="form-row">
         <div class="form-group">
-          <label>Fecha de Inicio</label>
+          <label>{{ esDiaUnico ? 'Fecha del Permiso' : 'Fecha de Inicio' }}</label>
           <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required
-            [max]="solicitudForm.fecha_fin || ''" />
+            [max]="esDiaUnico ? '' : (solicitudForm.fecha_fin || '')" />
         </div>
-        <div class="form-group">
+        <div class="form-group" *ngIf="!esDiaUnico">
           <label>Fecha de Fin</label>
           <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required
             [min]="solicitudForm.fecha_inicio || ''" />
@@ -190,12 +190,12 @@
         <div class="form-group">
           <label>Nombre del Permiso</label>
           <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="100"
-            placeholder="Ej: Permiso por trámite personal" required>
+            required>
         </div>
         <div class="form-group">
           <label>Motivo del Permiso</label>
-          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="500"
-            placeholder="Describa el motivo del permiso" required style="min-height:38px;"></textarea>
+          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="250" required
+            style="min-height:38px;"></textarea>
         </div>
       </div>
     </ng-container>
@@ -203,11 +203,11 @@
     <!-- Calendarios para controlar días hábiles -->
     <div class="form-row">
       <div class="form-group">
-        <label>Fecha de Inicio</label>
+        <label>{{ esDiaUnico ? 'Fecha del Permiso' : 'Fecha de Inicio' }}</label>
         <input type="date" [(ngModel)]="solicitudForm.fecha_inicio" (change)="calcularDias()" required
-          [max]="solicitudForm.fecha_fin || ''" />
+          [max]="esDiaUnico ? '' : (solicitudForm.fecha_fin || '')" />
       </div>
-      <div class="form-group">
+      <div class="form-group" *ngIf="!esDiaUnico">
         <label>Fecha de Fin</label>
         <input type="date" [(ngModel)]="solicitudForm.fecha_fin" (change)="calcularDias()" required
           [min]="solicitudForm.fecha_inicio || ''" />
@@ -261,7 +261,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre</label>
-          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" maxlength="80"/>
+          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" maxlength="80" />
         </div>
         <div class="form-group form-group-small">
           <label>Días</label>
@@ -269,8 +269,8 @@
         </div>
         <div class="form-group">
           <label>Motivo del Permiso</label>
-          <textarea [(ngModel)]="tipoPermisoForm.mensaje_carta" maxlength="500"
-            placeholder="Motivo predeterminado para este tipo" style="min-height:38px;"></textarea>
+          <textarea [(ngModel)]="tipoPermisoForm.mensaje_carta" maxlength="250" required
+            style="min-height:38px;"></textarea>
         </div>
       </div>
 
@@ -389,8 +389,13 @@
     </p>
 
     <div class="carta-fechas-row">
-      <span>Del <span class="fecha-campo">{{ cartaData.fechaInicio }}</span></span>
-      <span>Al <span class="fecha-campo">{{ cartaData.fechaFin }}</span></span>
+      <ng-container *ngIf="cartaData.fechaInicio === cartaData.fechaFin; else rangoFechas">
+        <span>Fecha: <span class="fecha-campo">{{ cartaData.fechaInicio }}</span></span>
+      </ng-container>
+      <ng-template #rangoFechas>
+        <span>Del <span class="fecha-campo">{{ cartaData.fechaInicio }}</span></span>
+        <span>Al <span class="fecha-campo">{{ cartaData.fechaFin }}</span></span>
+      </ng-template>
     </div>
 
     <p class="carta-sujeto">

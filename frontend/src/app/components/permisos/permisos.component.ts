@@ -189,6 +189,13 @@ export class PermisosComponent implements OnInit {
   // Advertencia de días excedidos
   diasExcedidos = false;
 
+  /** True cuando el tipo seleccionado tiene límite de 1 día */
+  get esDiaUnico(): boolean {
+    if (this.solicitudForm.tipo_permiso_id === -1) return false;
+    const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
+    return tipo?.dias_permitidos === 1;
+  }
+
   // Carta preview
   cartaData = this.initCartaData();
 
@@ -376,9 +383,14 @@ export class PermisosComponent implements OnInit {
     const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
     if (tipo) {
       this.solicitudForm.tipo_permiso_otro = '';
-      // No limpiar mensaje_otro — el usuario ingresa el motivo siempre
     }
     if (this.solicitudForm.tipo_permiso_id === -1) {
+      this.solicitudForm.fecha_inicio = '';
+      this.solicitudForm.fecha_fin = '';
+      this.solicitudForm.dias_solicitados = 0;
+    }
+    // Si es 1 día, limpiar fechas para que el usuario solo elija inicio
+    if (tipo?.dias_permitidos === 1) {
       this.solicitudForm.fecha_inicio = '';
       this.solicitudForm.fecha_fin = '';
       this.solicitudForm.dias_solicitados = 0;
@@ -393,6 +405,10 @@ export class PermisosComponent implements OnInit {
       this.solicitudForm.dias_solicitados = 0;
       this.actualizarCarta();
       return;
+    }
+    // Si es permiso de 1 día, forzar fecha_fin = fecha_inicio
+    if (this.esDiaUnico) {
+      this.solicitudForm.fecha_fin = this.solicitudForm.fecha_inicio;
     }
     const inicio = parseFechaLocal(this.solicitudForm.fecha_inicio);
     const fin = parseFechaLocal(this.solicitudForm.fecha_fin);
@@ -587,6 +603,10 @@ export class PermisosComponent implements OnInit {
   guardarTipoPermiso() {
     if (!this.tipoPermisoForm.nombre?.trim() || !this.tipoPermisoForm.dias_permitidos) {
       this.error = 'Complete nombre y días';
+      return;
+    }
+    if (!this.tipoPermisoForm.mensaje_carta?.trim()) {
+      this.error = 'El motivo del permiso es obligatorio';
       return;
     }
     this.loading = true;
