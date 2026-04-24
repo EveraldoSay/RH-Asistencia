@@ -376,7 +376,7 @@ export class PermisosComponent implements OnInit {
     const tipo = this.tiposPermiso.find(t => t.id === this.solicitudForm.tipo_permiso_id);
     if (tipo) {
       this.solicitudForm.tipo_permiso_otro = '';
-      this.solicitudForm.mensaje_otro = '';
+      // No limpiar mensaje_otro — el usuario ingresa el motivo siempre
     }
     if (this.solicitudForm.tipo_permiso_id === -1) {
       this.solicitudForm.fecha_inicio = '';
@@ -442,9 +442,8 @@ export class PermisosComponent implements OnInit {
       tipoPermiso: this.solicitudForm.tipo_permiso_id === -1
         ? (this.solicitudForm.tipo_permiso_otro || '')
         : (tipo?.nombre || ''),
-      mensaje: this.solicitudForm.tipo_permiso_id === -1
-        ? (this.solicitudForm.mensaje_otro || '')
-        : (tipo?.mensaje_carta || ''),
+      mensaje: this.solicitudForm.mensaje_otro
+        || (this.solicitudForm.tipo_permiso_id !== -1 ? (tipo?.mensaje_carta || '') : ''),
       fechaInicio: fmtFecha(this.solicitudForm.fecha_inicio || ''),
       fechaFin: fmtFecha(this.solicitudForm.fecha_fin || ''),
       diasSolicitados: dias,
@@ -458,6 +457,10 @@ export class PermisosComponent implements OnInit {
   guardarSolicitud() {
     if (!this.solicitudForm.empleado_id || !this.solicitudForm.fecha_inicio || !this.solicitudForm.fecha_fin) {
       this.error = 'Complete todos los campos requeridos';
+      return;
+    }
+    if (!this.solicitudForm.mensaje_otro?.trim()) {
+      this.error = 'El motivo del permiso es obligatorio';
       return;
     }
     if (!this.solicitudForm.dias_solicitados || this.solicitudForm.dias_solicitados === 0) {
@@ -493,6 +496,10 @@ export class PermisosComponent implements OnInit {
     if (!this.editingPermiso) return;
     if (!this.solicitudForm.fecha_inicio || !this.solicitudForm.fecha_fin) {
       this.error = 'Las fechas de inicio y fin son obligatorias';
+      return;
+    }
+    if (!this.solicitudForm.mensaje_otro?.trim()) {
+      this.error = 'El motivo del permiso es obligatorio';
       return;
     }
     if (!this.solicitudForm.dias_solicitados || this.solicitudForm.dias_solicitados === 0) {
