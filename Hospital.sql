@@ -573,9 +573,8 @@ CREATE TABLE `permisos` (
 -- Insertar algunos tipos de permiso por defecto
 LOCK TABLES `tipos_permiso` WRITE;
 INSERT INTO `tipos_permiso` (`nombre`, `dias_permitidos`, `mensaje_carta`) VALUES
-('Permiso por enfermedad', 3, 'Por medio de la presente solicito permiso por motivos de salud.'),
-('Permiso por asuntos personales', 1, 'Solicito permiso para atender asuntos personales urgentes.'),
-('Permiso por fallecimiento familiar', 3, 'Solicito permiso por fallecimiento de familiar directo.'),
-('Permiso por matrimonio', 5, 'Solicito permiso por motivo de matrimonio.'),
-('Permiso por maternidad/paternidad', 15, 'Solicito permiso por nacimiento de hijo/a.');
+('Permiso por vacaciones', 30, 'A cuenta de vacaciones del presente período'),
+('Permiso por cumpleaños', 1, 'A razon de celebración de cumpleaños'),
+('Permiso por cita al IGGS', 3, 'Por motivo de cita al Instituno Nacional de Seguridad Social'),
+('Permiso por suspensión médica', 5, 'Por motivo de problema de salud que requiere reposo/tratamiento');
 UNLOCK TABLES;
