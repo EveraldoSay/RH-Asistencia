@@ -324,9 +324,7 @@
     </div>
 
     <!-- ── SEPARADOR ── -->
-    <div class="carta-separador">
-      <span>RECORTAR AQUÍ</span>
-    </div>
+    <div class="carta-separador"><span>✂</span></div>
 
     <!-- ── COPIA 2 ── -->
     <div class="carta-copia-bloque">
@@ -375,55 +373,45 @@
         <strong>{{ cartaData.diasEnLetras }} ({{ cartaData.diasSolicitados }}) DÍAS HÁBILES</strong>
       </span>
     </p>
-
     <p class="carta-tipo-permiso">
       <span class="carta-underline"><strong>PERMISO POR {{ cartaData.tipoPermiso | uppercase }}</strong></span>
     </p>
     <p class="carta-mensaje">{{ cartaData.mensaje }}</p>
-
     <p *ngIf="cartaData.feriadosIncluidos.length > 0" class="carta-feriados">
       Incluye feriados: {{ cartaData.feriadosIncluidos.join(', ') }}
     </p>
     <p *ngIf="cartaData.finesDeSemanaCont > 0" class="carta-feriados">
       Incluye {{ cartaData.finesDeSemanaCont }} día(s) de fin de semana
     </p>
-
     <div class="carta-fechas-row">
-      <ng-container *ngIf="cartaData.fechaInicio === cartaData.fechaFin; else rangoFechas">
-        <span>Fecha: <span class="fecha-campo">{{ cartaData.fechaInicio }}</span></span>
-      </ng-container>
-      <ng-template #rangoFechas>
+      <span *ngIf="cartaData.fechaInicio === cartaData.fechaFin">
+        Fecha: <span class="fecha-campo">{{ cartaData.fechaInicio }}</span>
+      </span>
+      <ng-container *ngIf="cartaData.fechaInicio !== cartaData.fechaFin">
         <span>Del <span class="fecha-campo">{{ cartaData.fechaInicio }}</span></span>
         <span>Al <span class="fecha-campo">{{ cartaData.fechaFin }}</span></span>
-      </ng-template>
+      </ng-container>
     </div>
-
     <p class="carta-sujeto">
       <strong>SUJETO A PREVIA AUTORIZACIÓN DEL JEFE INMEDIATO</strong>
     </p>
-
     <p class="carta-atentamente">Atentamente,</p>
   </div>
 
   <div class="carta-hro-firmas">
-    <div class="firma-bloque firma-solicitante">
+    <div class="firma-bloque">
       <div class="firma-linea"></div>
-      <strong>{{ cartaData.nombreEmpleado | uppercase }}</strong>
-      <span *ngIf="cartaData.rol">{{ cartaData.rol | uppercase }}</span>
-      <span *ngIf="cartaData.renglon">PERSONAL {{ cartaData.renglon }}</span>
+      <strong>EVELYN DE JESUS ORDOÑEZ RODRIGUEZ</strong>
       <span class="firma-label">JEFE DE SERVICIO</span>
+      <span>PERSONAL 011</span>
     </div>
     <div class="firma-bloque">
       <div class="firma-linea"></div>
       <span class="firma-label">JEFE DE DEPARTAMENTO</span>
     </div>
-  </div>
-
-  <div class="carta-hro-firmas" style="margin-top:1rem;">
     <div class="firma-bloque">
       <div class="firma-linea"></div>
       <span class="firma-label">JEFE DE PERSONAL</span>
-      <span *ngIf="cartaData.area" class="firma-sub">{{ cartaData.area | uppercase }}</span>
     </div>
     <div class="firma-bloque">
       <div class="firma-linea"></div>

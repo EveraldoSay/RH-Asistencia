@@ -392,14 +392,14 @@
 }
 
 .carta-separador {
-  border-top: 2px dashed #999;
-  border-bottom: 2px dashed #999;
+  border-top: 1.5px dashed #999;
+  border-bottom: none;
   text-align: center;
-  padding: 3px 0;
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: #888;
+  padding: 8px 0 2px;
+  font-size: 16px;
+  color: #666;
   font-family: 'Segoe UI', sans-serif;
+  margin: 8px 0 0;
 }
 
 /* Header con logos */
@@ -664,13 +664,13 @@
   }
 
   .carta-separador {
-    flex: 0 0 6mm !important;
+    flex: 0 0 8mm !important;
     border-top: 1.5px dashed #444 !important;
-    border-bottom: 1.5px dashed #444 !important;
-    padding: 1mm 0 !important;
-    font-size: 7pt !important;
+    border-bottom: none !important;
+    padding: 2mm 0 0 !important;
+    font-size: 14pt !important;
     display: flex !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     justify-content: center !important;
   }
 
