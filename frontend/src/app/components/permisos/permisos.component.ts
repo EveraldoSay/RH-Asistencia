@@ -699,8 +699,8 @@ export class PermisosComponent implements OnInit {
     .carta-feriados { font-size:8pt; font-style:italic; text-transform:uppercase; margin:1px 0 3px !important; }
     .carta-fechas-row { display:flex; gap:20px; margin:4px 0; font-size:9pt; }
     .carta-sujeto { text-align:center; border-top:1px solid #000; border-bottom:1px solid #000; padding:2px 0; margin:4px 0; font-size:8.5pt; }
-    .carta-atentamente { font-size:9pt; margin-top:4px !important; }
-    .carta-hro-firmas { display:flex !important; flex-direction:row !important; justify-content:space-between !important; margin-top:8px; gap:6px; width:100%; }
+    .carta-atentamente { font-size:9pt; margin-top:4px !important; margin-bottom:30pt !important; }
+    .carta-hro-firmas { display:flex !important; flex-direction:row !important; justify-content:space-between !important; margin-top:0; gap:6px; width:100%; }
     .firma-bloque { flex:1 1 0 !important; min-width:0 !important; text-align:center !important; display:flex !important; flex-direction:column !important; align-items:center !important; gap:1px; font-size:7.5pt; }
     .firma-linea { width:100% !important; border-top:1px solid #000 !important; margin-bottom:2px; display:block !important; }
     .firma-label { font-weight:600; font-size:7pt; text-transform:uppercase; display:block !important; }

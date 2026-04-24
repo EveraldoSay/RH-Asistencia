@@ -324,7 +324,7 @@
     </div>
 
     <!-- ── SEPARADOR ── -->
-    <div class="carta-separador"><span>✂</span></div>
+    <div class="carta-separador"></div>
 
     <!-- ── COPIA 2 ── -->
     <div class="carta-copia-bloque">
@@ -381,7 +381,7 @@
       Incluye feriados: {{ cartaData.feriadosIncluidos.join(', ') }}
     </p>
     <p *ngIf="cartaData.finesDeSemanaCont > 0" class="carta-feriados">
-      Incluye {{ cartaData.finesDeSemanaCont }} día(s) de fin de semana
+      No incluye {{ cartaData.finesDeSemanaCont }} día(s) de fin de semana
     </p>
     <div class="carta-fechas-row">
       <span *ngIf="cartaData.fechaInicio === cartaData.fechaFin">

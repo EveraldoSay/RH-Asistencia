@@ -395,11 +395,11 @@
   border-top: 1.5px dashed #999;
   border-bottom: none;
   text-align: center;
-  padding: 8px 0 2px;
+  padding: 0;
   font-size: 16px;
   color: #666;
   font-family: 'Segoe UI', sans-serif;
-  margin: 8px 0 0;
+  margin: 18px 0 0;
 }
 
 /* Header con logos */
@@ -523,6 +523,7 @@
 
 .carta-atentamente {
   margin-top: 12px !important;
+  margin-bottom: 50px !important;
   font-size: 12px;
 }
 
