@@ -371,6 +371,23 @@ class PermisosController {
 // RUTAS
 // ============================================
 
+// Todos los permisos vigentes hoy (para vista de empleados)
+router.get('/vigentes-hoy', requireAuth, async (req, res) => {
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+    const [rows] = await db.query(`
+      SELECT p.empleado_id, p.estado, p.fecha_inicio, p.fecha_fin
+      FROM permisos p
+      WHERE p.estado IN ('AUTORIZADO', 'PENDIENTE')
+        AND p.fecha_inicio <= ? AND p.fecha_fin >= ?
+      ORDER BY p.estado ASC
+    `, [hoy, hoy]);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Verificar permisos vigentes de un empleado en un rango de fechas
 router.get('/empleado/:id/vigente', requireAuth, async (req, res) => {
   try {

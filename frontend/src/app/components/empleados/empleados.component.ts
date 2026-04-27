@@ -31,6 +31,8 @@ export class EmpleadosComponent implements OnInit {
 
   // Mapa de permisos vigentes por empleado_id
   permisosVigentes = new Map<number, { estado: string; fecha_inicio: string; fecha_fin: string }>();
+  // Objeto plano para detección de cambios de Angular
+  permisosVigentesObj: Record<number, { estado: string; fecha_inicio: string; fecha_fin: string }> = {};
 
   showForm = false;
   editingEmpleado: Empleado | null = null;
@@ -275,38 +277,32 @@ export class EmpleadosComponent implements OnInit {
   }
 
   cargarPermisosVigentes() {
-    const hoy = new Date().toISOString().split('T')[0];
-    const nuevoMapa = new Map<number, { estado: string; fecha_inicio: string; fecha_fin: string }>();
-    let pendientes = this.empleados.filter(e => e.id).length;
-
-    if (pendientes === 0) return;
-
-    this.empleados.forEach(emp => {
-      if (!emp.id) return;
-      this.permisosSvc.getPermisosVigentes(emp.id, hoy, hoy).subscribe({
-        next: (res) => {
-          if (res.success && res.permisos?.length > 0) {
-            const p = res.permisos[0];
-            nuevoMapa.set(emp.id!, {
-              estado: p.estado,
-              fecha_inicio: p.fecha_inicio,
-              fecha_fin: p.fecha_fin
-            });
-          }
-          pendientes--;
-          // Cuando terminaron todas las llamadas, reemplazar el mapa completo
-          if (pendientes === 0) {
-            this.permisosVigentes = new Map(nuevoMapa);
-          }
-        },
-        error: () => { pendientes--; }
-      });
+    this.permisosSvc.getPermisosVigentesHoy().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const nuevoObj: Record<number, { estado: string; fecha_inicio: string; fecha_fin: string }> = {};
+          // Si un empleado tiene AUTORIZADO y PENDIENTE, AUTORIZADO tiene prioridad
+          res.data.forEach((p: any) => {
+            const existing = nuevoObj[p.empleado_id];
+            if (!existing || p.estado === 'AUTORIZADO') {
+              nuevoObj[p.empleado_id] = {
+                estado: p.estado,
+                fecha_inicio: p.fecha_inicio,
+                fecha_fin: p.fecha_fin
+              };
+            }
+          });
+          this.permisosVigentesObj = { ...nuevoObj };
+          this.permisosVigentes = new Map(Object.entries(nuevoObj).map(([k, v]) => [Number(k), v]));
+        }
+      },
+      error: () => {}
     });
   }
 
   getEstadoEmpleado(emp: Empleado): string {
     if (!emp.activo) return 'Inactivo';
-    const permiso = this.permisosVigentes.get(emp.id!);
+    const permiso = this.permisosVigentesObj[emp.id!];
     if (permiso?.estado === 'AUTORIZADO') return 'Con Permiso';
     if (permiso?.estado === 'PENDIENTE') return 'Permiso Pendiente';
     return 'Activo';
@@ -314,7 +310,7 @@ export class EmpleadosComponent implements OnInit {
 
   getEstadoEmpleadoClass(emp: Empleado): string {
     if (!emp.activo) return 'status-inactive';
-    const permiso = this.permisosVigentes.get(emp.id!);
+    const permiso = this.permisosVigentesObj[emp.id!];
     if (permiso?.estado === 'AUTORIZADO') return 'status-permiso';
     if (permiso?.estado === 'PENDIENTE') return 'status-permiso-pendiente';
     return 'status-active';

@@ -47,7 +47,7 @@ export interface ApiResponse<T> {
 export class PermisosService {
   private apiUrl = `${environment.apiBase}/permisos`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // Tipos de permiso
   getTiposPermiso(): Observable<ApiResponse<TipoPermiso[]>> {
@@ -93,6 +93,10 @@ export class PermisosService {
 
   getPermisosVigentes(empleadoId: number, desde: string, hasta: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/empleado/${empleadoId}/vigente?desde=${desde}&hasta=${hasta}`);
+  }
+
+  getPermisosVigentesHoy(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/vigentes-hoy`);
   }
 
   getTurnosEnRango(empleadoId: number, desde: string, hasta: string): Observable<any> {
