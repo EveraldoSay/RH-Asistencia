@@ -50,13 +50,13 @@ export class EmpleadosComponent implements OnInit {
   };
 
   // Nuevas propiedades para gestión de supervisión
-  supervision: 'NINGUNO'|'ESPECIFICO'|'TITULAR' = 'NINGUNO';
+  supervision: 'NINGUNO' | 'ESPECIFICO' | 'TITULAR' = 'NINGUNO';
 
   // mini forms
   showNewRolForm = false;
   showNewAreaForm = false;
-  newArea = { nombre_area: '',  descripcion: '' };
-  newRol = { nombre_rol: '',  descripcion: '' };
+  newArea = { nombre_area: '', descripcion: '' };
+  newRol = { nombre_rol: '', descripcion: '' };
 
   // errores de servidor por campo
   serverErrors = {
@@ -79,7 +79,7 @@ export class EmpleadosComponent implements OnInit {
     private areasSvc: AreasService,
     private kc: KeycloakService,
     private permisosSvc: PermisosService
-  ) {}
+  ) { }
 
   // texto de busqueda
   searchTerm = '';
@@ -198,7 +198,7 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
-    syncBiometricUsers() {
+  syncBiometricUsers() {
     if (!confirm('La consulta tardara un momento. ¿Desea continuar?')) {
       return;
     }
@@ -276,20 +276,30 @@ export class EmpleadosComponent implements OnInit {
 
   cargarPermisosVigentes() {
     const hoy = new Date().toISOString().split('T')[0];
+    const nuevoMapa = new Map<number, { estado: string; fecha_inicio: string; fecha_fin: string }>();
+    let pendientes = this.empleados.filter(e => e.id).length;
+
+    if (pendientes === 0) return;
+
     this.empleados.forEach(emp => {
       if (!emp.id) return;
       this.permisosSvc.getPermisosVigentes(emp.id, hoy, hoy).subscribe({
         next: (res) => {
           if (res.success && res.permisos?.length > 0) {
             const p = res.permisos[0];
-            this.permisosVigentes.set(emp.id!, {
+            nuevoMapa.set(emp.id!, {
               estado: p.estado,
               fecha_inicio: p.fecha_inicio,
               fecha_fin: p.fecha_fin
             });
           }
+          pendientes--;
+          // Cuando terminaron todas las llamadas, reemplazar el mapa completo
+          if (pendientes === 0) {
+            this.permisosVigentes = new Map(nuevoMapa);
+          }
         },
-        error: () => {} // silencioso
+        error: () => { pendientes--; }
       });
     });
   }
@@ -333,26 +343,26 @@ export class EmpleadosComponent implements OnInit {
   }
 
   saveRol(form?: NgForm) {
-  if (form && form.invalid) return;
-  const { nombre_rol, descripcion } = this.newRol;
-  if (!nombre_rol?.trim()) return;
+    if (form && form.invalid) return;
+    const { nombre_rol, descripcion } = this.newRol;
+    if (!nombre_rol?.trim()) return;
 
-  this.loading = true;
-  this.empleadosService.createRol({ nombre_rol: nombre_rol.trim(), descripcion: (descripcion ?? '').trim() || null })
-    .subscribe({
-      next: (r) => {
-        this.loading = false;
-        if (r.success) {
-          this.newRol = { nombre_rol: '', descripcion: '' };
-          this.showNewRolForm = false;
-          this.loadRoles();
-        } else {
-          this.error = r.error || 'Error creando rol';
-        }
-      },
-      error: () => { this.loading = false; this.error = 'Error de conexión al servidor'; }
-    });
-}
+    this.loading = true;
+    this.empleadosService.createRol({ nombre_rol: nombre_rol.trim(), descripcion: (descripcion ?? '').trim() || null })
+      .subscribe({
+        next: (r) => {
+          this.loading = false;
+          if (r.success) {
+            this.newRol = { nombre_rol: '', descripcion: '' };
+            this.showNewRolForm = false;
+            this.loadRoles();
+          } else {
+            this.error = r.error || 'Error creando rol';
+          }
+        },
+        error: () => { this.loading = false; this.error = 'Error de conexión al servidor'; }
+      });
+  }
 
   showCreateForm() {
     this.showForm = true;
@@ -403,7 +413,7 @@ export class EmpleadosComponent implements OnInit {
     input.value = sanitized;
     this.empleadofrorm.nombre_completo = sanitized;
   }
-  
+
   onEmailInput(ev: Event) {
     const input = ev.target as HTMLInputElement;
     const sanitized = (input.value || '').trim().toLowerCase();
@@ -438,17 +448,17 @@ export class EmpleadosComponent implements OnInit {
         : this.empleadosService.createEmpleado(this.empleadofrorm);
 
       const response: any = await firstValueFrom(op);
-      
+
       if (!response.success) {
         this.error = response.error || 'Error guardando empleado';
         this.loading = false;
         return;
       }
 
-      const empleadoId = this.editingEmpleado 
-        ? this.editingEmpleado.id 
+      const empleadoId = this.editingEmpleado
+        ? this.editingEmpleado.id
         : response?.data?.id;
-      
+
       const areaId = this.empleadofrorm.area_id;
 
       // 2) Sincronizar supervisor en el área
@@ -472,10 +482,10 @@ export class EmpleadosComponent implements OnInit {
       // 3) OK UI
       this.loadEmpleados();
       this.cancelForm();
-      
+
     } catch (err: any) {
       this.loading = false;
-      
+
       if (err?.status === 409) {
         const field = (err.error?.field || '').toString().toLowerCase();
         const msg = (err.error?.error || '').toLowerCase();
@@ -509,7 +519,7 @@ export class EmpleadosComponent implements OnInit {
   }
 
   canCreateEdit(): boolean { return this.hasRole('rrhh', this.userInfo); }
-  canDelete(): boolean     { return this.hasRole('rrhh', this.userInfo); }
+  canDelete(): boolean { return this.hasRole('rrhh', this.userInfo); }
 
   //  Métodos CRUD de Empleados
   deactivateEmpleado(emp: any) {
