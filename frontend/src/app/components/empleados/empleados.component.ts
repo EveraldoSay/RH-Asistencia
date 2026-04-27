@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { EmpleadosService, Empleado, ApiResponse, Rol, Area } from "../../services/empleados.service";
 import { AreasService } from "../../services/areass.service";
+import { PermisosService } from "../../services/permisos.service";
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { KeycloakService } from 'keycloak-angular';
@@ -27,6 +28,9 @@ export class EmpleadosComponent implements OnInit {
   areas: Area[] = [];
   loading = false;
   error: string | null = null;
+
+  // Mapa de permisos vigentes por empleado_id
+  permisosVigentes = new Map<number, { estado: string; fecha_inicio: string; fecha_fin: string }>();
 
   showForm = false;
   editingEmpleado: Empleado | null = null;
@@ -73,7 +77,8 @@ export class EmpleadosComponent implements OnInit {
   constructor(
     private empleadosService: EmpleadosService,
     private areasSvc: AreasService,
-    private kc: KeycloakService
+    private kc: KeycloakService,
+    private permisosSvc: PermisosService
   ) {}
 
   // texto de busqueda
@@ -255,6 +260,7 @@ export class EmpleadosComponent implements OnInit {
       next: (response: any) => {
         if (response.success && response.data) {
           this.empleados = response.data;
+          this.cargarPermisosVigentes();
         } else {
           this.error = response.error || 'Error cargando empleados';
         }
@@ -266,6 +272,42 @@ export class EmpleadosComponent implements OnInit {
         console.error('Error:', err);
       }
     });
+  }
+
+  cargarPermisosVigentes() {
+    const hoy = new Date().toISOString().split('T')[0];
+    this.empleados.forEach(emp => {
+      if (!emp.id) return;
+      this.permisosSvc.getPermisosVigentes(emp.id, hoy, hoy).subscribe({
+        next: (res) => {
+          if (res.success && res.permisos?.length > 0) {
+            const p = res.permisos[0];
+            this.permisosVigentes.set(emp.id!, {
+              estado: p.estado,
+              fecha_inicio: p.fecha_inicio,
+              fecha_fin: p.fecha_fin
+            });
+          }
+        },
+        error: () => {} // silencioso
+      });
+    });
+  }
+
+  getEstadoEmpleado(emp: Empleado): string {
+    if (!emp.activo) return 'Inactivo';
+    const permiso = this.permisosVigentes.get(emp.id!);
+    if (permiso?.estado === 'AUTORIZADO') return 'Con Permiso';
+    if (permiso?.estado === 'PENDIENTE') return 'Permiso Pendiente';
+    return 'Activo';
+  }
+
+  getEstadoEmpleadoClass(emp: Empleado): string {
+    if (!emp.activo) return 'status-inactive';
+    const permiso = this.permisosVigentes.get(emp.id!);
+    if (permiso?.estado === 'AUTORIZADO') return 'status-permiso';
+    if (permiso?.estado === 'PENDIENTE') return 'status-permiso-pendiente';
+    return 'status-active';
   }
 
   saveArea(form?: NgForm) {

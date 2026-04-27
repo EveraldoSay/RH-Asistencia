@@ -306,12 +306,13 @@ router.get('/buscar-empleados', requireAuth, async (req, res) => {
 
     // Verificar qué columnas existen en tu tabla empleados
     const [empleados] = await db.query(`
-        SELECT id, nombre_completo, renglon 
-        FROM empleados 
-        WHERE (nombre_completo LIKE ? OR renglon LIKE ?) 
-          AND eliminado_en IS NULL
-          AND activo = 1
-        ORDER BY nombre_completo 
+        SELECT e.id, e.nombre_completo, e.renglon, a.nombre_area
+        FROM empleados e
+        LEFT JOIN areas a ON e.area_id = a.id
+        WHERE (e.nombre_completo LIKE ? OR e.renglon LIKE ?) 
+          AND e.eliminado_en IS NULL
+          AND e.activo = 1
+        ORDER BY e.nombre_completo 
         LIMIT 20
       `, [`%${query}%`, `%${query}%`]);
 

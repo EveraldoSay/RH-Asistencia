@@ -90,4 +90,20 @@ export class PermisosService {
   deletePermiso(id: number): Observable<ApiResponse<any>> {
     return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/${id}`);
   }
+
+  getPermisosVigentes(empleadoId: number, desde: string, hasta: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/empleado/${empleadoId}/vigente?desde=${desde}&hasta=${hasta}`);
+  }
+
+  getTurnosEnRango(empleadoId: number, desde: string, hasta: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/empleado/${empleadoId}/turnos-en-rango?desde=${desde}&hasta=${hasta}`);
+  }
+
+  getReportePermisos(params: { desde: string; hasta: string; area_id?: number; empleado_id?: number; estado?: string }): Observable<any> {
+    let query = `desde=${params.desde}&hasta=${params.hasta}`;
+    if (params.area_id) query += `&area_id=${params.area_id}`;
+    if (params.empleado_id) query += `&empleado_id=${params.empleado_id}`;
+    if (params.estado) query += `&estado=${params.estado}`;
+    return this.http.get<any>(`${this.apiUrl}/reporte?${query}`);
+  }
 }

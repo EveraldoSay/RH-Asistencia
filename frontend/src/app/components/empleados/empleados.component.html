@@ -258,8 +258,8 @@
           <td>{{ emp.email || '—' }}</td>
           <td>{{ getRolNombre(emp.rol_id) }}</td>
           <td>{{ getAreaNombre(emp.area_id) }}</td>
-          <td [class.status-active]="emp.activo" [class.status-inactive]="!emp.activo">
-            {{ emp.activo ? 'Activo' : 'Inactivo' }}
+          <td [ngClass]="getEstadoEmpleadoClass(emp)">
+            {{ getEstadoEmpleado(emp) }}
           </td>
           <td *ngIf="canCreateEdit() || canDelete()" class="action-buttons">
             <div class="actions-inline">

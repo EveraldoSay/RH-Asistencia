@@ -502,9 +502,27 @@ export class PermisosComponent implements OnInit {
       this.error = `Los días hábiles (${this.solicitudForm.dias_solicitados}) exceden el límite del tipo de permiso (${tipo?.dias_permitidos} días).`;
       return;
     }
+
+    // Verificar si tiene turno asignado en ese rango
+    this.permisosSvc.getTurnosEnRango(
+      this.solicitudForm.empleado_id!,
+      this.solicitudForm.fecha_inicio!,
+      this.solicitudForm.fecha_fin!
+    ).subscribe({
+      next: (res) => {
+        if (res.tieneTurnos) {
+          const turnos = res.turnos.map((t: any) => `${t.nombre_turno} (${t.fecha_inicio} - ${t.fecha_fin})`).join(', ');
+          if (!confirm(`⚠️ Este empleado tiene turno(s) asignado(s) en este período:\n${turnos}\n\n¿Desea crear el permiso de todas formas?`)) return;
+        }
+        this.ejecutarGuardarSolicitud();
+      },
+      error: () => this.ejecutarGuardarSolicitud() // si falla la verificación, continuar
+    });
+  }
+
+  private ejecutarGuardarSolicitud() {
     this.loading = true;
     const data: any = { ...this.solicitudForm };
-    // Permiso personalizado: no asociar tipo_permiso_id
     if (data.tipo_permiso_id === -1) {
       data.tipo_permiso_id = null;
     } else {
@@ -547,6 +565,25 @@ export class PermisosComponent implements OnInit {
       this.error = `Los días hábiles (${this.solicitudForm.dias_solicitados}) exceden el límite del tipo de permiso (${tipo?.dias_permitidos} días).`;
       return;
     }
+
+    // Verificar turnos asignados en el rango
+    this.permisosSvc.getTurnosEnRango(
+      this.solicitudForm.empleado_id!,
+      this.solicitudForm.fecha_inicio!,
+      this.solicitudForm.fecha_fin!
+    ).subscribe({
+      next: (res) => {
+        if (res.tieneTurnos) {
+          const turnos = res.turnos.map((t: any) => `${t.nombre_turno} (${t.fecha_inicio} - ${t.fecha_fin})`).join(', ');
+          if (!confirm(`⚠️ Este empleado tiene turno(s) asignado(s) en este período:\n${turnos}\n\n¿Desea actualizar el permiso de todas formas?`)) return;
+        }
+        this.ejecutarActualizarPermiso();
+      },
+      error: () => this.ejecutarActualizarPermiso()
+    });
+  }
+
+  private ejecutarActualizarPermiso() {
     this.loading = true;
     const data: any = { ...this.solicitudForm };
     if (data.tipo_permiso_id === -1) {
@@ -555,7 +592,7 @@ export class PermisosComponent implements OnInit {
       data.tipo_permiso_otro = null;
       data.mensaje_otro = null;
     }
-    this.permisosSvc.updatePermiso(this.editingPermiso.id!, data).subscribe({
+    this.permisosSvc.updatePermiso(this.editingPermiso!.id!, data).subscribe({
       next: (res) => {
         this.loading = false;
         if (res.success) { this.volverATabla(); }
@@ -568,6 +605,25 @@ export class PermisosComponent implements OnInit {
   // ─── ESTADO ───────────────────────────────────────────────────────
   cambiarEstado(permiso: Permiso, estado: 'PENDIENTE' | 'AUTORIZADO') {
     if (!confirm(`¿Cambiar estado a ${estado}?`)) return;
+
+    if (estado === 'AUTORIZADO') {
+      // Verificar si tiene turno asignado en ese rango antes de autorizar
+      this.permisosSvc.getTurnosEnRango(permiso.empleado_id, permiso.fecha_inicio, permiso.fecha_fin).subscribe({
+        next: (res) => {
+          if (res.tieneTurnos) {
+            const turnos = res.turnos.map((t: any) => `${t.nombre_turno} (${t.fecha_inicio} - ${t.fecha_fin})`).join(', ');
+            if (!confirm(`⚠️ ${permiso.nombre_completo} tiene turno(s) asignado(s) en este período:\n${turnos}\n\n¿Desea autorizar el permiso de todas formas?`)) return;
+          }
+          this.ejecutarCambioEstado(permiso, estado);
+        },
+        error: () => this.ejecutarCambioEstado(permiso, estado)
+      });
+    } else {
+      this.ejecutarCambioEstado(permiso, estado);
+    }
+  }
+
+  private ejecutarCambioEstado(permiso: Permiso, estado: 'PENDIENTE' | 'AUTORIZADO') {
     this.loading = true;
     this.permisosSvc.updateEstadoPermiso(permiso.id!, estado).subscribe({
       next: (res) => {

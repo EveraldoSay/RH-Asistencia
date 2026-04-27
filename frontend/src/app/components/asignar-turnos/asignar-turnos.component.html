@@ -12,11 +12,6 @@
 
   <!-- Vista HOME - Pantalla de selección inicial -->
   <section *ngIf="vista === 'HOME'" class="card selection-card">
-    <h2>Seleccione el tipo de turno</h2>
-    <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 2rem;">
-      Elija el sistema de turnos que mejor se adapte a las necesidades de su área
-    </p>
-
     <div class="selection-options">
       <div class="option-card" (click)="abrirVistaRotativos()">
         <div class="option-icon"></div>
@@ -248,18 +243,31 @@
         <!-- En la lista de empleados disponibles, actualiza esta parte: -->
         <div class="empleados-grid">
           <label *ngFor="let e of empleadosFiltrados; trackBy: trackByEmpleadoId" class="empleado-card"
-            [class.selected]="isEmpleadoSeleccionado(e.id)" [class.not-selectable]="!isEmpleadoSeleccionable(e)">
-            <input type="checkbox" [checked]="isEmpleadoSeleccionado(e.id)" [disabled]="!isEmpleadoSeleccionable(e)"
+            [class.selected]="isEmpleadoSeleccionado(e.id)"
+            [class.not-selectable]="!isEmpleadoSeleccionable(e) || tienePermisoAutorizado(e.id)"
+            [class.permiso-autorizado]="tienePermisoAutorizado(e.id)"
+            [class.permiso-pendiente]="!tienePermisoAutorizado(e.id) && tienePermisoPendiente(e.id)">
+            <input type="checkbox" [checked]="isEmpleadoSeleccionado(e.id)"
+              [disabled]="!isEmpleadoSeleccionable(e) || tienePermisoAutorizado(e.id)"
               (change)="toggleEmpleadoEquipo(e)" />
             <div class="info">
               <span class="name">{{ e.nombre_completo }}</span>
               <span class="rol">{{ getRolNombre(e.rol_id) }}</span>
 
-              <!-- Estado del área - MEJORADO -->
+              <!-- Badge de permiso -->
+              <span *ngIf="tienePermisoAutorizado(e.id)" class="badge-permiso badge-permiso-autorizado"
+                [title]="getPermisoEmpleado(e.id)?.detalle">
+                🔒 Permiso autorizado
+              </span>
+              <span *ngIf="!tienePermisoAutorizado(e.id) && tienePermisoPendiente(e.id)"
+                class="badge-permiso badge-permiso-pendiente"
+                [title]="getPermisoEmpleado(e.id)?.detalle">
+                ⚠️ Permiso pendiente
+              </span>
+
+              <!-- Estado del área -->
               <div class="estado-area">
-                <span *ngIf="!e.area_id" class="estado disponible">
-                  Disponible
-                </span>
+                <span *ngIf="!e.area_id" class="estado disponible">Disponible</span>
                 <span *ngIf="e.area_id && e.area_id === areaJefeForm.controls.area_id.value"
                   class="estado asignado-actual">
                   En esta área: {{ getAreaNombre(e.area_id) }}
@@ -269,10 +277,6 @@
                   Ocupado en: {{ getAreaNombre(e.area_id) }}
                 </span>
               </div>
-
-              <small class="disponibilidad" [class.disponible]="!e.area_id" [class.asignado]="e.area_id">
-                {{ e.area_id ? 'Asignado' : 'Disponible' }}
-              </small>
             </div>
           </label>
         </div>

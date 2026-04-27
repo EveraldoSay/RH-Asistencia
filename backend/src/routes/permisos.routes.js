@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db.js');
 const { audit } = require('../utils/audit.js');
+const { requireAuth } = require('../middlewares/auth.js');
 const router = express.Router();
 
 // MODELO - Tipos de Permiso
@@ -369,6 +370,113 @@ class PermisosController {
 // ============================================
 // RUTAS
 // ============================================
+
+// Verificar permisos vigentes de un empleado en un rango de fechas
+router.get('/empleado/:id/vigente', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { desde, hasta } = req.query;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ success: false, error: 'Se requieren desde y hasta' });
+    }
+
+    const [rows] = await db.query(`
+      SELECT p.id, p.fecha_inicio, p.fecha_fin, p.dias_solicitados, p.estado,
+             tp.nombre AS tipo_permiso_nombre, p.tipo_permiso_otro
+      FROM permisos p
+      LEFT JOIN tipos_permiso tp ON p.tipo_permiso_id = tp.id
+      WHERE p.empleado_id = ?
+        AND p.estado IN ('AUTORIZADO', 'PENDIENTE')
+        AND p.fecha_inicio <= ? AND p.fecha_fin >= ?
+      ORDER BY p.fecha_inicio ASC
+    `, [id, hasta, desde]);
+
+    const autorizado = rows.filter(r => r.estado === 'AUTORIZADO');
+    const pendiente = rows.filter(r => r.estado === 'PENDIENTE');
+
+    res.json({
+      success: true,
+      tienePermisoAutorizado: autorizado.length > 0,
+      tienePermisoPendiente: pendiente.length > 0,
+      permisos: rows
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Verificar si un empleado tiene turnos asignados en un rango de fechas
+router.get('/empleado/:id/turnos-en-rango', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { desde, hasta } = req.query;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ success: false, error: 'Se requieren desde y hasta' });
+    }
+
+    const [rows] = await db.query(`
+      SELECT at.id, at.fecha_inicio, at.fecha_fin, t.nombre_turno
+      FROM asignacion_turnos at
+      JOIN turnos t ON t.id = at.turno_id
+      WHERE at.empleado_id = ?
+        AND at.eliminado_en IS NULL
+        AND at.fecha_inicio <= ? AND at.fecha_fin >= ?
+      ORDER BY at.fecha_inicio ASC
+      LIMIT 5
+    `, [id, hasta, desde]);
+
+    res.json({ success: true, tieneTurnos: rows.length > 0, turnos: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reporte de permisos (para módulo de reportes)
+router.get('/reporte', requireAuth, async (req, res) => {
+  try {
+    const { area_id, empleado_id, desde, hasta, estado } = req.query;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ success: false, error: 'Se requieren desde y hasta' });
+    }
+
+    let sql = `
+      SELECT
+        p.id, p.fecha_inicio, p.fecha_fin, p.dias_solicitados, p.estado,
+        p.observaciones, p.creado_en, p.autorizado_en,
+        e.nombre_completo, e.numero_empleado, e.renglon,
+        r.nombre_rol AS rol_nombre,
+        a.nombre_area AS area_nombre,
+        tp.nombre AS tipo_permiso_nombre,
+        p.tipo_permiso_otro
+      FROM permisos p
+      INNER JOIN empleados e ON p.empleado_id = e.id
+      LEFT JOIN roles_empleado r ON e.rol_id = r.id
+      LEFT JOIN areas a ON e.area_id = a.id
+      LEFT JOIN tipos_permiso tp ON p.tipo_permiso_id = tp.id
+      WHERE p.fecha_inicio <= ? AND p.fecha_fin >= ?
+    `;
+
+    const params = [hasta, desde];
+
+    if (area_id === 'sin_area') {
+      sql += ` AND e.area_id IS NULL`;
+    } else if (area_id) {
+      sql += ` AND e.area_id = ?`; params.push(area_id);
+    }
+    if (empleado_id) { sql += ` AND p.empleado_id = ?`; params.push(empleado_id); }
+    if (estado && estado !== 'todos') { sql += ` AND p.estado = ?`; params.push(estado); }
+
+    sql += ` ORDER BY a.nombre_area, e.nombre_completo, p.fecha_inicio`;
+
+    const [rows] = await db.query(sql, params);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Tipos de permiso
 router.get('/tipos', TiposPermisoController.getAll);
