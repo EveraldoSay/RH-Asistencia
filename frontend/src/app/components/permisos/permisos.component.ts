@@ -129,8 +129,8 @@ export class PermisosComponent implements OnInit {
   // ─── CARGA DE DATOS ───────────────────────────────────────────────
   loadPermisos() {
     this.loading = true;
-    // Siempre cargar solo los que están en permiso vigente
-    this.permisosSvc.getPermisos('permiso').subscribe({
+    // Cargar todos los permisos para gestión (vigentes, futuros y recientes)
+    this.permisosSvc.getPermisos('todos').subscribe({
       next: (res) => {
         this.permisos = res.success && res.data ? res.data : [];
         this.loading = false;
@@ -261,17 +261,11 @@ export class PermisosComponent implements OnInit {
     if (tipo) {
       this.solicitudForm.tipo_permiso_otro = '';
     }
-    if (this.solicitudForm.tipo_permiso_id === -1) {
-      this.solicitudForm.fecha_inicio = '';
-      this.solicitudForm.fecha_fin = '';
-      this.solicitudForm.dias_solicitados = 0;
-    }
-    // Si es 1 día, limpiar fechas para que el usuario solo elija inicio
-    if (tipo?.dias_permitidos === 1) {
-      this.solicitudForm.fecha_inicio = '';
-      this.solicitudForm.fecha_fin = '';
-      this.solicitudForm.dias_solicitados = 0;
-    }
+
+    // Limpiar fechas y días al cambiar tipo
+    this.solicitudForm.fecha_inicio = '';
+    this.solicitudForm.fecha_fin = '';
+    this.solicitudForm.dias_solicitados = 0;
     this.diasExcedidos = false;
     this.actualizarCarta();
   }
