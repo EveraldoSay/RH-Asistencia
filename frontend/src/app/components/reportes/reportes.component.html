@@ -15,7 +15,8 @@
         </select>
       </div>
 
-      <div class="filtro-group" *ngIf="tipoReporte !== 'biometricos' && tipoReporte !== 'todo' && tipoReporte !== 'permisos'">
+      <div class="filtro-group"
+        *ngIf="tipoReporte !== 'biometricos' && tipoReporte !== 'todo' && tipoReporte !== 'permisos'">
         <label>Área:</label>
         <select [(ngModel)]="areaSeleccionada" (change)="onAreaChange()">
           <option value="">-- Seleccione área --</option>
@@ -35,7 +36,8 @@
         </select>
       </div>
 
-      <div class="filtro-group" *ngIf="tipoReporte !== 'todo' && tipoReporte !== 'horarios' && tipoReporte !== 'permisos'">
+      <div class="filtro-group"
+        *ngIf="tipoReporte !== 'todo' && tipoReporte !== 'horarios' && tipoReporte !== 'permisos'">
         <label>Mes:</label>
         <input type="month" [(ngModel)]="mesSeleccionado" (change)="generarSemanas()" />
       </div>
@@ -189,14 +191,12 @@
         </button>
 
         <!-- Excel -->
-        <button *ngIf="tipoReporte !== 'permisos'"
-          (click)="descargarExcel()" [disabled]="registros.length === 0 && eventosBiometricos.length === 0"
-          class="btn-excel">
+        <button *ngIf="tipoReporte !== 'permisos'" (click)="descargarExcel()"
+          [disabled]="registros.length === 0 && eventosBiometricos.length === 0" class="btn-excel">
           <span>Descargar Excel</span>
         </button>
-        <button *ngIf="tipoReporte === 'permisos'"
-          (click)="descargarExcelPermisos()" [disabled]="reportePermisos.length === 0"
-          class="btn-excel">
+        <button *ngIf="tipoReporte === 'permisos'" (click)="descargarExcelPermisos()"
+          [disabled]="reportePermisos.length === 0" class="btn-excel">
           <span>Descargar Excel</span>
         </button>
 
@@ -396,9 +396,11 @@
     <div *ngIf="!cargando && tipoReporte === 'permisos' && reportePermisos.length > 0" class="resultados">
       <p class="resumen">
         Reporte de Permisos |
-        Período: <strong>{{ fechaDesde }} al {{ fechaHasta }}</strong> |
+        Período: <strong>{{ fechaDesde | date:'dd/MM/yyyy':'UTC' }} al {{ fechaHasta | date:'dd/MM/yyyy':'UTC'
+          }}</strong> |
         Total: <strong>{{ reportePermisos.length }}</strong>
-        <span *ngIf="empleadoSeleccionado"> | Empleado: <strong>{{ empleadoSeleccionado.nombre_completo }}</strong></span>
+        <span *ngIf="empleadoSeleccionado"> | Empleado: <strong>{{ empleadoSeleccionado.nombre_completo
+            }}</strong></span>
       </p>
       <div class="tabla-container">
         <table class="tabla-reporte">
@@ -423,8 +425,8 @@
               <td>{{ p.area_nombre || 'N/A' }}</td>
               <td>{{ p.rol_nombre || 'N/A' }}</td>
               <td>{{ p.tipo_permiso_nombre || p.tipo_permiso_otro || 'Otro' }}</td>
-              <td>{{ p.fecha_inicio }}</td>
-              <td>{{ p.fecha_fin }}</td>
+              <td>{{ p.fecha_inicio | date:'dd/MM/yyyy':'UTC' }}</td>
+              <td>{{ p.fecha_fin | date:'dd/MM/yyyy':'UTC' }}</td>
               <td style="text-align:center">{{ p.dias_solicitados }}</td>
               <td>
                 <span [ngClass]="{
