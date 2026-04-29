@@ -63,6 +63,26 @@ export class PermisosComponent implements OnInit {
   // Flag para impresión directa desde tabla
   imprimiendoDesdeTabla = false;
 
+  // Popup de observaciones
+  popupObservaciones: { permiso: Permiso; x: number; y: number } | null = null;
+
+  mostrarObservaciones(event: MouseEvent, permiso: Permiso) {
+    event.stopPropagation();
+    this.popupObservaciones = { permiso, x: event.clientX, y: event.clientY };
+  }
+
+  cerrarPopup() {
+    this.popupObservaciones = null;
+  }
+
+  getTextoObservaciones(permiso: Permiso): string {
+    if (permiso.observaciones?.trim()) return permiso.observaciones;
+    if (permiso.estado === 'PENDIENTE') return 'Pendiente de autorizar';
+    if (permiso.estado === 'AUTORIZADO') return 'Permiso autorizado';
+    if (permiso.estado === 'RECHAZADO') return 'Permiso rechazado';
+    return '—';
+  }
+
   // Advertencia de días excedidos
   diasExcedidos = false;
 
