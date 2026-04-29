@@ -118,12 +118,12 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre del Permiso *</label>
-          <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="100"
+          <input type="text" [(ngModel)]="solicitudForm.tipo_permiso_otro" (input)="actualizarCarta()" maxlength="30"
             required />
         </div>
         <div class="form-group">
           <label>Motivo del Permiso</label>
-          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="250"
+          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="180"
             required></textarea>
         </div>
       </div>
@@ -203,7 +203,7 @@
         </div>
         <div class="form-group">
           <label>Motivo del Permiso</label>
-          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="250" required
+          <textarea [(ngModel)]="solicitudForm.mensaje_otro" (input)="actualizarCarta()" maxlength="180" required
             style="min-height:38px;"></textarea>
         </div>
       </div>
@@ -270,7 +270,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre</label>
-          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" maxlength="80" />
+          <input type="text" [(ngModel)]="tipoPermisoForm.nombre" maxlength="30" />
         </div>
         <div class="form-group form-group-small">
           <label>Días</label>
@@ -278,7 +278,7 @@
         </div>
         <div class="form-group">
           <label>Motivo del Permiso</label>
-          <textarea [(ngModel)]="tipoPermisoForm.mensaje_carta" maxlength="250" required
+          <textarea [(ngModel)]="tipoPermisoForm.mensaje_carta" maxlength="180" required
             style="min-height:38px;"></textarea>
         </div>
       </div>
