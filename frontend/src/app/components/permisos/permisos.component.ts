@@ -715,15 +715,18 @@ export class PermisosComponent implements OnInit {
   }
 
   // ─── HELPERS ──────────────────────────────────────────────────────
-  getEstadoClass(estado: string): string {
-    if (estado === 'AUTORIZADO') return 'estado-autorizado';
+  getEstadoClass(estado: string, permiso?: Permiso): string {
+    if (estado === 'AUTORIZADO') {
+      if (permiso && this.yaFinalizo(permiso)) return 'estado-finalizado';
+      return 'estado-autorizado';
+    }
     if (estado === 'RECHAZADO') return 'estado-rechazado';
     return 'estado-pendiente';
   }
 
   /** Retorna true si hoy está dentro del rango fecha_inicio–fecha_fin del permiso */
   esVigente(permiso: Permiso): boolean {
-    const hoy = new Date().toISOString().substring(0, 10); // 'YYYY-MM-DD'
+    const hoy = new Date().toISOString().substring(0, 10);
     const inicio = (permiso.fecha_inicio as any instanceof Date)
       ? (permiso.fecha_inicio as any).toISOString().substring(0, 10)
       : String(permiso.fecha_inicio).substring(0, 10);
@@ -731,5 +734,14 @@ export class PermisosComponent implements OnInit {
       ? (permiso.fecha_fin as any).toISOString().substring(0, 10)
       : String(permiso.fecha_fin).substring(0, 10);
     return hoy >= inicio && hoy <= fin;
+  }
+
+  /** Retorna true si fecha_fin ya pasó */
+  yaFinalizo(permiso: Permiso): boolean {
+    const hoy = new Date().toISOString().substring(0, 10);
+    const fin = (permiso.fecha_fin as any instanceof Date)
+      ? (permiso.fecha_fin as any).toISOString().substring(0, 10)
+      : String(permiso.fecha_fin).substring(0, 10);
+    return hoy > fin;
   }
 }
