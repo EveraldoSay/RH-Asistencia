@@ -84,19 +84,28 @@ class PermisosModel {
         p.observaciones,
         p.creado_en,
         p.actualizado_en,
-        p.autorizado_en
+        p.autorizado_en,
+        (SELECT al.actor_username FROM audit_log al
+         WHERE al.entidad = 'permisos' AND al.entidad_id = p.id
+         AND al.evento = 'CREATE'
+         ORDER BY al.creado_en ASC LIMIT 1) AS creado_por_usuario,
+        (SELECT al.actor_username FROM audit_log al
+         WHERE al.entidad = 'permisos' AND al.entidad_id = p.id
+         AND al.evento IN ('UPDATE','DELETE')
+         ORDER BY al.creado_en DESC LIMIT 1) AS autorizado_por_usuario
       FROM permisos p
       INNER JOIN empleados e ON p.empleado_id = e.id
       LEFT JOIN roles_empleado r ON e.rol_id = r.id
       LEFT JOIN areas a ON e.area_id = a.id
       LEFT JOIN tipos_permiso tp ON p.tipo_permiso_id = tp.id
+      LEFT JOIN usuarios_sistema u ON p.creado_por = u.id
     `;
 
     if (filtro === 'permiso') {
       sql += ` WHERE p.fecha_inicio <= CURDATE() AND p.fecha_fin >= CURDATE()`;
     }
 
-    sql += ` ORDER BY p.fecha_inicio DESC, e.nombre_completo ASC`;
+    sql += ` ORDER BY p.creado_en DESC, e.nombre_completo ASC`;
 
     const [rows] = await db.query(sql);
     return rows;

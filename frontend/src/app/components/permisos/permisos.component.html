@@ -358,9 +358,6 @@
       <ng-container *ngTemplateOutlet="cartaCuerpo"></ng-container>
     </div>
 
-    <!-- ── SEPARADOR ── -->
-    <div class="carta-separador"></div>
-
     <!-- ── COPIA 2 ── -->
     <div class="carta-copia-bloque">
       <ng-container *ngTemplateOutlet="cartaCuerpo"></ng-container>
@@ -392,6 +389,12 @@
     <span class="fecha-campo fecha-mes">{{ cartaData.mes }}</span>
     DE
     <span class="fecha-campo">{{ cartaData.anio }}</span>
+  </div>
+
+  <div class="carta-meta-impresion">
+    <span>Creado por: <strong>{{ cartaData.creadoPor || '—' }}</strong></span>
+    <span *ngIf="cartaData.autorizadoPor">Autorizado por: <strong>{{ cartaData.autorizadoPor }}</strong></span>
+    <span>Impreso: {{ cartaData.fechaHoraImpresion }}</span>
   </div>
 
   <div class="carta-hro-destinatario">

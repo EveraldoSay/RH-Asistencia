@@ -254,6 +254,19 @@
   vertical-align: middle;
 }
 
+/* Meta de impresión en carta */
+.carta-meta-impresion {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 7pt;
+  color: #555;
+  border-top: 1px solid #ccc;
+  margin-top: 4px;
+  padding-top: 3px;
+}
+
 /* ─── ACCIONES ─── */
 .action-buttons {
   display: flex;
@@ -416,6 +429,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.carta-copia-bloque + .carta-copia-bloque {
+  margin-top: 20px;
 }
 
 .carta-separador {

@@ -145,7 +145,10 @@ export class PermisosComponent implements OnInit {
       diasSolicitados: 0,
       diasEnLetras: '',
       feriadosIncluidos: [] as string[],
-      finesDeSemanaCont: 0
+      finesDeSemanaCont: 0,
+      creadoPor: '',
+      autorizadoPor: '',
+      fechaHoraImpresion: ''
     };
   }
 
@@ -363,7 +366,10 @@ export class PermisosComponent implements OnInit {
       diasSolicitados: dias,
       diasEnLetras: dias > 0 ? numeroALetras(dias) : '',
       feriadosIncluidos: feriados,
-      finesDeSemanaCont: finesSemana
+      finesDeSemanaCont: finesSemana,
+      creadoPor: '',
+      autorizadoPor: '',
+      fechaHoraImpresion: ''
     };
   }
 
@@ -606,10 +612,10 @@ export class PermisosComponent implements OnInit {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Solicitud de Permiso</title>
   ${estilos}
   <style>
-    @page { size: letter portrait; margin: 10mm 15mm; }
+    @page { size: letter portrait; margin: 10mm 15mm; margin-header: 0; margin-footer: 0; }
+    head { display: none !important; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; background: #fff !important; }
     html { background: #fff !important; }
@@ -624,6 +630,7 @@ export class PermisosComponent implements OnInit {
       display: flex; flex-direction: column;
       justify-content: space-between; overflow: hidden; box-sizing: border-box;
     }
+    .carta-copia-bloque + .carta-copia-bloque { margin-top: 8mm; }
     .carta-separador {
       flex: 0 0 12mm; border-top: 1.5px dashed #444; border-bottom: none;
       text-align: center; font-size: 14pt; display: flex;
@@ -658,6 +665,7 @@ export class PermisosComponent implements OnInit {
     .dias-autorizacion { font-size:9pt; }
     .carta-solicitud-line { margin-bottom:3px !important; }
     .carta-tipo-permiso { margin-bottom:3px !important; }
+    .carta-meta-impresion { display:flex; justify-content:space-between; font-size:7pt; color:#555; border-top:1px solid #ccc; margin-top:4px; padding-top:3px; }
   </style>
 </head>
 <body>${cartaEl.outerHTML}</body>
@@ -673,7 +681,6 @@ export class PermisosComponent implements OnInit {
     const rolNombre = emp ? (this.roles.find(r => r.id === emp.rol_id)?.nombre || '') : '';
     const areaNombre = emp ? (this.areas.find(a => a.id === emp.area_id)?.nombre || '') : '';
     const tipo = this.tiposPermiso.find(t => t.id === permiso.tipo_permiso_id);
-    const hoy = new Date();
     const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const fmtFecha = (iso: string) => { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
     const inicio = permiso.fecha_inicio ? parseFechaLocal(permiso.fecha_inicio.substring(0, 10)) : null;
@@ -682,14 +689,25 @@ export class PermisosComponent implements OnInit {
     const finesSemana = inicio && fin ? finesDeSemanaEnRango(inicio, fin) : 0;
     const dias = permiso.dias_solicitados || 0;
 
+    // Fecha de la carta = fecha en que se creó el permiso
+    const fechaCarta = permiso.creado_en ? new Date(permiso.creado_en) : new Date();
+
+    // Fecha y hora de impresión = ahora
+    const ahora = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const horas24 = ahora.getHours();
+    const ampm = horas24 >= 12 ? 'PM' : 'AM';
+    const horas12 = horas24 % 12 || 12;
+    const fechaHoraImpresion = `${pad(ahora.getDate())}/${pad(ahora.getMonth()+1)}/${ahora.getFullYear()} ${pad(horas12)}:${pad(ahora.getMinutes())} ${ampm}`;
+
     this.cartaData = {
       nombreEmpleado: permiso.nombre_completo || '',
       renglon: emp?.renglon || '',
       area: areaNombre,
       rol: rolNombre,
-      dia: String(hoy.getDate()).padStart(2, '0'),
-      mes: meses[hoy.getMonth()],
-      anio: String(hoy.getFullYear()),
+      dia: String(fechaCarta.getDate()).padStart(2, '0'),
+      mes: meses[fechaCarta.getMonth()],
+      anio: String(fechaCarta.getFullYear()),
       tipoPermiso: permiso.tipo_permiso_id ? (tipo?.nombre || '') : (permiso.tipo_permiso_otro || ''),
       mensaje: permiso.tipo_permiso_id ? (tipo?.mensaje_carta || '') : (permiso.mensaje_otro || ''),
       fechaInicio: fmtFecha(permiso.fecha_inicio?.substring(0, 10) || ''),
@@ -697,17 +715,16 @@ export class PermisosComponent implements OnInit {
       diasSolicitados: dias,
       diasEnLetras: dias > 0 ? numeroALetras(dias) : '',
       feriadosIncluidos: feriados,
-      finesDeSemanaCont: finesSemana
+      finesDeSemanaCont: finesSemana,
+      creadoPor: (permiso as any).creado_por_usuario || '',
+      autorizadoPor: (permiso as any).autorizado_por_usuario || '',
+      fechaHoraImpresion
     };
 
     this.imprimiendoDesdeTabla = true;
-
-    // Esperar a que Angular renderice la carta en el DOM oculto
     setTimeout(() => {
       this.imprimirCarta();
-      setTimeout(() => {
-        this.imprimiendoDesdeTabla = false;
-      }, 1000);
+      setTimeout(() => { this.imprimiendoDesdeTabla = false; }, 1000);
     }, 150);
   }
 
