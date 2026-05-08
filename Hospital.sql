@@ -578,15 +578,3 @@ INSERT INTO `tipos_permiso` (`nombre`, `dias_permitidos`, `mensaje_carta`) VALUE
 ('Cita al IGGS', 3, 'Por motivo de cita al Instituno Nacional de Seguridad Social'),
 ('Suspensión médica', 5, 'Por motivo de problema de salud que requiere reposo/tratamiento');
 UNLOCK TABLES;
-
--- ============================================
--- DATOS DE PRUEBA — PERMISOS
--- (empleados reales del sistema)
--- ============================================
-LOCK TABLES `permisos` WRITE;
-INSERT INTO `permisos` (`empleado_id`, `tipo_permiso_id`, `fecha_inicio`, `fecha_fin`, `dias_solicitados`, `estado`) VALUES
-  (1283, 1, '2026-05-06', '2026-05-13', 6, 'AUTORIZADO'),  -- Abner: Vacaciones
-  (1283, 4, '2026-05-06', '2026-05-12', 5, 'AUTORIZADO'),  -- Abner: Suspensión médica
-  (852,  2, '2026-05-06', '2026-05-06', 1, 'AUTORIZADO'),  -- Adalinda: Cumpleaños
-  (458,  3, '2026-05-14', '2026-05-16', 2, 'PENDIENTE');   -- Adalicia: Cita al IGGS
-UNLOCK TABLES;

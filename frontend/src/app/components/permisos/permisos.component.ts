@@ -689,8 +689,16 @@ export class PermisosComponent implements OnInit {
     const finesSemana = inicio && fin ? finesDeSemanaEnRango(inicio, fin) : 0;
     const dias = permiso.dias_solicitados || 0;
 
-    // Fecha de la carta = fecha en que se creó el permiso
-    const fechaCarta = permiso.creado_en ? new Date(permiso.creado_en) : new Date();
+    // Fecha de la carta = fecha en que se creó el permiso (respetando timezone local)
+    let fechaCarta: Date;
+    if (permiso.creado_en) {
+      // Si viene como string ISO, forzar interpretación local quitando la Z
+      const creadoStr = String(permiso.creado_en).replace('Z', '').replace('T', ' ');
+      fechaCarta = new Date(creadoStr);
+      if (isNaN(fechaCarta.getTime())) fechaCarta = new Date(permiso.creado_en);
+    } else {
+      fechaCarta = new Date();
+    }
 
     // Fecha y hora de impresión = ahora
     const ahora = new Date();
