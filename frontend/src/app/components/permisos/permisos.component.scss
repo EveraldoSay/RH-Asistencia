@@ -250,7 +250,13 @@
   border: 1px solid #90a4b7;
 }
 
-/* Icono de observación junto al estado */
+/* Botones de estado en formulario edición */
+.estado-botones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .obs-icon {
   font-size: 13px;
   margin-left: 4px;

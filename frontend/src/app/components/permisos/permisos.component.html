@@ -239,7 +239,7 @@
 
     <div class="form-group">
       <label>Estado</label>
-      <select [(ngModel)]="solicitudForm.estado">
+      <select [(ngModel)]="solicitudForm.estado" (ngModelChange)="cambiarEstadoEnEdicion($event)">
         <option value="PENDIENTE">Pendiente</option>
         <option value="AUTORIZADO">Autorizado</option>
         <option value="RECHAZADO">Rechazado</option>
@@ -393,8 +393,10 @@
   </div>
 
   <div class="carta-meta-impresion">
-    <span *ngIf="cartaData.autorizadoEn">Autorizado: <strong>{{ cartaData.autorizadoEn }}</strong></span>
-    <span *ngIf="cartaData.autorizadoPor">Autorizado por: <strong>{{ cartaData.autorizadoPor }}</strong></span>
+    <span *ngIf="cartaData.autorizadoPor || cartaData.autorizadoEn">
+      Generado por: <strong>{{ cartaData.autorizadoPor || '—' }}</strong>
+      <ng-container *ngIf="cartaData.autorizadoEn"> — {{ cartaData.autorizadoEn }}</ng-container>
+    </span>
     <span>Impreso: {{ cartaData.fechaHoraImpresion }}</span>
   </div>
 

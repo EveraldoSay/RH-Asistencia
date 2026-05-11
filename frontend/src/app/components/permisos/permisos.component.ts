@@ -518,6 +518,30 @@ export class PermisosComponent implements OnInit {
   }
 
   // ─── ESTADO ───────────────────────────────────────────────────────
+  cambiarEstadoEnEdicion(estado: 'AUTORIZADO' | 'RECHAZADO' | 'PENDIENTE') {
+    this.solicitudForm.estado = estado;
+    if (this.editingPermiso?.id) {
+      const permisoTemp = { ...this.editingPermiso, estado: this.solicitudForm.estado as any };
+      if (estado === 'AUTORIZADO') {
+        this.permisosSvc.getTurnosEnRango(permisoTemp.empleado_id, permisoTemp.fecha_inicio, permisoTemp.fecha_fin).subscribe({
+          next: (res) => {
+            if (res.tieneTurnos) {
+              const turnos = res.turnos.map((t: any) => `${t.nombre_turno} (${t.fecha_inicio} - ${t.fecha_fin})`).join(', ');
+              if (!confirm(`⚠️ Tiene turno(s) asignado(s):\n${turnos}\n\n¿Autorizar de todas formas?`)) {
+                this.solicitudForm.estado = this.editingPermiso!.estado;
+                return;
+              }
+            }
+            this.ejecutarCambioEstado(permisoTemp, estado);
+          },
+          error: () => this.ejecutarCambioEstado(permisoTemp, estado)
+        });
+      } else {
+        this.ejecutarCambioEstado(permisoTemp, estado);
+      }
+    }
+  }
+
   cambiarEstado(permiso: Permiso, estado: 'PENDIENTE' | 'AUTORIZADO' | 'RECHAZADO') {
     if (estado === 'AUTORIZADO') {
       this.permisosSvc.getTurnosEnRango(permiso.empleado_id, permiso.fecha_inicio, permiso.fecha_fin).subscribe({
@@ -752,10 +776,15 @@ export class PermisosComponent implements OnInit {
       autorizadoEn: (() => {
         const ae = permiso.autorizado_en;
         if (!ae) return '';
-        const d = new Date(String(ae).replace('Z','').replace('T',' '));
+        // Asegurar que se interprete como UTC agregando Z si no la tiene
+        const isoStr = String(ae).includes('Z') || String(ae).includes('+') ? String(ae) : String(ae).replace(' ', 'T') + 'Z';
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return '';
         const p2 = (n: number) => String(n).padStart(2,'0');
-        const h = d.getHours(), ampm = h >= 12 ? 'PM' : 'AM';
-        return `${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} ${p2(h%12||12)}:${p2(d.getMinutes())} ${ampm}`;
+        // Convertir a Guatemala UTC-6
+        const gt = new Date(d.getTime() - 6 * 60 * 60 * 1000);
+        const h = gt.getUTCHours(), ampm = h >= 12 ? 'PM' : 'AM';
+        return `${p2(gt.getUTCDate())}/${p2(gt.getUTCMonth()+1)}/${gt.getUTCFullYear()} ${p2(h%12||12)}:${p2(gt.getUTCMinutes())} ${ampm}`;
       })(),
       fechaHoraImpresion
     };
