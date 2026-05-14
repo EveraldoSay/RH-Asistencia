@@ -11,6 +11,12 @@ import { DashboardService, DashboardSummary } from '../../services/dashboard.ser
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
+
+  areaColors = [
+    '#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6',
+    '#14b8a6','#f97316','#6366f1','#ec4899','#0ea5e9'
+  ];
+
   data: DashboardSummary = {
     personalActivo: 0,
     personalInactivo: 0,
@@ -39,7 +45,7 @@ export class DashboardComponent implements OnInit {
     this.loadDashboardData();
   }
 
-  /** 🔹 Carga los datos del dashboard */
+  /** Carga los datos del dashboard */
   loadDashboardData(): void {
     this.loading = true;
 
@@ -82,7 +88,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** 🔹 Verifica si hay datos válidos */
+  /** Verifica si hay datos válidos */
   private hasAnyData(d: DashboardSummary): boolean {
     if (!d) return false;
 
@@ -94,17 +100,18 @@ export class DashboardComponent implements OnInit {
     return hasPersonalData || hasTurnosData || hasAsistenciaData || hasDistribucionData;
   }
 
-  /** 🔹 Renderiza los gráficos del dashboard */
+  /** Renderiza los gráficos del dashboard */
   private renderCharts(): void {
     // Limpia los gráficos previos
     Chart.getChart("areaChart")?.destroy();
     Chart.getChart("asistenciaChart")?.destroy();
 
-    // 1️⃣ Gráfico de Distribución de Personal por Área
+    // Dona — Distribución por Área
     if (this.data.distribucionArea && this.data.distribucionArea.length > 0) {
       const ctx1 = document.getElementById('areaChart') as HTMLCanvasElement;
       const areas = this.data.distribucionArea.map((a: any) => a.area || 'Sin área');
       const cantidades = this.data.distribucionArea.map((a: any) => a.cantidad || 0);
+      const total = cantidades.reduce((s: number, v: number) => s + v, 0);
 
       new Chart(ctx1, {
         type: 'doughnut',
@@ -112,49 +119,89 @@ export class DashboardComponent implements OnInit {
           labels: areas,
           datasets: [{
             data: cantidades,
-            backgroundColor: [
-              '#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545',
-              '#6f42c1', '#20c997', '#fd7e14'
-            ],
+            backgroundColor: this.areaColors,
             borderWidth: 2,
             borderColor: '#fff',
           }]
         },
         options: {
-          cutout: '70%',
+          cutout: '58%',
+          animation: { duration: 600 },
+          maintainAspectRatio: true,
           plugins: {
-            legend: { position: 'right', labels: { font: { size: 13 } } },
-            title: { display: false }
+            legend: {
+              position: 'bottom',
+              labels: { font: { size: 9 }, boxWidth: 9, padding: 5 }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0';
+                  return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                }
+              }
+            }
           }
         }
       });
     }
 
-    // Gráfico de Asistencia Semanal
+    // Línea con área — Asistencia Semanal
     if (this.data.asistenciaSemanal && this.data.asistenciaSemanal.length > 0) {
       const ctx2 = document.getElementById('asistenciaChart') as HTMLCanvasElement;
-      const labels = this.data.asistenciaSemanal.map((d: any) => d.fecha.slice(5));
+      const labels = this.data.asistenciaSemanal.map((d: any) => {
+        // Mostrar fecha como "Lun 12/05" para que sea legible
+        const fecha = new Date(d.fecha + 'T00:00:00');
+        const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        const dd = String(fecha.getDate()).padStart(2,'0');
+        const mm = String(fecha.getMonth()+1).padStart(2,'0');
+        return `${dias[fecha.getDay()]} ${dd}/${mm}`;
+      });
       const entradas = this.data.asistenciaSemanal.map((d: any) => d.entradas);
 
       new Chart(ctx2, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels,
           datasets: [{
             label: 'Entradas registradas',
             data: entradas,
-            backgroundColor: 'rgba(0, 123, 255, 0.7)',
-            borderColor: '#007bff',
+            borderColor: '#3b82f6',
             borderWidth: 2,
-            borderRadius: 8,
+            pointBackgroundColor: '#3b82f6',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            fill: true,
+            backgroundColor: 'rgba(59,130,246,0.10)',
+            tension: 0.35,
           }]
         },
         options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500 },
           scales: {
-            y: { beginAtZero: true, },
-            x: { grid: { display: false } }
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Entradas', font: { size: 10 }, color: '#94a3b8' },
+              ticks: { font: { size: 10 }, color: '#94a3b8' },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              title: { display: true, text: 'Día', font: { size: 10 }, color: '#94a3b8' },
+              grid: { display: false },
+              ticks: { font: { size: 9 }, color: '#94a3b8', maxRotation: 0 }
+            }
           },
-          plugins: { legend: { display: false } }
+          plugins: {
+            legend: { display: true, labels: { font: { size: 10 }, boxWidth: 10, color: '#64748b' } },
+            tooltip: {
+              callbacks: {
+                title: (items) => items[0].label,
+                label: (ctx) => ` ${ctx.parsed.y} entradas`
+              }
+            }
+          }
         }
       });
     }
