@@ -393,8 +393,8 @@
   </div>
 
   <div class="carta-meta-impresion">
-    <span *ngIf="cartaData.autorizadoPor || cartaData.autorizadoEn">
-      Generado por: <strong>{{ cartaData.autorizadoPor || '—' }}</strong>
+    <span *ngIf="cartaData.autorizadoPor || cartaData.creadoPor || cartaData.autorizadoEn">
+      Generado por: <strong>{{ cartaData.autorizadoPor || cartaData.creadoPor || '—' }}</strong>
       <ng-container *ngIf="cartaData.autorizadoEn"> — {{ cartaData.autorizadoEn }}</ng-container>
     </span>
     <span>Impreso: {{ cartaData.fechaHoraImpresion }}</span>
