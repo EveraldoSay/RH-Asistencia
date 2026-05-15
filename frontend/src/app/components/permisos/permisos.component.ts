@@ -42,6 +42,7 @@ export class PermisosComponent implements OnInit {
   error: string | null = null;
 
   searchTerm = '';
+  filtroEstado: 'TODOS' | 'PENDIENTE' | 'AUTORIZADO' | 'RECHAZADO' = 'TODOS';
 
   // Vistas
   vistaActual: 'tabla' | 'solicitud' | 'editarPermiso' | 'tiposPermiso' = 'tabla';
@@ -200,8 +201,16 @@ export class PermisosComponent implements OnInit {
 
   get filteredPermisos(): Permiso[] {
     const t = this.norm(this.searchTerm);
-    if (!t) return this.permisos;
-    return this.permisos.filter(p =>
+    let lista = this.permisos;
+
+    // Filtro por estado
+    if (this.filtroEstado !== 'TODOS') {
+      lista = lista.filter(p => p.estado === this.filtroEstado);
+    }
+
+    // Filtro por texto
+    if (!t) return lista;
+    return lista.filter(p =>
       [p.nombre_completo, p.rol_nombre, p.area_nombre].some(v => this.norm(String(v || '')).includes(t))
     );
   }

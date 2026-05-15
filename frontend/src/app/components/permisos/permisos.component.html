@@ -14,6 +14,18 @@
         <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar por nombre" [disabled]="loading" />
         <button *ngIf="searchTerm" class="btn btn-secondary btn-small" (click)="searchTerm = ''">Limpiar</button>
       </div>
+
+      <!-- Filtros de estado -->
+      <div class="filtro-estado-group">
+        <button class="btn-filtro-estado" [class.activo]="filtroEstado === 'TODOS'"
+          (click)="filtroEstado = 'TODOS'; updatePagination()">Todos</button>
+        <button class="btn-filtro-estado filtro-pendiente" [class.activo]="filtroEstado === 'PENDIENTE'"
+          (click)="filtroEstado = 'PENDIENTE'; updatePagination()">Pendiente</button>
+        <button class="btn-filtro-estado filtro-autorizado" [class.activo]="filtroEstado === 'AUTORIZADO'"
+          (click)="filtroEstado = 'AUTORIZADO'; updatePagination()">Autorizado</button>
+        <button class="btn-filtro-estado filtro-rechazado" [class.activo]="filtroEstado === 'RECHAZADO'"
+          (click)="filtroEstado = 'RECHAZADO'; updatePagination()">Rechazado</button>
+      </div>
     </ng-container>
   </div>
 
@@ -57,7 +69,7 @@
             <span *ngIf="permiso.observaciones" class="obs-icon" [title]="permiso.observaciones">💬</span>
           </td>
           <td class="action-buttons">
-            <ng-container *ngIf="!yaFinalizo(permiso); else soloImprimir">
+            <ng-container *ngIf="!yaFinalizo(permiso)">
               <button *ngIf="permiso.estado !== 'AUTORIZADO'"
                 class="btn btn-success btn-small" (click)="cambiarEstado(permiso, 'AUTORIZADO')">
                 Autorizar
@@ -67,18 +79,20 @@
                 Rechazar
               </button>
               <button class="btn btn-primary btn-small" (click)="irAEditarPermiso(permiso)">Editar</button>
-              <button *ngIf="permiso.estado === 'AUTORIZADO'" class="btn btn-secondary btn-small"
-                (click)="imprimirPermisoDirecto(permiso)" title="Imprimir carta">🖨️ Imprimir</button>
             </ng-container>
-            <ng-template #soloImprimir>
-              <button class="btn btn-secondary btn-small"
-                (click)="imprimirPermisoDirecto(permiso)" title="Imprimir carta">🖨️ Imprimir</button>
-            </ng-template>
+            <!-- Finalizado: solo editar si no es AUTORIZADO, sin Autorizar/Rechazar -->
+            <ng-container *ngIf="yaFinalizo(permiso)">
+              <button *ngIf="permiso.estado !== 'AUTORIZADO'"
+                class="btn btn-primary btn-small" (click)="irAEditarPermiso(permiso)">Editar</button>
+            </ng-container>
+            <!-- Imprimir: solo si AUTORIZADO, sin importar si finalizó -->
+            <button *ngIf="permiso.estado === 'AUTORIZADO'" class="btn btn-secondary btn-small"
+              (click)="imprimirPermisoDirecto(permiso)" title="Imprimir carta">🖨️ Imprimir</button>
           </td>
         </tr>
         <tr *ngIf="filteredPermisos.length === 0">
           <td colspan="9" class="no-data">
-            {{ searchTerm ? 'No se encontraron coincidencias' : 'No hay empleados con permiso en curso' }}
+            {{ searchTerm ? 'No se encontraron coincidencias' : filtroEstado !== 'TODOS' ? 'No hay permisos con estado ' + filtroEstado : 'No hay permisos registrados' }}
           </td>
         </tr>
       </tbody>

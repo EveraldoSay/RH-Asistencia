@@ -257,6 +257,35 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+
+/* Filtros de estado */
+.filtro-estado-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.btn-filtro-estado {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #dee2e6;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+
+  &.activo, &:hover {
+    background: #6c757d;
+    color: #fff;
+    border-color: #6c757d;
+  }
+}
+
+.filtro-pendiente.activo  { background: #856404; border-color: #856404; color: #fff; }
+.filtro-autorizado.activo { background: #155724; border-color: #155724; color: #fff; }
+.filtro-rechazado.activo  { background: #721c24; border-color: #721c24; color: #fff; }
 .obs-icon {
   font-size: 13px;
   margin-left: 4px;
