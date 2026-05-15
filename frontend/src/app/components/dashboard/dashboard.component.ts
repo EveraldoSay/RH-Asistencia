@@ -115,7 +115,7 @@ export class DashboardComponent implements OnInit {
       return `${dias[d.getDay()]} ${dd}/${mm}`;
     };
 
-    // 1️⃣ Dona — Distribución por Área
+    // Dona — Distribución por Área
     if (this.data.distribucionArea && this.data.distribucionArea.length > 0) {
       const ctx1 = document.getElementById('areaChart') as HTMLCanvasElement;
       const areas = this.data.distribucionArea.map((a: any) => a.area || 'Sin área');
@@ -152,7 +152,7 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // 2️⃣ Línea — Asistencia Semanal
+    // Línea — Asistencia Semanal
     if (this.data.asistenciaSemanal && this.data.asistenciaSemanal.length > 0) {
       const ctx2 = document.getElementById('asistenciaChart') as HTMLCanvasElement;
       const labels = this.data.asistenciaSemanal.map((d: any) => fmtLabel(d.fecha));
@@ -204,7 +204,7 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // 3️⃣ Barras pill — Hora Promedio de Entrada
+    // Barras pill — Hora Promedio de Entrada
     if (this.data.horaPromedioEntrada && this.data.horaPromedioEntrada.some(d => d.hora !== null)) {
       const ctx3 = document.getElementById('horaChart') as HTMLCanvasElement;
       const labels = this.data.horaPromedioEntrada.map((d: any) => fmtLabel(d.fecha));
