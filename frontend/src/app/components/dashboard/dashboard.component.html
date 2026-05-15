@@ -68,42 +68,51 @@
     </div>
   </div>
 
-  <!-- ── MAIN CONTENT ── -->
+  <!-- ── MAIN ROW ── -->
   <div class="main-row">
 
-    <!-- Dona: distribución por área -->
-    <div class="panel panel-sm">
-      <p class="panel-title">Distribución por Área</p>
-      <div class="donut-wrap">
+    <!-- Columna izquierda: dona + tabla áreas -->
+    <div class="col-left">
+      <div class="panel">
+        <p class="panel-title">Distribución por Área</p>
+        <div class="donut-wrap">
+          <div *ngIf="!hasData" class="no-data">Sin datos</div>
+          <canvas id="areaChart" *ngIf="hasData"></canvas>
+        </div>
+      </div>
+      <div class="panel panel-area-table">
+        <p class="panel-title">Personal por Área</p>
+        <div class="area-table" *ngIf="hasData">
+          <div class="area-row" *ngFor="let a of data.distribucionArea; let i = index">
+            <span class="area-dot" [style.background]="areaColors[i % areaColors.length]"></span>
+            <span class="area-name">{{ a.area || 'Sin área' }}</span>
+            <span class="area-bar-wrap">
+              <span class="area-bar" [style.width.%]="(a.cantidad / data.personalTotal) * 100"
+                [style.background]="areaColors[i % areaColors.length]"></span>
+            </span>
+            <span class="area-num">{{ a.cantidad }}</span>
+          </div>
+        </div>
         <div *ngIf="!hasData" class="no-data">Sin datos</div>
-        <canvas id="areaChart" *ngIf="hasData"></canvas>
       </div>
     </div>
 
-    <!-- Barras: asistencia semanal -->
+    <!-- Columna central: asistencia semanal -->
     <div class="panel panel-lg">
-      <p class="panel-title">Asistencia Semanal</p>
+      <p class="panel-title">Asistencia Semanal <span class="panel-sub">entradas registradas por día</span></p>
       <div class="bar-wrap">
         <div *ngIf="!hasData" class="no-data">Sin datos de asistencia</div>
         <canvas id="asistenciaChart" *ngIf="hasData"></canvas>
       </div>
     </div>
 
-    <!-- Tabla: top áreas -->
+    <!-- Columna derecha: hora promedio de entrada -->
     <div class="panel panel-md">
-      <p class="panel-title">Personal por Área</p>
-      <div class="area-table" *ngIf="hasData">
-        <div class="area-row" *ngFor="let a of data.distribucionArea; let i = index">
-          <span class="area-dot" [style.background]="areaColors[i % areaColors.length]"></span>
-          <span class="area-name">{{ a.area || 'Sin área' }}</span>
-          <span class="area-bar-wrap">
-            <span class="area-bar" [style.width.%]="(a.cantidad / data.personalTotal) * 100"
-              [style.background]="areaColors[i % areaColors.length]"></span>
-          </span>
-          <span class="area-num">{{ a.cantidad }}</span>
-        </div>
+      <p class="panel-title">Hora Promedio de Entrada <span class="panel-sub">últimos 7 días</span></p>
+      <div class="bar-wrap">
+        <div *ngIf="!hasData" class="no-data">Sin datos</div>
+        <canvas id="horaChart" *ngIf="hasData"></canvas>
       </div>
-      <div *ngIf="!hasData" class="no-data">Sin datos</div>
     </div>
 
   </div>

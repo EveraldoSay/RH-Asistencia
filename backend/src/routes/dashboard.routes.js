@@ -6,12 +6,13 @@ const { requireAuth, requireRRHHorJefe } = require('../middlewares/auth.js');
 // Helper: genera ultimos 7 días 
 function last7Days() {
   const days = [];
-  const today = new Date();
+  // Usar hora de Guatemala (UTC-6)
+  const now = new Date();
+  const gt = new Date(now.getTime() - 6 * 60 * 60 * 1000);
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
-    days.push(iso);
+    const d = new Date(gt);
+    d.setUTCDate(gt.getUTCDate() - i);
+    days.push(d.toISOString().slice(0, 10));
   }
   return days;
 }
@@ -142,6 +143,26 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
     const map = new Map(asistRaw.map(r => [r.dia.toISOString?.() ? r.dia.toISOString().slice(0,10) : String(r.dia), r.entradas]));
     const asistenciaSemanal = days.map(d => ({ fecha: d, entradas: map.get(d) || 0 }));
 
+    // 11) Hora promedio de entrada por día (últimos 7 días)
+    const [horaPromedioRaw] = await db.query(`
+      SELECT 
+        DATE(fecha_hora) AS dia,
+        SEC_TO_TIME(AVG(TIME_TO_SEC(TIME(fecha_hora)))) AS hora_promedio
+      FROM registros_asistencia
+      WHERE fecha_hora >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        AND tipo_evento = 'ENTRADA'
+      GROUP BY DATE(fecha_hora)
+      ORDER BY dia ASC
+    `);
+
+    const horaMap = new Map(horaPromedioRaw.map((r) => {
+      const dia = r.dia.toISOString?.() ? r.dia.toISOString().slice(0,10) : String(r.dia);
+      // Convertir hora a decimal (ej: 07:45 -> 7.75)
+      const [h, m] = String(r.hora_promedio).split(':').map(Number);
+      return [dia, Math.round((h + m/60) * 100) / 100];
+    }));
+    const horaPromedioEntrada = days.map(d => ({ fecha: d, hora: horaMap.get(d) || null }));
+
     res.json({
       success: true,
       data: {
@@ -154,7 +175,8 @@ router.get('/summary', requireAuth, requireRRHHorJefe, async (_req, res) => {
         personalSinTurno,
         proximosTurnos: bucket,
         asistenciaSemanal,
-        distribucionArea
+        distribucionArea,
+        horaPromedioEntrada
       }
     });
 

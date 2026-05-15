@@ -26,13 +26,13 @@ export class DashboardComponent implements OnInit {
     turnosRotativos: 0,
     personalSinTurno: 0,
     personalConPermiso: 0,
-    // alertas: 0,
     proximosTurnos: {
       manana: { enfermeros: 0, medicos: 0 },
       tarde: { enfermeros: 0, medicos: 0 },
       noche: { enfermeros: 0, medicos: 0 },
     },
     asistenciaSemanal: [],
+    horaPromedioEntrada: [],
     distribucionArea: []
   } as unknown as DashboardSummary;
 
@@ -102,11 +102,20 @@ export class DashboardComponent implements OnInit {
 
   /** Renderiza los gráficos del dashboard */
   private renderCharts(): void {
-    // Limpia los gráficos previos
     Chart.getChart("areaChart")?.destroy();
     Chart.getChart("asistenciaChart")?.destroy();
+    Chart.getChart("horaChart")?.destroy();
 
-    // Dona — Distribución por Área
+    // Helper para formatear etiquetas de fecha
+    const fmtLabel = (fecha: string) => {
+      const d = new Date(fecha + 'T00:00:00');
+      const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      return `${dias[d.getDay()]} ${dd}/${mm}`;
+    };
+
+    // 1️⃣ Dona — Distribución por Área
     if (this.data.distribucionArea && this.data.distribucionArea.length > 0) {
       const ctx1 = document.getElementById('areaChart') as HTMLCanvasElement;
       const areas = this.data.distribucionArea.map((a: any) => a.area || 'Sin área');
@@ -129,10 +138,7 @@ export class DashboardComponent implements OnInit {
           animation: { duration: 600 },
           maintainAspectRatio: true,
           plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { font: { size: 9 }, boxWidth: 9, padding: 5 }
-            },
+            legend: { position: 'bottom', labels: { font: { size: 9 }, boxWidth: 9, padding: 5 } },
             tooltip: {
               callbacks: {
                 label: (ctx) => {
@@ -146,17 +152,10 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // Línea con área — Asistencia Semanal
+    // 2️⃣ Línea — Asistencia Semanal
     if (this.data.asistenciaSemanal && this.data.asistenciaSemanal.length > 0) {
       const ctx2 = document.getElementById('asistenciaChart') as HTMLCanvasElement;
-      const labels = this.data.asistenciaSemanal.map((d: any) => {
-        // Mostrar fecha como "Lun 12/05" para que sea legible
-        const fecha = new Date(d.fecha + 'T00:00:00');
-        const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        const dd = String(fecha.getDate()).padStart(2,'0');
-        const mm = String(fecha.getMonth()+1).padStart(2,'0');
-        return `${dias[fecha.getDay()]} ${dd}/${mm}`;
-      });
+      const labels = this.data.asistenciaSemanal.map((d: any) => fmtLabel(d.fecha));
       const entradas = this.data.asistenciaSemanal.map((d: any) => d.entradas);
 
       new Chart(ctx2, {
@@ -188,7 +187,6 @@ export class DashboardComponent implements OnInit {
               grid: { color: '#f1f5f9' }
             },
             x: {
-              title: { display: true, text: 'Día', font: { size: 10 }, color: '#94a3b8' },
               grid: { display: false },
               ticks: { font: { size: 9 }, color: '#94a3b8', maxRotation: 0 }
             }
@@ -199,6 +197,111 @@ export class DashboardComponent implements OnInit {
               callbacks: {
                 title: (items) => items[0].label,
                 label: (ctx) => ` ${ctx.parsed.y} entradas`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 3️⃣ Barras pill — Hora Promedio de Entrada
+    if (this.data.horaPromedioEntrada && this.data.horaPromedioEntrada.some(d => d.hora !== null)) {
+      const ctx3 = document.getElementById('horaChart') as HTMLCanvasElement;
+      const labels = this.data.horaPromedioEntrada.map((d: any) => fmtLabel(d.fecha));
+      const horas = this.data.horaPromedioEntrada.map((d: any) => d.hora);
+
+      const fmtHora = (v: number | null) => {
+        if (v === null) return 'Sin datos';
+        const h = Math.floor(v);
+        const m = Math.round((v - h) * 60);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${ampm}`;
+      };
+
+      // Plugin para dibujar círculo con valor en la punta de cada barra
+      const pillPlugin = {
+        id: 'pillTop',
+        afterDatasetsDraw(chart: any) {
+          const { ctx: c, scales: { x, y } } = chart;
+          chart.data.datasets[0].data.forEach((val: number | null, i: number) => {
+            if (val === null) return;
+            const xPos = x.getPixelForValue(i);
+            const yPos = y.getPixelForValue(val);
+            const r = 16;
+            // Círculo blanco con borde
+            c.save();
+            c.beginPath();
+            c.arc(xPos, yPos, r, 0, Math.PI * 2);
+            c.fillStyle = '#fff';
+            c.fill();
+            c.strokeStyle = val <= 8 ? '#22c55e' : val <= 8.5 ? '#f59e0b' : '#ef4444';
+            c.lineWidth = 2;
+            c.stroke();
+            // Texto hora
+            c.fillStyle = '#1e293b';
+            c.font = 'bold 8px sans-serif';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            const h = Math.floor(val);
+            const m = Math.round((val - h) * 60);
+            c.fillText(`${h % 12 || 12}:${String(m).padStart(2,'0')}`, xPos, yPos);
+            c.restore();
+          });
+        }
+      };
+
+      new Chart(ctx3, {
+        type: 'bar',
+        plugins: [pillPlugin],
+        data: {
+          labels,
+          datasets: [{
+            label: 'Hora promedio entrada',
+            data: horas,
+            backgroundColor: horas.map((h: number | null) => {
+              if (h === null) return 'rgba(203,213,225,0.3)';
+              if (h <= 8)   return 'rgba(34,197,94,0.25)';
+              if (h <= 8.5) return 'rgba(245,158,11,0.25)';
+              return 'rgba(239,68,68,0.25)';
+            }),
+            borderColor: horas.map((h: number | null) => {
+              if (h === null) return '#cbd5e1';
+              if (h <= 8)   return '#22c55e';
+              if (h <= 8.5) return '#f59e0b';
+              return '#ef4444';
+            }),
+            borderWidth: 2,
+            borderRadius: 20,
+            borderSkipped: false,
+            barPercentage: 0.5,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500 },
+          layout: { padding: { top: 20 } },
+          scales: {
+            y: {
+              min: 5, max: 12,
+              title: { display: true, text: 'Hora', font: { size: 10 }, color: '#94a3b8' },
+              ticks: {
+                font: { size: 9 }, color: '#94a3b8',
+                callback: (val) => fmtHora(Number(val))
+              },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 9 }, color: '#94a3b8', maxRotation: 0 }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: (items) => items[0].label,
+                label: (ctx) => ` Promedio: ${fmtHora(ctx.parsed.y)}`
               }
             }
           }

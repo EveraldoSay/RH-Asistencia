@@ -23,6 +23,7 @@ export interface DashboardSummary {
   alertas: number;
   proximosTurnos: ProximosTurnos;
   asistenciaSemanal: Array<{ fecha: string; entradas: number }>;
+  horaPromedioEntrada: Array<{ fecha: string; hora: number | null }>;
 }
 
 export interface ApiResponse<T=any> {
@@ -98,6 +99,7 @@ export class DashboardService {
         noche: { enfermeros: 0, medicos: 0 },
       },
       asistenciaSemanal: [],
+      horaPromedioEntrada: [],
       distribucionArea: []
     } as DashboardSummary;
   }
