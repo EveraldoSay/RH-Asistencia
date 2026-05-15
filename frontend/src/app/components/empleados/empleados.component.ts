@@ -86,6 +86,24 @@ export class EmpleadosComponent implements OnInit {
   // texto de busqueda
   searchTerm = '';
 
+  // Paginación
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalPages = 1;
+
+  get paginatedEmpleados(): Empleado[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredEmpleados.slice(start, start + this.itemsPerPage);
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredEmpleados.length / this.itemsPerPage) || 1;
+    if (this.currentPage > this.totalPages) this.currentPage = 1;
+  }
+
+  prevPage(): void { if (this.currentPage > 1) { this.currentPage--; } }
+  nextPage(): void { if (this.currentPage < this.totalPages) { this.currentPage++; } }
+
   // Normaliza para comparar sin tildes y en minúsculas
   private norm(s: string): string {
     return (s || '')
@@ -123,6 +141,8 @@ export class EmpleadosComponent implements OnInit {
 
   clearSearch() {
     this.searchTerm = '';
+    this.currentPage = 1;
+    this.updatePagination();
   }
 
 
@@ -262,6 +282,7 @@ export class EmpleadosComponent implements OnInit {
       next: (response: any) => {
         if (response.success && response.data) {
           this.empleados = response.data;
+          this.updatePagination();
           this.cargarPermisosVigentes();
         } else {
           this.error = response.error || 'Error cargando empleados';

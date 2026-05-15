@@ -262,8 +262,21 @@
 .no-data {  
   text-align: center;  
   padding: 40px;  
-  color: #666;  
-  font-size: 16px;  
+}
+
+/* Paginación */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: #666;
 }  
 
 .empleados-table td { vertical-align: middle; }

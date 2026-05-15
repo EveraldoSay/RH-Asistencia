@@ -173,6 +173,7 @@ export class PermisosComponent implements OnInit {
     this.permisosSvc.getPermisos('todos').subscribe({
       next: (res) => {
         this.permisos = res.success && res.data ? res.data : [];
+        this.updatePagination();
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -204,6 +205,24 @@ export class PermisosComponent implements OnInit {
       [p.nombre_completo, p.rol_nombre, p.area_nombre].some(v => this.norm(String(v || '')).includes(t))
     );
   }
+
+  // Paginación
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalPages = 1;
+
+  get paginatedPermisos(): Permiso[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredPermisos.slice(start, start + this.itemsPerPage);
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredPermisos.length / this.itemsPerPage) || 1;
+    if (this.currentPage > this.totalPages) this.currentPage = 1;
+  }
+
+  prevPage(): void { if (this.currentPage > 1) this.currentPage--; }
+  nextPage(): void { if (this.currentPage < this.totalPages) this.currentPage++; }
 
   tienePermisoVigente(permiso: Permiso): boolean {
     if (!permiso.fecha_inicio || !permiso.fecha_fin) return false;

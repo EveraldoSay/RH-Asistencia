@@ -252,7 +252,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let emp of filteredEmpleados; trackBy: trackById" [class.inactive]="!emp.activo">
+        <tr *ngFor="let emp of paginatedEmpleados; trackBy: trackById" [class.inactive]="!emp.activo">
           <td>{{ emp.numero_empleado }}</td>
           <td>{{ emp.nombre_completo }}</td>
           <td>{{ emp.email || '—' }}</td>
@@ -282,5 +282,12 @@
 
       </tbody>
     </table>
+
+    <!-- Paginación -->
+    <div class="pagination-controls" *ngIf="filteredEmpleados.length > itemsPerPage">
+      <button class="btn btn-secondary btn-small" (click)="prevPage()" [disabled]="currentPage === 1">Anterior</button>
+      <span class="pagination-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      <button class="btn btn-secondary btn-small" (click)="nextPage()" [disabled]="currentPage === totalPages">Siguiente</button>
+    </div>
   </div>
 </div>

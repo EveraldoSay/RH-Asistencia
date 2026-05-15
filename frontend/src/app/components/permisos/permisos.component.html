@@ -41,7 +41,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let permiso of filteredPermisos">
+        <tr *ngFor="let permiso of paginatedPermisos">
           <td>{{ permiso.nombre_completo }}</td>
           <td>{{ permiso.rol_nombre || '—' }}</td>
           <td>{{ permiso.area_nombre || '—' }}</td>
@@ -83,6 +83,13 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Paginación -->
+    <div class="pagination-controls" *ngIf="filteredPermisos.length > itemsPerPage">
+      <button class="btn btn-secondary btn-small" (click)="prevPage()" [disabled]="currentPage === 1">Anterior</button>
+      <span class="pagination-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      <button class="btn btn-secondary btn-small" (click)="nextPage()" [disabled]="currentPage === totalPages">Siguiente</button>
+    </div>
   </div>
 
   <!-- ═══ SOLICITAR PERMISO ═══ -->
