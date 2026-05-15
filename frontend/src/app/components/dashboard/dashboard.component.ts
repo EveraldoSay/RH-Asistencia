@@ -35,7 +35,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       noche: { enfermeros: 0, medicos: 0 },
     },
     asistenciaSemanal: [],
-    horaPromedioEntrada: [],
+    // modaEntrada: hora más frecuente de entrada por día (decimal, ej: 7.5 = 7:30 AM)
+    modaEntrada: [],
     distribucionArea: []
   } as unknown as DashboardSummary;
 
@@ -213,11 +214,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Barras pill — Hora Promedio de Entrada
-    if (this.data.horaPromedioEntrada && this.data.horaPromedioEntrada.some(d => d.hora !== null)) {
+    // 3️⃣ Barras pill — Moda de Hora de Entrada
+    // Muestra la franja de 30 min donde más empleados registraron entrada cada día
+    if (this.data.modaEntrada && this.data.modaEntrada.some(d => d.hora !== null)) {
       const ctx3 = document.getElementById('horaChart') as HTMLCanvasElement;
-      const labels = this.data.horaPromedioEntrada.map((d: any) => fmtLabel(d.fecha));
-      const horas = this.data.horaPromedioEntrada.map((d: any) => d.hora);
+      const labels = this.data.modaEntrada.map((d: any) => fmtLabel(d.fecha));
+      const horas = this.data.modaEntrada.map((d: any) => d.hora);
 
       const fmtHora = (v: number | null) => {
         if (v === null) return 'Sin datos';

@@ -108,7 +108,7 @@
 
     <!-- Columna derecha: hora promedio de entrada -->
     <div class="panel panel-md">
-      <p class="panel-title">Hora Promedio de Entrada <span class="panel-sub">últimos 7 días</span></p>
+      <p class="panel-title">Hora Moda de Entrada <span class="panel-sub">hora más frecuente por día</span></p>
       <div class="bar-wrap">
         <div *ngIf="!hasData" class="no-data">Sin datos</div>
         <canvas id="horaChart" *ngIf="hasData"></canvas>

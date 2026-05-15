@@ -23,7 +23,8 @@ export interface DashboardSummary {
   alertas: number;
   proximosTurnos: ProximosTurnos;
   asistenciaSemanal: Array<{ fecha: string; entradas: number }>;
-  horaPromedioEntrada: Array<{ fecha: string; hora: number | null }>;
+  // modaEntrada: hora más frecuente de entrada por día (en decimal, ej: 7.5 = 7:30 AM)
+  modaEntrada: Array<{ fecha: string; hora: number | null }>;
 }
 
 export interface ApiResponse<T=any> {
@@ -99,7 +100,8 @@ export class DashboardService {
         noche: { enfermeros: 0, medicos: 0 },
       },
       asistenciaSemanal: [],
-      horaPromedioEntrada: [],
+      // modaEntrada: hora más frecuente de entrada por día
+      modaEntrada: [],
       distribucionArea: []
     } as DashboardSummary;
   }
